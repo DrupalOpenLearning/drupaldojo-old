@@ -4,7 +4,6 @@ namespace Drupal\search_api_views_taxonomy\Plugin\views\argument;
 
 use Drupal\Component\Utility\Html;
 use Drupal\search_api\Plugin\views\argument\SearchApiStandard;
-use Drupal\search_api\UncacheableDependencyTrait;
 use Drupal\taxonomy\Entity\Term;
 
 /**
@@ -16,15 +15,13 @@ use Drupal\taxonomy\Entity\Term;
  */
 class SearchApiTerm extends SearchApiStandard {
 
-  use UncacheableDependencyTrait;
-
   /**
    * {@inheritdoc}
    */
   public function title() {
     if (!empty($this->argument)) {
       $this->fillValue();
-      $terms = array();
+      $terms = [];
       foreach ($this->value as $tid) {
         $taxonomy_term = Term::load($tid);
         if ($taxonomy_term) {

@@ -68,10 +68,8 @@ class FeaturesInstallStorage extends ExtensionInstallStorage {
       $listing = new ExtensionDiscovery(\Drupal::root());
 
       // CHANGED START: Add profile directories for any bundles that use a profile.
-      $profile_directories = [];
-      if ($profile) {
-        $profile_directories[] = drupal_get_path('profile', $profile);
-      }
+      $listing->setProfileDirectoriesFromSettings();
+      $profile_directories = $listing->getProfileDirectories();
       if ($this->includeProfile) {
         // Add any profiles used in bundles.
         /** @var \Drupal\features\FeaturesAssignerInterface $assigner */

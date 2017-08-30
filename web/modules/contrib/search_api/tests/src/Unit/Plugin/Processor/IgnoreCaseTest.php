@@ -21,7 +21,7 @@ class IgnoreCaseTest extends UnitTestCase {
    */
   protected function setUp() {
     parent::setUp();
-    $this->processor = new IgnoreCase(array(), 'string', array());
+    $this->processor = new IgnoreCase([], 'string', []);
   }
 
   /**
@@ -35,7 +35,7 @@ class IgnoreCaseTest extends UnitTestCase {
    * @dataProvider processDataProvider
    */
   public function testProcess($passed_value, $expected_value) {
-    $this->invokeMethod('process', array(&$passed_value));
+    $this->invokeMethod('process', [&$passed_value]);
     $this->assertEquals($passed_value, $expected_value);
   }
 
@@ -46,12 +46,12 @@ class IgnoreCaseTest extends UnitTestCase {
    *   Arrays of arguments for testProcess().
    */
   public function processDataProvider() {
-    return array(
-      array('Foo bar', 'foo bar'),
-      array('foo Bar', 'foo bar'),
-      array('Foo Bar', 'foo bar'),
-      array('Foo bar BaZ, ÄÖÜÀÁ<>»«.', 'foo bar baz, äöüàá<>»«.'),
-    );
+    return [
+      ['Foo bar', 'foo bar'],
+      ['foo Bar', 'foo bar'],
+      ['Foo Bar', 'foo bar'],
+      ['Foo bar BaZ, ÄÖÜÀÁ<>»«.', 'foo bar baz, äöüàá<>»«.'],
+    ];
   }
 
 }

@@ -1,0 +1,7 @@
+name: 'Flag test plugins'
+description: 'Provides dummy Flag plugins for use in tests.'
+type: module
+core: 8.x
+dependencies:
+  - flag:flag
+package: Testing

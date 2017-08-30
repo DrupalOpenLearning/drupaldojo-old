@@ -53,16 +53,16 @@ class LinkOwnershipAccessTest extends FlagTestBase {
     $this->drupalLogin($user_1);
 
     // Flag the node with user 1.
-    $this->drupalGet($this->node->url());
-    $this->clickLink($flag->getFlagShortText());
+    $this->drupalGet($this->node->toUrl());
+    $this->clickLink($flag->getShortText('flag'));
     $this->assertResponse(200);
-    $this->assertLink($flag->getUnflagShortText());
+    $this->assertLink($flag->getShortText('unflag'));
 
     // Switch to user 2. They should see the link to flag.
     $user_2 = $this->drupalCreateUser();
     $this->drupalLogin($user_2);
-    $this->drupalGet($this->node->url());
-    $this->assertLink($flag->getFlagShortText(), 0, "A flag link is found on the page for user 2.");
+    $this->drupalGet($this->node->toUrl());
+    $this->assertLink($flag->getShortText('flag'), 0, "A flag link is found on the page for user 2.");
 
   }
 
@@ -79,16 +79,16 @@ class LinkOwnershipAccessTest extends FlagTestBase {
     $this->drupalLogin($user_1);
 
     // Flag the node with user 1.
-    $this->drupalGet($this->node->url());
-    $this->clickLink($flag->getFlagShortText());
+    $this->drupalGet($this->node->toUrl());
+    $this->clickLink($flag->getShortText('flag'));
     $this->assertResponse(200);
-    $this->assertLink($flag->getUnflagShortText());
+    $this->assertLink($flag->getShortText('unflag'));
 
     // Switch to user 2. They should see the unflag link too.
     $user_2 = $this->drupalCreateUser();
     $this->drupalLogin($user_2);
-    $this->drupalGet($this->node->url());
-    $this->assertLink($flag->getUnflagShortText(), 0, "The unflag link is found on the page for user 2.");
+    $this->drupalGet($this->node->toUrl());
+    $this->assertLink($flag->getShortText('unflag'), 0, "The unflag link is found on the page for user 2.");
   }
 
 }

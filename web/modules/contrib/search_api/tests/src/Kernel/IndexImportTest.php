@@ -23,7 +23,7 @@ class IndexImportTest extends KernelTestBase {
    *
    * @var string[]
    */
-  public static $modules = array(
+  public static $modules = [
     'field',
     'search_api',
     'search_api_db',
@@ -33,7 +33,7 @@ class IndexImportTest extends KernelTestBase {
     'system',
     'entity_test',
     'text',
-  );
+  ];
 
   /**
    * {@inheritdoc}
@@ -41,9 +41,9 @@ class IndexImportTest extends KernelTestBase {
   public function setUp() {
     parent::setUp();
 
-    $this->installSchema('search_api', array('search_api_item'));
-    $this->installSchema('system', array('router'));
-    $this->installSchema('user', array('users_data'));
+    $this->installSchema('search_api', ['search_api_item']);
+    $this->installSchema('system', ['router']);
+    $this->installSchema('user', ['users_data']);
     $this->installEntitySchema('entity_test_mulrev_changed');
     $this->installEntitySchema('search_api_task');
 
@@ -60,7 +60,7 @@ class IndexImportTest extends KernelTestBase {
       ->set('tracking_page_size', 100)
       ->save();
 
-    $this->installConfig(array('search_api_test_db'));
+    $this->installConfig(['search_api_test_db']);
 
     $this->storage = $this->container->get('entity_type.manager')->getStorage('search_api_index');
   }
@@ -83,21 +83,18 @@ class IndexImportTest extends KernelTestBase {
 
     // Make changes to the configuration in "sync" so there actually is
     // something to import.
-    $expected_stopwords = array('a', 'an', 'and', 'are', 'as');
+    $expected_stopwords = ['a', 'an', 'and', 'are', 'as'];
     $import_config = $sync->read('search_api.index.database_search_index');
-    $import_config['processor_settings']['stopwords'] = array(
-      'plugin_id' => 'stopwords',
-      'settings' => array(
-        'weights' => array(
-          'preprocess_query' => -10,
-          'postprocess_query' => -10,
-        ),
-        'fields' => array(
-          'name',
-        ),
-        'stopwords' => $expected_stopwords,
-      ),
-    );
+    $import_config['processor_settings']['stopwords'] = [
+      'weights' => [
+        'preprocess_query' => -10,
+        'postprocess_query' => -10,
+      ],
+      'fields' => [
+        'name',
+      ],
+      'stopwords' => $expected_stopwords,
+    ];
     $sync->write('search_api.index.database_search_index', $import_config);
 
     // Import the test configuration.
@@ -107,7 +104,7 @@ class IndexImportTest extends KernelTestBase {
 
     // Ensure the static cache is clear and check that our change was correctly
     // imported.
-    $this->storage->resetCache(array('database_search_index'));
+    $this->storage->resetCache(['database_search_index']);
     /** @var \Drupal\search_api\IndexInterface $imported_index */
     $imported_index = $this->storage->load('database_search_index');
     $this->assertTrue($imported_index->isValidProcessor('stopwords'), 'Processor is in index after import');

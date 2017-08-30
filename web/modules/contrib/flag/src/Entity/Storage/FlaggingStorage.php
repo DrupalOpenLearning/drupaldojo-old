@@ -27,15 +27,38 @@ class FlaggingStorage extends SqlContentEntityStorage implements FlaggingStorage
   /**
    * {@inheritdoc}
    */
-  public function loadIsFlagged(EntityInterface $entity, AccountInterface $account) {
-    $flag_ids = $this->loadIsFlaggedMultiple([$entity], $account);
+  public function resetCache(array $ids = NULL) {
+    parent::resetCache($ids);
+    $this->flagIdsByEntity = [];
+    $this->globalFlagIdsByEntity = [];
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function loadIsFlagged(EntityInterface $entity, AccountInterface $account, $session_id = NULL) {
+    if ($account->isAnonymous() && is_null($session_id)) {
+      throw new \LogicException('Anonymous users must be identifed by session_id');
+    }
+
+    $flag_ids = $this->loadIsFlaggedMultiple([$entity], $account, $session_id);
     return $flag_ids[$entity->id()];
   }
 
   /**
    * {@inheritdoc}
    */
-  public function loadIsFlaggedMultiple($entities, AccountInterface $account) {
+  public function loadIsFlaggedMultiple(array $entities, AccountInterface $account, $session_id = NULL) {
+    if ($account->isAnonymous() && is_null($session_id)) {
+      throw new \LogicException('Anonymous users must be identifed by session_id');
+    }
+
+    // Set a dummy value for $session_id for an authenticated user so that we
+    // can use it as a key in the cache array.
+    if (!$account->isAnonymous()) {
+      $session_id = 0;
+    }
+
     $flag_ids_by_entity = [];
 
     if (!$entities) {
@@ -50,8 +73,8 @@ class FlaggingStorage extends SqlContentEntityStorage implements FlaggingStorage
     // Loop over all requested entities, if they are already in the loaded list,
     // get then from there, merge the global and per-user flags together.
     foreach ($entities as $entity) {
-      if (isset($this->flagIdsByEntity[$account->id()][$entity_type_id][$entity->id()])) {
-        $flag_ids_by_entity[$entity->id()] = array_merge($this->flagIdsByEntity[$account->id()][$entity_type_id][$entity->id()], $this->globalFlagIdsByEntity[$entity_type_id][$entity->id()]);
+      if (isset($this->flagIdsByEntity[$account->id()][$session_id][$entity_type_id][$entity->id()])) {
+        $flag_ids_by_entity[$entity->id()] = array_merge($this->flagIdsByEntity[$account->id()][$session_id][$entity_type_id][$entity->id()], $this->globalFlagIdsByEntity[$entity_type_id][$entity->id()]);
       }
       else {
         $ids_to_load[$entity->id()] = [];
@@ -64,13 +87,13 @@ class FlaggingStorage extends SqlContentEntityStorage implements FlaggingStorage
     }
 
     // Initialize the loaded lists with the missing ID's as an empty array.
-    if (!isset($this->flagIdsByEntity[$account->id()][$entity_type_id])) {
-      $this->flagIdsByEntity[$account->id()][$entity_type_id] = [];
+    if (!isset($this->flagIdsByEntity[$account->id()][$session_id][$entity_type_id])) {
+      $this->flagIdsByEntity[$account->id()][$session_id][$entity_type_id] = [];
     }
     if (!isset($this->globalFlagIdsByEntity[$entity_type_id])) {
       $this->globalFlagIdsByEntity[$entity_type_id] = [];
     }
-    $this->flagIdsByEntity[$account->id()][$entity_type_id] += $ids_to_load;
+    $this->flagIdsByEntity[$account->id()][$session_id][$entity_type_id] += $ids_to_load;
     $this->globalFlagIdsByEntity[$entity_type_id] += $ids_to_load;
     $flag_ids_by_entity += $ids_to_load;
 
@@ -81,14 +104,14 @@ class FlaggingStorage extends SqlContentEntityStorage implements FlaggingStorage
       ->condition('entity_type', $entity_type_id)
       ->condition('entity_id', array_keys($ids_to_load));
 
-    // The flagging must either match the user or be global, avoid an empty IN
-    // condition if there are no global flags.
+    // The flagging must either match the user or be global.
     $user_or_global_condition = $query->orConditionGroup()
       ->condition('global', 1);
     if ($account->isAnonymous()) {
-      if (($session = \Drupal::request()->getSession()) && ($session_flaggings = $session->get('flaggings', []))) {
-        $user_or_global_condition->condition('id', $session_flaggings, 'IN');
-      }
+      $uid_and_session_condition = $query->andConditionGroup()
+        ->condition('uid', $account->id())
+        ->condition('session_id', $session_id);
+      $user_or_global_condition->condition($uid_and_session_condition);
     }
     else {
       $user_or_global_condition->condition('uid', $account->id());
@@ -105,7 +128,7 @@ class FlaggingStorage extends SqlContentEntityStorage implements FlaggingStorage
         $this->globalFlagIdsByEntity[$entity_type_id][$row->entity_id][$row->flag_id] = $row->flag_id;
       }
       else {
-        $this->flagIdsByEntity[$account->id()][$entity_type_id][$row->entity_id][$row->flag_id] = $row->flag_id;
+        $this->flagIdsByEntity[$account->id()][$session_id][$entity_type_id][$row->entity_id][$row->flag_id] = $row->flag_id;
       }
       $flag_ids_by_entity[$row->entity_id][$row->flag_id] = $row->flag_id;
     }
@@ -113,5 +136,49 @@ class FlaggingStorage extends SqlContentEntityStorage implements FlaggingStorage
     return $flag_ids_by_entity;
   }
 
+  /**
+   * {@inheritdoc}
+   */
+  protected function doPostSave(EntityInterface $entity, $update) {
+
+    parent::doPostSave($entity, $update);
+
+    // After updating or creating a flagging, add it to the cached flagging by entity if already in static cache.
+    if ($entity->get('global')->value) {
+      // If the global flags by entity for this entity have already been cached, then add the newly created flagging.
+      if (isset($this->globalFlagIdsByEntity[$entity->get('entity_type')->value][$entity->get('entity_id')->value])) {
+        $this->globalFlagIdsByEntity[$entity->get('entity_type')->value][$entity->get('entity_id')->value][$entity->get('flag_id')->value] = $entity->get('flag_id')->value;
+      }
+    }
+    else {
+      // If the flags by entity for this entity/user have already been cached, then add the newly created flagging.
+      if (isset($this->flagIdsByEntity[$entity->get('uid')->target_id][$entity->get('entity_type')->value][$entity->get('entity_id')->value])) {
+        $this->flagIdsByEntity[$entity->get('uid')->target_id][$entity->get('entity_type')->value][$entity->get('entity_id')->value][$entity->get('flag_id')->value] = $entity->get('flag_id')->value;
+      }
+    }
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  protected function doDelete($entities) {
+
+    parent::doDelete($entities);
+
+    /** @var \Drupal\Core\Entity\ContentEntityInterface[] $entities */
+    foreach ($entities as $entity) {
+      // After deleting a flagging, remove it from the cached flagging by entity if already in static cache.
+      if ($entity->get('global')->value) {
+        if (isset($this->globalFlagIdsByEntity[$entity->get('entity_type')->value][$entity->get('entity_id')->value][$entity->get('flag_id')->value])) {
+          unset($this->globalFlagIdsByEntity[$entity->get('entity_type')->value][$entity->get('entity_id')->value][$entity->get('flag_id')->value]);
+        }
+      }
+      else {
+        if (isset($this->flagIdsByEntity[$entity->get('uid')->target_id][$entity->get('entity_type')->value][$entity->get('entity_id')->value][$entity->get('flag_id')->value])) {
+          unset($this->flagIdsByEntity[$entity->get('uid')->target_id][$entity->get('entity_type')->value][$entity->get('entity_id')->value][$entity->get('flag_id')->value]);
+        }
+      }
+    }
+  }
 
 }

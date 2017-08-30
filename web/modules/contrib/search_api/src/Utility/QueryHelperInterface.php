@@ -23,7 +23,7 @@ interface QueryHelperInterface {
    * @return \Drupal\search_api\Query\QueryInterface
    *   A search query object to use.
    */
-  public function createQuery(IndexInterface $index, array $options = array());
+  public function createQuery(IndexInterface $index, array $options = []);
 
   /**
    * Adds a result set to the cache.

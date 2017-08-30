@@ -54,7 +54,7 @@ class IndexTaskManager implements IndexTaskManagerInterface, EventSubscriberInte
    * {@inheritdoc}
    */
   public static function getSubscribedEvents() {
-    $events['search_api.task.' . static::TRACK_ITEMS_TASK_TYPE][] = array('trackItems');
+    $events['search_api.task.' . static::TRACK_ITEMS_TASK_TYPE][] = ['trackItems'];
 
     return $events;
   }
@@ -70,18 +70,18 @@ class IndexTaskManager implements IndexTaskManagerInterface, EventSubscriberInte
    * @throws \Drupal\search_api\SearchApiException
    *   Thrown if any error occurred while tracking items.
    */
-  public static function processIndexTasks(array &$context, ConfigImporter $config_importer) {
+  public static function processIndexTasks(&$context, ConfigImporter $config_importer) {
     $index_task_manager = \Drupal::getContainer()
       ->get('search_api.index_task_manager');
 
     if (!isset($context['sandbox']['indexes'])) {
-      $context['sandbox']['indexes'] = array();
+      $context['sandbox']['indexes'] = [];
 
       $indexes = \Drupal::entityTypeManager()
         ->getStorage('search_api_index')
-        ->loadByProperties(array(
+        ->loadByProperties([
           'status' => TRUE,
-        ));
+        ]);
       $deleted = $config_importer->getUnprocessedConfiguration('delete');
 
       /** @var \Drupal\search_api\IndexInterface $index */
@@ -114,11 +114,11 @@ class IndexTaskManager implements IndexTaskManagerInterface, EventSubscriberInte
     else {
       $finished = $context['sandbox']['total'] - count($context['sandbox']['indexes']);
       $context['finished'] = $finished / $context['sandbox']['total'];
-      $args = array(
+      $args = [
         '%index' => $index->label(),
         '@num' => $finished + 1,
         '@total' => $context['sandbox']['total'],
-      );
+      ];
       $context['message'] = \Drupal::translation()
         ->translate('Tracking items for search index %index (@num of @total)', $args);
     }
@@ -174,10 +174,10 @@ class IndexTaskManager implements IndexTaskManagerInterface, EventSubscriberInte
     }
 
     foreach ($datasource_ids as $datasource_id) {
-      $data = array(
+      $data = [
         'datasource' => $datasource_id,
         'page' => 0,
-      );
+      ];
       $this->taskManager->addTask(static::TRACK_ITEMS_TASK_TYPE, NULL, $index, $data);
     }
   }
@@ -192,10 +192,10 @@ class IndexTaskManager implements IndexTaskManagerInterface, EventSubscriberInte
    *   An array of conditions to pass to the Search API task manager.
    */
   protected function getTaskConditions(IndexInterface $index) {
-    return array(
+    return [
       'type' => static::TRACK_ITEMS_TASK_TYPE,
       'index_id' => $index->id(),
-    );
+    ];
   }
 
   /**

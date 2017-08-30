@@ -12,19 +12,6 @@ use Drupal\Core\Entity\EntityTypeInterface;
 interface ModerationInformationInterface {
 
   /**
-   * Loads a specific bundle entity.
-   *
-   * @param string $bundle_entity_type_id
-   *   The bundle entity type ID.
-   * @param string $bundle_id
-   *   The bundle ID.
-   *
-   * @return \Drupal\Core\Config\Entity\ConfigEntityInterface|null
-   *   The bundle entity.
-   */
-  public function loadBundleEntity($bundle_entity_type_id, $bundle_id);
-
-  /**
    * Determines if an entity is moderated.
    *
    * @param \Drupal\Core\Entity\EntityInterface $entity
@@ -138,5 +125,16 @@ interface ModerationInformationInterface {
    *   TRUE if the specified entity is a live revision, FALSE otherwise.
    */
   public function isLiveRevision(ContentEntityInterface $entity);
+
+  /**
+   * Gets the workflow for the given content entity.
+   *
+   * @param \Drupal\Core\Entity\ContentEntityInterface $entity
+   *   The content entity to get the workflow for.
+   *
+   * @return \Drupal\workflows\WorkflowInterface|null
+   *   The workflow entity. NULL if there is no workflow.
+   */
+  public function getWorkflowForEntity(ContentEntityInterface $entity);
 
 }

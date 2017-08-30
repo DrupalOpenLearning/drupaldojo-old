@@ -87,3 +87,26 @@ function gnode_update_8003() {
 
   return $message;
 }
+
+/**
+ * Use the new generic group permission names.
+ */
+function gnode_update_8004() {
+  $config_factory = \Drupal::configFactory();
+
+  foreach ($config_factory->listAll('group.role.') as $group_role_config_name) {
+    $group_role = $config_factory->getEditable($group_role_config_name);
+
+    // Replace 'OP TYPE node' with 'OP group_node:TYPE entity'.
+    $search = '%^((?:\S+)(?: own| any)?) (\S+) node$%';
+    $replace = '$1 group_node:$2 entity';
+
+    $permissions = $group_role->get('permissions');
+    foreach ($permissions as &$permission) {
+      $permission = preg_replace($search, $replace, $permission);
+    }
+
+    $group_role->set('permissions', $permissions);
+    $group_role->save();
+  }
+}

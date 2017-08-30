@@ -3,6 +3,7 @@
 namespace Drupal\addtoany\Plugin\Block;
 
 use Drupal\Core\Block\BlockBase;
+use Drupal\node\Entity\Node;
 
 /**
  * Provides an 'AddToAny' block.
@@ -19,7 +20,9 @@ class AddToAnyBlock extends BlockBase {
    */
   public function build() {
     $node = \Drupal::routeMatch()->getParameter('node');
-
+    if (is_numeric($node)) {
+      $node = Node::load($node);
+    }
     return array(
       '#addtoany_html' => addtoany_create_node_buttons($node),
       '#theme' => 'addtoany_standard',

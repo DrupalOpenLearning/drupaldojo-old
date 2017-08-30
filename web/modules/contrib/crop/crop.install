@@ -41,7 +41,7 @@ function crop_update_8001(&$sandbox) {
         // Lets tell the site admin what we are doing.
         \Drupal::logger('crop_api')
           ->notice(
-            'The orphaned crop @cid refering to image with URI @uri has been deleted.',
+            'The orphaned crop @cid referring to image with URI @uri has been deleted.',
             ['@cid' => $cid, 'uri' => $crop->uri->value]
           );
         $crop->delete();
@@ -50,4 +50,12 @@ function crop_update_8001(&$sandbox) {
     }
     $sandbox['#finished'] = $sandbox['current'] / $sandbox['total'];
   }
+}
+
+/**
+ * Let Drupal know that there is a new config available.
+ */
+function crop_update_8002() {
+  \Drupal::service('config.installer')
+    ->installDefaultConfig('module', 'crop');
 }

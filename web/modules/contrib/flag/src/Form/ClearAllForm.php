@@ -141,4 +141,5 @@ class ClearAllForm extends ConfirmFormBase {
       $context['finished'] = $context['sandbox']['progress'] / $context['sandbox']['max'];
     }
   }
+
 }

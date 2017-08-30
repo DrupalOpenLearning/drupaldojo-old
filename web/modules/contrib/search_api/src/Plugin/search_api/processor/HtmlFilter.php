@@ -9,6 +9,7 @@ use Drupal\Core\Url;
 use Drupal\search_api\Item\FieldInterface;
 use Drupal\search_api\Plugin\search_api\data_type\value\TextValueInterface;
 use Drupal\search_api\Processor\FieldsProcessorPluginBase;
+use Drupal\search_api\Utility\DataTypeHelperInterface;
 use Drupal\search_api\Utility\Utility;
 use Symfony\Component\Yaml\Dumper;
 use Symfony\Component\Yaml\Exception\ParseException;
@@ -23,21 +24,53 @@ use Symfony\Component\Yaml\Parser;
  *   description = @Translation("Strips HTML tags from fulltext fields and decodes HTML entities. Use this processor when indexing HTML data – for example, node bodies for certain text formats. The processor also allows to boost (or ignore) the contents of specific elements."),
  *   stages = {
  *     "pre_index_save" = 0,
- *     "preprocess_index" = -10,
- *     "preprocess_query" = -10
+ *     "preprocess_index" = -15,
+ *     "preprocess_query" = -15,
  *   }
  * )
  */
 class HtmlFilter extends FieldsProcessorPluginBase {
 
   /**
+   * The data type helper.
+   *
+   * @var \Drupal\search_api\Utility\DataTypeHelperInterface|null
+   */
+  protected $dataTypeHelper;
+
+  /**
+   * Retrieves the data type helper.
+   *
+   * @return \Drupal\search_api\Utility\DataTypeHelperInterface
+   *   The data type helper.
+   */
+  public function getDataTypeHelper() {
+    return $this->dataTypeHelper ?: \Drupal::service('search_api.data_type_helper');
+  }
+
+  /**
+   * Sets the data type helper.
+   *
+   * @param \Drupal\search_api\Utility\DataTypeHelperInterface $data_type_helper
+   *   The new data type helper.
+   *
+   * @return $this
+   */
+  public function setDataTypeHelper(DataTypeHelperInterface $data_type_helper) {
+    $this->dataTypeHelper = $data_type_helper;
+    return $this;
+  }
+
+  /**
    * {@inheritdoc}
    */
   public function defaultConfiguration() {
-    return array(
+    $configuration = parent::defaultConfiguration();
+
+    $configuration += [
       'title' => TRUE,
       'alt' => TRUE,
-      'tags' => array(
+      'tags' => [
         'h1' => 5,
         'h2' => 3,
         'h3' => 2,
@@ -45,8 +78,10 @@ class HtmlFilter extends FieldsProcessorPluginBase {
         'b' => 2,
         'em' => 1.5,
         'u' => 1.5,
-      ),
-    );
+      ],
+    ];
+
+    return $configuration;
   }
 
   /**
@@ -55,19 +90,19 @@ class HtmlFilter extends FieldsProcessorPluginBase {
   public function buildConfigurationForm(array $form, FormStateInterface $form_state) {
     $form = parent::buildConfigurationForm($form, $form_state);
 
-    $form['title'] = array(
+    $form['title'] = [
       '#type' => 'checkbox',
       '#title' => $this->t('Index title attribute'),
       '#description' => $this->t('If set, the contents of title attributes will be indexed.'),
       '#default_value' => $this->configuration['title'],
-    );
+    ];
 
-    $form['alt'] = array(
+    $form['alt'] = [
       '#type' => 'checkbox',
       '#title' => $this->t('Index alt attribute'),
       '#description' => $this->t('If set, the alternative text of images will be indexed.'),
       '#default_value' => $this->configuration['alt'],
-    );
+    ];
 
     $dumper = new Dumper();
     $tags = $dumper->dump($this->configuration['tags'], 2);
@@ -75,12 +110,12 @@ class HtmlFilter extends FieldsProcessorPluginBase {
     $tags = str_replace('"', '', $tags);
 
     $t_args[':url'] = Url::fromUri('https://en.wikipedia.org/wiki/YAML')->toString();
-    $form['tags'] = array(
+    $form['tags'] = [
       '#type' => 'textarea',
       '#title' => $this->t('Tag boosts'),
       '#description' => $this->t('Specify special boost values for certain HTML elements, in <a href=":url">YAML file format</a>. The boost values of nested elements are multiplied, elements not mentioned will have the default boost value of 1. Assign a boost of 0 to ignore the text content of that HTML element.', $t_args),
       '#default_value' => $tags,
-    );
+    ];
 
     return $form;
   }
@@ -93,32 +128,32 @@ class HtmlFilter extends FieldsProcessorPluginBase {
 
     $tags = trim($form_state->getValue('tags'));
     if (!$tags) {
-      $form_state->setValue('tags', array());
+      $form_state->setValue('tags', []);
       return;
     }
-    $errors = array();
+    $errors = [];
     try {
       $parser = new Parser();
       $tags = $parser->parse($tags);
       if (!is_array($tags)) {
-        $errors[] = $this->t('Tags is not a valid YAML map. See @link for information on how to write correctly formed YAML.', array('@link' => 'http://yaml.org'));
-        $tags = array();
+        $errors[] = $this->t('Tags is not a valid YAML map. See @link for information on how to write correctly formed YAML.', ['@link' => 'http://yaml.org']);
+        $tags = [];
       }
     }
     catch (ParseException $exception) {
-      $errors[] = $this->t('Tags is not a valid YAML map. See @link for information on how to write correctly formed YAML.', array('@link' => 'http://yaml.org'));
-      $tags = array();
+      $errors[] = $this->t('Tags is not a valid YAML map. See @link for information on how to write correctly formed YAML.', ['@link' => 'http://yaml.org']);
+      $tags = [];
     }
     foreach ($tags as $key => $value) {
       $tag = "<$key>";
       if (is_array($value)) {
-        $errors[] = $this->t("Boost value for tag @tag can't be an array.", array('@tag' => $tag));
+        $errors[] = $this->t("Boost value for tag @tag can't be an array.", ['@tag' => $tag]);
       }
       elseif (!is_numeric($value)) {
-        $errors[] = $this->t('Boost value for tag @tag must be numeric.', array('@tag' => $tag));
+        $errors[] = $this->t('Boost value for tag @tag must be numeric.', ['@tag' => $tag]);
       }
       elseif ($value < 0) {
-        $errors[] = $this->t('Boost value for tag @tag must be non-negative.', array('@tag' => $tag));
+        $errors[] = $this->t('Boost value for tag @tag must be non-negative.', ['@tag' => $tag]);
       }
       elseif ($value == 1) {
         unset($tags[$key]);
@@ -131,10 +166,10 @@ class HtmlFilter extends FieldsProcessorPluginBase {
     if ($errors) {
       $message = array_shift($errors);
       foreach ($errors as $error) {
-        $args = array(
+        $args = [
           '@message1' => $message,
           '@message2' => $error,
-        );
+        ];
         $message = new FormattableMarkup('@message1<br />@message2', $args);
       }
       $form_state->setError($form['tags'], $message);
@@ -161,9 +196,9 @@ class HtmlFilter extends FieldsProcessorPluginBase {
     // Remove invisible content.
     $text = preg_replace('@<(applet|audio|canvas|command|embed|iframe|map|menu|noembed|noframes|noscript|script|style|svg|video)[^>]*>.*</\1>@siU', ' ', $value);
     // Let removed tags still delimit words.
-    $is_text_type = Utility::isTextType($type);
+    $is_text_type = $this->getDataTypeHelper()->isTextType($type);
     if ($is_text_type) {
-      $text = str_replace(array('<', '>'), array(' <', '> '), $text);
+      $text = str_replace(['<', '>'], [' <', '> '], $text);
       if ($this->configuration['title']) {
         $text = preg_replace('/(<[-a-z_]+[^>]*["\s])title\s*=\s*("([^"]+)"|\'([^\']+)\')([^>]*>)/i', '$1 $5 $3$4 ', $text);
       }
@@ -185,7 +220,7 @@ class HtmlFilter extends FieldsProcessorPluginBase {
    * {@inheritdoc}
    */
   protected function process(&$value) {
-    $value = str_replace(array('<', '>'), array(' <', '> '), $value);
+    $value = str_replace(['<', '>'], [' <', '> '], $value);
     $value = strip_tags($value);
     $value = $this->normalizeText($value);
   }
@@ -209,16 +244,23 @@ class HtmlFilter extends FieldsProcessorPluginBase {
    *   Tokenized text with appropriate scores.
    */
   protected function parseHtml(&$text, $active_tag = NULL, $boost = 1.0) {
-    $ret = array();
+    $ret = [];
     while (($pos = strpos($text, '<')) !== FALSE) {
+      $text_before = substr($text, 0, $pos);
+      $text_after = substr($text, $pos + 1);
+      // Attempt some small error tolerance when literal "<" characters aren't
+      // escaped properly (and are free-standing).
+      if (!preg_match('#^(/?)([-:_a-zA-Z0-9]+)#', $text_after, $m)) {
+        $text = $text_before . '&lt;' . $text_after;
+        continue;
+      }
       if ($boost && $pos > 0) {
-        $value = $this->normalizeText(substr($text, 0, $pos));
+        $value = $this->normalizeText($text_before);
         if ($value !== '') {
           $ret[] = Utility::createTextToken($value, $boost);
         }
       }
-      $text = substr($text, $pos + 1);
-      preg_match('#^(/?)([-:_a-zA-Z0-9]+)#', $text, $m);
+      $text = $text_after;
       $pos = strpos($text, '>');
       $empty_tag = $text[$pos - 1] == '/';
       $text = substr($text, $pos + 1);

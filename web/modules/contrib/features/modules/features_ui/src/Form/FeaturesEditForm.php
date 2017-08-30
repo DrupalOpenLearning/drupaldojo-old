@@ -402,6 +402,8 @@ class FeaturesEditForm extends FormBase {
    * @return bool
    */
   public function featureExists($value, $element, $form_state) {
+    $bundle = $this->assigner->getBundle($this->bundle);
+    $value = $bundle->getFullName($value);
     $packages = $this->featuresManager->getPackages();
     // A package may conflict only if it's been exported.
     return (isset($packages[$value]) && ($packages[$value]->getState() !== FeaturesManagerInterface::STATUS_NO_EXPORT)) || \Drupal::moduleHandler()->moduleExists($value);

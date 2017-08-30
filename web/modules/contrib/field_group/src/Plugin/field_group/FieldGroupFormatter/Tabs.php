@@ -1,13 +1,12 @@
 <?php
 
-/**
- * @file
- * Contains \Drupal\field_group\Plugin\field_group\FieldGroupFormatter\HorizontalTabs.
- */
-
 namespace Drupal\field_group\Plugin\field_group\FieldGroupFormatter;
 
-use Drupal\Component\Utility\SafeMarkup;
+use Drupal\Component\Utility\Html;
+use Drupal\Core\Form\FormState;
+use Drupal\Core\Render\Element;
+use Drupal\Core\Render\Element\VerticalTabs;
+use Drupal\field_group\Element\HorizontalTabs;
 use Drupal\field_group\FieldGroupFormatterBase;
 
 /**
@@ -29,6 +28,7 @@ class Tabs extends FieldGroupFormatterBase {
    * {@inheritdoc}
    */
   public function preRender(&$element, $rendering_object) {
+    parent::preRender($element, $rendering_object);
 
     $element += array(
       '#prefix' => '<div class=" ' . implode(' ' , $this->getClasses()) . '">',
@@ -44,18 +44,19 @@ class Tabs extends FieldGroupFormatterBase {
 
     // By default tabs don't have titles but you can override it in the theme.
     if ($this->getLabel()) {
-      $element['#title'] = SafeMarkup::checkPlain($this->getLabel());
+      $element['#title'] = Html::escape($this->getLabel());
     }
 
-    $form_state = new \Drupal\Core\Form\FormState();
+    $form_state = new FormState();
 
     if ($this->getSetting('direction') == 'vertical') {
+
       $element += array(
         '#type' => 'vertical_tabs',
         '#theme_wrappers' => array('vertical_tabs'),
       );
       $complete_form = array();
-      $element = \Drupal\Core\Render\Element\VerticalTabs::processVerticalTabs($element, $form_state, $complete_form);
+      $element = VerticalTabs::processVerticalTabs($element, $form_state, $complete_form);
     }
     else {
       $element += array(
@@ -63,7 +64,7 @@ class Tabs extends FieldGroupFormatterBase {
         '#theme_wrappers' => array('horizontal_tabs'),
       );
       $on_form = $this->context == 'form';
-      $element = \Drupal\field_group\Element\HorizontalTabs::processHorizontalTabs($element, $form_state, $on_form);
+      $element = HorizontalTabs::processHorizontalTabs($element, $form_state, $on_form);
     }
 
     // Make sure the group has 1 child. This is needed to succeed at form_pre_render_vertical_tabs().
@@ -72,7 +73,7 @@ class Tabs extends FieldGroupFormatterBase {
     $element['group']['#groups'][$this->group->group_name]['#group_exists'] = TRUE;
 
     // Search for a tab that was marked as open. First one wins.
-    foreach (\Drupal\Core\Render\Element::children($element) as $tab_name) {
+    foreach (Element::children($element) as $tab_name) {
       if (!empty($element[$tab_name]['#open'])) {
         $element[$this->group->group_name . '__active_tab']['#default_value'] = $tab_name;
         break;

@@ -8,6 +8,9 @@
  */
 
 use \Drupal\Core\Form\FormStateInterface;
+use Drupal\Core\StreamWrapper\PublicStream;
+use Drupal\crop\Entity\Crop;
+use Drupal\image\Entity\ImageStyle;
 use \Drupal\media_entity\MediaBundleInterface;
 use \Drupal\file\FileInterface;
 
@@ -29,7 +32,7 @@ function crop_theme() {
  */
 function template_preprocess_crop_crop_summary(&$variables) {
   if (!empty($variables['data']['crop_type'])) {
-    $type = \Drupal::entityManager()->getStorage('crop_type')->load($variables['data']['crop_type']);
+    $type = \Drupal::entityTypeManager()->getStorage('crop_type')->load($variables['data']['crop_type']);
     $variables['data']['crop_type'] = $type->label();
   }
 }
@@ -44,7 +47,7 @@ function crop_form_media_bundle_form_alter(&$form, FormStateInterface $form_stat
   $bundle = $form['#entity'];
   $options = [];
   $allowed_field_types = ['file', 'image'];
-  foreach (\Drupal::entityManager()->getFieldDefinitions('media', $bundle->id()) as $field_name => $field) {
+  foreach (\Drupal::service('entity_field.manager')->getFieldDefinitions('media', $bundle->id()) as $field_name => $field) {
     if (in_array($field->getType(), $allowed_field_types) && !$field->getFieldStorageDefinition()->isBaseField()) {
       $options[$field_name] = $field->getLabel();
     }
@@ -63,7 +66,7 @@ function crop_form_media_bundle_form_alter(&$form, FormStateInterface $form_stat
     ];
 
     $form['crop']['message'] = [
-      '#markup' => t('There are no file or image fields on this bundle at the moment. In order to configure crop add at least one such field and come back.')
+      '#markup' => t('There are no file or image fields on this bundle at the moment. In order to configure crop add at least one such field and come back.'),
     ];
 
     return;
@@ -94,9 +97,6 @@ function crop_media_bundle_form_builder($entity_type, MediaBundleInterface $bund
  * Implements hook_ENTITY_TYPE_delete().
  *
  * Deletes orphaned crops when a file is deleted.
- *
- * @param \Drupal\file\FileInterface $file
- *   The file being deleted.
  */
 function crop_file_delete(FileInterface $file) {
   // Get all crops for the file being deleted.
@@ -106,5 +106,49 @@ function crop_file_delete(FileInterface $file) {
 
   foreach ($crops as $crop) {
     $crop->delete();
+  }
+}
+
+/**
+ * Implements hook_file_url_alter().
+ */
+function crop_file_url_alter(&$uri) {
+  // Process only files that are stored in "styles" directory.
+  if (strpos($uri, PublicStream::basePath() . '/styles/') !== FALSE) {
+    // Handle the case of multiple "/styles/" in URI.
+    $uri_parts = explode('/styles/', $uri);
+    $image_style_part = end($uri_parts);
+    // Match image style, schema, file subdirectory and file name.
+    preg_match("/(.*?)\/(.*?)\/(.*+)/", $image_style_part, $match);
+    // Get the image style ID.
+    $image_style = $match[1];
+    // Get the file path without query parameter.
+    $parsed_uri = parse_url($match[3]);
+    // Get the file URI using parsed schema and file path.
+    $file_uri = $match[2] . '://' . $parsed_uri['path'];
+
+    /** @var \Drupal\image\Entity\ImageStyle $image_style */
+    if (!$image_style = ImageStyle::load($image_style)) {
+      return;
+    }
+
+    $crop_type = NULL;
+    // Find whether matched image style uses "crop_type" effect.
+    /* @var  \Drupal\image\ImageEffectInterface $effect */
+    foreach ($image_style->getEffects() as $uuid => $effect) {
+      $data_effect = $image_style->getEffect($uuid)->getConfiguration()['data'];
+      if (isset($data_effect['crop_type'])) {
+        $crop_type = $data_effect['crop_type'];
+        break;
+      }
+    }
+
+    // In case the image style uses "crop_type" effect, load the crop entity.
+    if ($crop_type && $crop = Crop::findCrop($file_uri, $crop_type)) {
+      // Found a crop for this image, append a hash of it to the URL,
+      // so that browsers reload the image and CDNs and proxies can be bypassed.
+      $shortened_hash = substr(md5(implode($crop->position()) . implode($crop->anchor())), 0, 8);
+      $uri .= '&h=' . $shortened_hash;
+    }
   }
 }

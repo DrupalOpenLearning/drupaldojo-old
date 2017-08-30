@@ -1,10 +1,5 @@
 <?php
 
-/**
- * @file
- * Contains \Drupal\field_group\Element\AccordionItem.
- */
-
 namespace Drupal\field_group\Element;
 
 use Drupal\Core\Render\Element\RenderElement;
@@ -21,7 +16,7 @@ class AccordionItem extends RenderElement {
    */
   public function getInfo() {
     return array(
-      '#collapsed' => FALSE,
+      '#open' => TRUE,
       '#theme_wrappers' => array('field_group_accordion_item'),
     );
   }

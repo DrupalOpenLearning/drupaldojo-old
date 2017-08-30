@@ -30,6 +30,7 @@ class DynamicEntityReferenceFieldItemList extends EntityReferenceFieldItemList {
     }
     $constraints = array_values($constraints);
     $constraint_manager = $this->getTypedDataManager()->getValidationConstraintManager();
+    $constraints[] = $constraint_manager->create('ValidDynamicReference', []);
     return $constraints;
   }
 
@@ -38,12 +39,12 @@ class DynamicEntityReferenceFieldItemList extends EntityReferenceFieldItemList {
    */
   public function referencedEntities() {
     if (empty($this->list)) {
-      return array();
+      return [];
     }
 
     // Collect the IDs of existing entities to load, and directly grab the
     // "autocreate" entities that are already populated in $item->entity.
-    $target_entities = $ids = array();
+    $target_entities = $ids = [];
     foreach ($this->list as $delta => $item) {
       if ($item->target_id !== NULL && $item->target_type !== NULL) {
         $ids[$item->target_type][$delta] = $item->target_id;
@@ -82,20 +83,20 @@ class DynamicEntityReferenceFieldItemList extends EntityReferenceFieldItemList {
     // $default_values.
     if ($default_value) {
       // Convert UUIDs to numeric IDs.
-      $all_uuids = array();
+      $all_uuids = [];
       foreach ($default_value as $delta => $properties) {
         if (isset($properties['target_uuid'])) {
           $target_type = $properties['target_type'];
           $all_uuids[$target_type][$delta] = $properties['target_uuid'];
         }
       }
-      $entity_uuids = array();
+      $entity_uuids = [];
       foreach ($all_uuids as $target_type => $uuids) {
         if ($uuids) {
           $entities = $manager
             ->getStorage($target_type)
-            ->loadByProperties(array('uuid' => $uuids));
-          $entity_uuids[$target_type] = array();
+            ->loadByProperties(['uuid' => $uuids]);
+          $entity_uuids[$target_type] = [];
           foreach ($entities as $id => $entity) {
             $entity_uuids[$target_type][$entity->uuid()] = $id;
           }
@@ -132,7 +133,7 @@ class DynamicEntityReferenceFieldItemList extends EntityReferenceFieldItemList {
     }
 
     // Convert numeric IDs to UUIDs to ensure config deployability.
-    $all_ids = array();
+    $all_ids = [];
     foreach ($default_value as $delta => $properties) {
       if (isset($properties['entity']) && $properties['entity']->isNew()) {
         // This may be a newly created term.
@@ -143,7 +144,7 @@ class DynamicEntityReferenceFieldItemList extends EntityReferenceFieldItemList {
       }
       $all_ids[$default_value[$delta]['target_type']][] = $default_value[$delta]['target_id'];
     }
-    $entities = array();
+    $entities = [];
     foreach ($all_ids as $target_type => $ids) {
       $entities[$target_type] = $manager
         ->getStorage($target_type)

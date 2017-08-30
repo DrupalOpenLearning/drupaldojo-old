@@ -10,13 +10,13 @@ use Drupal\search_api\Query\QueryInterface;
 use Drupal\search_api\Query\ResultSetInterface;
 
 /**
- * Represents a Search API pre- and/or post-processor.
+ * Provides an interface for Search API processor plugins.
  *
- * While processors are enabled or disabled for both pre- and postprocessing at
- * once, many processors will only need to run in one of those two phases. Then,
- * the other method(s) should simply be left blank. A processor should make it
- * clear in its description or documentation when it will run and what effect it
- * will have.
+ * Processors can act at many locations in the overall Search API process. These
+ * locations are subsumed under the label "Stages" and defined by the STAGE_*
+ * constants on this interface. A processor should take care to clearly define
+ * for which stages it should run, in addition to implementing the corresponding
+ * methods.
  *
  * @see \Drupal\search_api\Annotation\SearchApiProcessor
  * @see \Drupal\search_api\Processor\ProcessorPluginManager

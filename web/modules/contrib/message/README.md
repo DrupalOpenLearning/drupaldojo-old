@@ -5,7 +5,7 @@ Overview
 A general logging utility that can be used as activity module.
 
 * In message module, the arguments of a sentence can use tokens, custom
-  calblacks or be hard-coded. Making the arguments dynamic means that the
+  callbacks or be hard-coded. Making the arguments dynamic means that the
   rendering time is slower than activity, on the other hand you can use
   callback functions to render the final output (see message_example module).
 * Thanks to the dependency on the Entity API, the messages are exportable and
@@ -89,5 +89,3 @@ definition.
   "Override global settings" checkbox will make the global settings ignore the
   current message template and will allow to set purging definitions for the current
   template.
-
-

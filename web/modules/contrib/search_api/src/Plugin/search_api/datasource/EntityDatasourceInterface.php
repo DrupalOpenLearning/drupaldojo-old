@@ -35,26 +35,12 @@ interface EntityDatasourceInterface extends DatasourceInterface {
    *   (optional) The languages for which all item IDs should be returned; or
    *   NULL to retrieve IDs from all enabled languages in this datasource.
    *
-   * @return string[]
-   *   An array of all item IDs matching these conditions. In case both bundles
-   *   and languages are specified, they are combined with OR.
+   * @return string[]|null
+   *   An array of all item IDs matching these conditions; or NULL if a page was
+   *   specified and there are no more items for that and all following pages.
+   *   In case both bundles and languages are specified, they are combined with
+   *   OR.
    */
   public function getPartialItemIds($page = NULL, array $bundles = NULL, array $languages = NULL);
-
-  /**
-   * Returns an array of config entity dependencies.
-   *
-   * @param string $entity_type_id
-   *   The entity type to which the fields are attached.
-   * @param string[] $fields
-   *   An array of property paths of fields from this entity type.
-   * @param string[] $all_fields
-   *   An array of property paths of all the fields from this datasource.
-   *
-   * @return string[]
-   *   An array keyed by the IDs of entities on which this datasource depends.
-   *   The values are containing list of Search API fields.
-   */
-  public function getFieldDependenciesForEntityType($entity_type_id, array $fields, array $all_fields);
 
 }

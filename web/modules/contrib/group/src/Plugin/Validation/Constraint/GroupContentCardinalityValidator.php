@@ -56,6 +56,16 @@ class GroupContentCardinalityValidator extends ConstraintValidator implements Co
       return;
     }
 
+    // Only run our checks if a group was referenced.
+    if (!$group = $group_content->getGroup()) {
+      return;
+    }
+
+    // Only run our checks if an entity was referenced.
+    if (!$entity = $group_content->getEntity()) {
+      return;
+    }
+
     // Get the plugin for the group content entity.
     $plugin = $group_content->getContentPlugin();
 
@@ -68,74 +78,69 @@ class GroupContentCardinalityValidator extends ConstraintValidator implements Co
       return;
     }
 
-    // Only run our checks if an entity was referenced.
-    if ($entity = $group_content->getEntity()) {
-      // Get the entity_id field label for error messages.
-      $field_name = $group_content->getFieldDefinition('entity_id')->getLabel();
+    // Get the entity_id field label for error messages.
+    $field_name = $group_content->getFieldDefinition('entity_id')->getLabel();
 
-      // Enforce the group cardinality if it's not set to unlimited.
-      if ($group_cardinality > 0) {
-        // Get the group content entities for this piece of content.
-        $properties = ['type' => $plugin->getContentTypeConfigId(), 'entity_id' => $entity->id()];
-        $group_instances = $this->entityTypeManager
-          ->getStorage('group_content')
-          ->loadByProperties($properties);
+    // Enforce the group cardinality if it's not set to unlimited.
+    if ($group_cardinality > 0) {
+      // Get the group content entities for this piece of content.
+      $properties = ['type' => $plugin->getContentTypeConfigId(), 'entity_id' => $entity->id()];
+      $group_instances = $this->entityTypeManager
+        ->getStorage('group_content')
+        ->loadByProperties($properties);
 
-        // Get the groups this content entity already belongs to, not counting
-        // the current group towards the limit.
-        $group_ids = [];
-        foreach ($group_instances as $instance) {
-          /** @var \Drupal\group\Entity\GroupContentInterface $instance */
-          if ($instance->getGroup()->id() != $group_content->getGroup()->id()) {
-            $group_ids[] = $instance->getGroup()->id();
-          }
+      // Get the groups this content entity already belongs to, not counting
+      // the current group towards the limit.
+      $group_ids = [];
+      foreach ($group_instances as $instance) {
+        /** @var \Drupal\group\Entity\GroupContentInterface $instance */
+        if ($instance->getGroup()->id() != $group->id()) {
+          $group_ids[] = $instance->getGroup()->id();
         }
-        $group_count = count(array_unique($group_ids));
+      }
+      $group_count = count(array_unique($group_ids));
 
-        // Raise a violation if the content has reached the cardinality limit.
-        if ($group_count >= $group_cardinality) {
-          $this->context->buildViolation($constraint->groupMessage)
-            ->setParameter('@field', $field_name)
-            ->setParameter('%content', $entity->label())
-            // We manually flag the entity reference field as the source of the
-            // violation so form API will add a visual indicator of where the
-            // validation failed.
-            ->atPath('entity_id.0')
-            ->addViolation();
+      // Raise a violation if the content has reached the cardinality limit.
+      if ($group_count >= $group_cardinality) {
+        $this->context->buildViolation($constraint->groupMessage)
+          ->setParameter('@field', $field_name)
+          ->setParameter('%content', $entity->label())
+          // We manually flag the entity reference field as the source of the
+          // violation so form API will add a visual indicator of where the
+          // validation failed.
+          ->atPath('entity_id.0')
+          ->addViolation();
+      }
+    }
+
+    // Enforce the entity cardinality if it's not set to unlimited.
+    if ($entity_cardinality > 0) {
+      // Get the current instances of this content entity in the group.
+      $entity_instances = $group->getContentByEntityId($plugin->getPluginId(), $entity->id());
+      $entity_count = count($entity_instances);
+
+      // If the current group content entity has an ID, exclude that one.
+      if ($group_content_id = $group_content->id()) {
+        foreach ($entity_instances as $instance) {
+          /** @var \Drupal\group\Entity\GroupContentInterface $instance */
+          if ($instance->id() == $group_content_id) {
+            $entity_count--;
+            break;
+          }
         }
       }
 
-      // Enforce the entity cardinality if it's not set to unlimited.
-      if ($entity_cardinality > 0) {
-        $group = $group_content->getGroup();
-
-        // Get the current instances of this content entity in the group.
-        $entity_instances = $group->getContentByEntityId($plugin->getPluginId(), $entity->id());
-        $entity_count = count($entity_instances);
-
-        // If the current group content entity has an ID, exclude that one.
-        if ($group_content_id = $group_content->id()) {
-          foreach ($entity_instances as $instance) {
-            /** @var \Drupal\group\Entity\GroupContentInterface $instance */
-            if ($instance->id() == $group_content_id) {
-              $entity_count--;
-              break;
-            }
-          }
-        }
-
-        // Raise a violation if the content has reached the cardinality limit.
-        if ($entity_count >= $entity_cardinality) {
-          $this->context->buildViolation($constraint->entityMessage)
-            ->setParameter('@field', $field_name)
-            ->setParameter('%content', $entity->label())
-            ->setParameter('%group', $group->label())
-            // We manually flag the entity reference field as the source of the
-            // violation so form API will add a visual indicator of where the
-            // validation failed.
-            ->atPath('entity_id.0')
-            ->addViolation();
-        }
+      // Raise a violation if the content has reached the cardinality limit.
+      if ($entity_count >= $entity_cardinality) {
+        $this->context->buildViolation($constraint->entityMessage)
+          ->setParameter('@field', $field_name)
+          ->setParameter('%content', $entity->label())
+          ->setParameter('%group', $group->label())
+          // We manually flag the entity reference field as the source of the
+          // violation so form API will add a visual indicator of where the
+          // validation failed.
+          ->atPath('entity_id.0')
+          ->addViolation();
       }
     }
   }

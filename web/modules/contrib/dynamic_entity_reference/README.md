@@ -6,7 +6,7 @@
 Create a single field to hold references to Users and Nodes. Or Terms and Nodes, or all three.
 
 ##Requirements
-Entity reference (in core)
+Field
 
 ##Known problems
 Please use the [issue queue](https://www.drupal.org/project/issues/dynamic_entity_reference) to report problems

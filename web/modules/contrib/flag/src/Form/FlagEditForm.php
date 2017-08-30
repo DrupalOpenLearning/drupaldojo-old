@@ -22,6 +22,7 @@ class FlagEditForm extends FlagFormBase {
     $form = parent::buildForm($form, $form_state);
 
     $form['global']['#disabled'] = TRUE;
+    $form['global']['#description'] = $this->t('The scope cannot be changed on existing flags.');
 
     return $form;
   }

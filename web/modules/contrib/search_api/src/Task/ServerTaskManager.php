@@ -5,6 +5,7 @@ namespace Drupal\search_api\Task;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\StringTranslation\StringTranslationTrait;
 use Drupal\search_api\IndexInterface;
+use Drupal\search_api\LoggerTrait;
 use Drupal\search_api\SearchApiException;
 use Drupal\search_api\ServerInterface;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
@@ -14,6 +15,7 @@ use Symfony\Component\EventDispatcher\EventSubscriberInterface;
  */
 class ServerTaskManager implements ServerTaskManagerInterface, EventSubscriberInterface {
 
+  use LoggerTrait;
   use StringTranslationTrait;
 
   /**
@@ -47,10 +49,10 @@ class ServerTaskManager implements ServerTaskManagerInterface, EventSubscriberIn
    * {@inheritdoc}
    */
   public static function getSubscribedEvents() {
-    $events = array();
+    $events = [];
 
     foreach (static::getSupportedTypes() as $type) {
-      $events['search_api.task.' . $type][] = array('processEvent');
+      $events['search_api.task.' . $type][] = ['processEvent'];
     }
 
     return $events;
@@ -63,13 +65,13 @@ class ServerTaskManager implements ServerTaskManagerInterface, EventSubscriberIn
    *   The task types supported by this task manager.
    */
   protected static function getSupportedTypes() {
-    return array(
+    return [
       'addIndex',
       'updateIndex',
       'removeIndex',
       'deleteItems',
       'deleteAllIndexItems',
-    );
+    ];
   }
 
   /**
@@ -92,7 +94,7 @@ class ServerTaskManager implements ServerTaskManagerInterface, EventSubscriberIn
       return $this->taskManager->executeAllTasks($conditions, 100);
     }
     catch (SearchApiException $e) {
-      watchdog_exception('search_api', $e);
+      $this->logException($e);
       return FALSE;
     }
   }

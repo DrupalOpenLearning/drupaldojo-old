@@ -53,7 +53,7 @@ class ProfileLocalTask extends DeriverBase implements ContainerDeriverInterface 
     foreach ($this->entityTypeManager->getStorage('profile_type')->loadMultiple() as $profile_type_id => $profile_type) {
       $this->derivatives["profile.type.$profile_type_id"] = [
         'title' => $profile_type->label(),
-        'route_name' => "entity.profile.type.$profile_type_id.user_profile_form",
+        'route_name' => 'entity.profile.type.user_profile_form',
         'base_route' => 'entity.user.canonical',
         'route_parameters' => ['profile_type' => $profile_type_id],
         'weight' => ++$weight,

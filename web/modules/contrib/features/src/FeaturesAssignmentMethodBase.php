@@ -3,7 +3,7 @@
 namespace Drupal\features;
 
 use Drupal\Core\Config\ConfigFactoryInterface;
-use Drupal\Core\Entity\EntityManagerInterface;
+use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Plugin\PluginBase;
 
 /**
@@ -25,11 +25,11 @@ abstract class FeaturesAssignmentMethodBase extends PluginBase implements Featur
   protected $assigner;
 
   /**
-   * The entity manager.
+   * The entity type manager.
    *
-   * @var \Drupal\Core\Entity\EntityManagerInterface
+   * @var \Drupal\Core\Entity\EntityTypeManagerInterface
    */
-  protected $entityManager;
+  protected $entityTypeManager;
 
   /**
    * The configuration factory.
@@ -55,8 +55,8 @@ abstract class FeaturesAssignmentMethodBase extends PluginBase implements Featur
   /**
    * {@inheritdoc}
    */
-  public function setEntityManager(EntityManagerInterface $entity_manager) {
-    $this->entityManager = $entity_manager;
+  public function setEntityTypeManager(EntityTypeManagerInterface $entity_type_manager) {
+    $this->entityTypeManager = $entity_type_manager;
   }
 
   /**

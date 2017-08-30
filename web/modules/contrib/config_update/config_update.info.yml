@@ -3,10 +3,10 @@ type: module
 description: 'Provides basic revert and update functionality for other modules'
 # core: 8.x
 dependencies:
-  - config
+  - drupal:config
 
-# Information added by Drupal.org packaging script on 2016-03-08
-version: '8.x-1.1'
+# Information added by Drupal.org packaging script on 2017-01-18
+version: '8.x-1.3'
 core: '8.x'
 project: 'config_update'
-datestamp: 1457466840
+datestamp: 1484770686

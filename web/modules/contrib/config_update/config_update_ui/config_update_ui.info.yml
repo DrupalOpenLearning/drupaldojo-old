@@ -4,11 +4,11 @@ description: 'Adds an updates report and revert functionality to configuration m
 # core: 8.x
 configure: config_update.report
 dependencies:
-  - config_update
-  - config
+  - config_update:config_update
+  - drupal:config
 
-# Information added by Drupal.org packaging script on 2016-03-08
-version: '8.x-1.1'
+# Information added by Drupal.org packaging script on 2017-01-18
+version: '8.x-1.3'
 core: '8.x'
 project: 'config_update'
-datestamp: 1457466840
+datestamp: 1484770686

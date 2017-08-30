@@ -108,11 +108,10 @@ abstract class FlagFormBase extends EntityForm {
       '#title' => $this->t('Messages'),
     ];
 
-    $flag_short = $flag->getFlagShortText();
     $form['messages']['flag_short'] = [
       '#type' => 'textfield',
       '#title' => $this->t('Flag link text'),
-      '#default_value' => !empty($flag_short) ? $flag_short : $this->t('Flag this item'),
+      '#default_value' => $flag->get('flag_short') ?: $this->t('Flag this item'),
       '#description' => $this->t('The text for the "flag this" link for this flag.'),
       '#required' => TRUE,
     ];
@@ -120,22 +119,21 @@ abstract class FlagFormBase extends EntityForm {
     $form['messages']['flag_long'] = [
       '#type' => 'textfield',
       '#title' => $this->t('Flag link description'),
-      '#default_value' => $flag->getFlagLongText(),
+      '#default_value' => $flag->get('flag_long'),
       '#description' => $this->t('The description of the "flag this" link. Usually displayed on mouseover.'),
     ];
 
     $form['messages']['flag_message'] = [
       '#type' => 'textfield',
       '#title' => $this->t('Flagged message'),
-      '#default_value' => $flag->getFlagMessage(),
+      '#default_value' => $flag->get('flag_message'),
       '#description' => $this->t('Message displayed after flagging content. If JavaScript is enabled, it will be displayed below the link. If not, it will be displayed in the message area.'),
     ];
 
-    $unflag_short = $flag->getUnflagShortText();
     $form['messages']['unflag_short'] = [
       '#type' => 'textfield',
       '#title' => $this->t('Unflag link text'),
-      '#default_value' => !empty($unflag_short) ? $unflag_short : $this->t('Unflag this item'),
+      '#default_value' => $flag->get('unflag_short') ?: $this->t('Unflag this item'),
       '#description' => $this->t('The text for the "unflag this" link for this flag.'),
       '#required' => TRUE,
     ];
@@ -143,14 +141,14 @@ abstract class FlagFormBase extends EntityForm {
     $form['messages']['unflag_long'] = [
       '#type' => 'textfield',
       '#title' => $this->t('Unflag link description'),
-      '#default_value' => $flag->getUnflagLongText(),
+      '#default_value' => $flag->get('unflag_long'),
       '#description' => $this->t('The description of the "unflag this" link. Usually displayed on mouseover.'),
     ];
 
     $form['messages']['unflag_message'] = [
       '#type' => 'textfield',
       '#title' => $this->t('Unflagged message'),
-      '#default_value' => $flag->getUnflagMessage(),
+      '#default_value' => $flag->get('unflag_message'),
       '#description' => $this->t('Message displayed after content has been unflagged. If JavaScript is enabled, it will be displayed below the link. If not, it will be displayed in the message area.'),
     ];
 
@@ -291,7 +289,6 @@ abstract class FlagFormBase extends EntityForm {
   public function validateForm(array &$form, FormStateInterface $form_state) {
     parent::validateForm($form, $form_state);
 
-    // @todo Move this to the validation method for the confirm form plugin
     $flag = $this->entity;
     $flag->getFlagTypePlugin()->validateConfigurationForm($form, $form_state);
     $flag->getLinkTypePlugin()->validateConfigurationForm($form, $form_state);

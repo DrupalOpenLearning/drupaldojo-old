@@ -32,7 +32,7 @@ class TransliterationTest extends UnitTestCase {
     $this->index = $this->getMock('Drupal\search_api\IndexInterface');
 
     $this->setUpMockContainer();
-    $this->processor = new Transliteration(array(), 'transliteration', array());
+    $this->processor = new Transliteration([], 'transliteration', []);
     $this->processor->setLangcode('en');
 
     $transliterator = $this->getMock('\Drupal\Component\Transliteration\TransliterationInterface');
@@ -54,7 +54,7 @@ class TransliterationTest extends UnitTestCase {
     /** @var \Drupal\search_api\Item\FieldInterface $field */
     $items = $this->createSingleFieldItem($this->index, 'int', $field_value, $field);
     $this->processor->preprocessIndexItems($items);
-    $this->assertEquals(array($field_value), $field->getValues(), 'Integer not affected by transliteration.');
+    $this->assertEquals([$field_value], $field->getValues(), 'Integer not affected by transliteration.');
   }
 
   /**
@@ -65,7 +65,7 @@ class TransliterationTest extends UnitTestCase {
     /** @var \Drupal\search_api\Item\FieldInterface $field */
     $items = $this->createSingleFieldItem($this->index, 'double', $field_value, $field);
     $this->processor->preprocessIndexItems($items);
-    $this->assertEquals(array($field_value), $field->getValues(), 'Floating point number not affected by transliteration.');
+    $this->assertEquals([$field_value], $field->getValues(), 'Floating point number not affected by transliteration.');
   }
 
   /**
@@ -77,7 +77,7 @@ class TransliterationTest extends UnitTestCase {
     $items = $this->createSingleFieldItem($this->index, 'string', $field_value, $field);
     $this->processor->preprocessIndexItems($items);
     $expected_value = "translit-$field_value-en?";
-    $this->assertEquals(array($expected_value), $field->getValues(), 'Strings are correctly transliterated.');
+    $this->assertEquals([$expected_value], $field->getValues(), 'Strings are correctly transliterated.');
   }
 
 }

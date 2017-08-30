@@ -24,9 +24,10 @@ class SapiStreamEmitter implements EmitterInterface
      * body content via the output buffer.
      *
      * @param ResponseInterface $response
+     * @param null|int $maxBufferLevel Maximum output buffering level to unwrap.
      * @param int $maxBufferLength Maximum output buffering size for each iteration
      */
-    public function emit(ResponseInterface $response, $maxBufferLength = 8192)
+    public function emit(ResponseInterface $response, $maxBufferLevel = null, $maxBufferLength = 8192)
     {
         if (headers_sent()) {
             throw new RuntimeException('Unable to emit response; headers already sent');
@@ -36,11 +37,11 @@ class SapiStreamEmitter implements EmitterInterface
 
         $this->emitStatusLine($response);
         $this->emitHeaders($response);
-        $this->flush();
+        $this->flush($maxBufferLevel);
 
         $range = $this->parseContentRange($response->getHeaderLine('Content-Range'));
 
-        if (is_array($range)) {
+        if (is_array($range) && $range[0] === 'bytes') {
             $this->emitBodyRange($range, $response, $maxBufferLength);
             return;
         }
@@ -58,12 +59,15 @@ class SapiStreamEmitter implements EmitterInterface
     {
         $body = $response->getBody();
 
-        if (! $body->isSeekable()) {
+        if ($body->isSeekable()) {
+            $body->rewind();
+        }
+
+        if (! $body->isReadable()) {
             echo $body;
             return;
         }
 
-        $body->rewind();
         while (! $body->eof()) {
             echo $body->read($maxBufferLength);
         }
@@ -82,24 +86,30 @@ class SapiStreamEmitter implements EmitterInterface
 
         $body = $response->getBody();
 
-        if (! $body->isSeekable()) {
-            $contents = $body->getContents();
-            echo substr($contents, $first, $last - $first + 1);
+        $length = $last - $first + 1;
+
+        if ($body->isSeekable()) {
+            $body->seek($first);
+
+            $first = 0;
+        }
+
+        if (! $body->isReadable()) {
+            echo substr($body->getContents(), $first, $length);
             return;
         }
 
-        $body = new RelativeStream($body, $first);
-        $body->rewind();
-        $pos = 0;
-        $length = $last - $first + 1;
-        while (! $body->eof() && $pos < $length) {
-            if (($pos + $maxBufferLength) > $length) {
-                echo $body->read($length - $pos);
-                break;
-            }
+        $remaining = $length;
 
-            echo $body->read($maxBufferLength);
-            $pos = $body->tell();
+        while ($remaining >= $maxBufferLength && ! $body->eof()) {
+            $contents   = $body->read($maxBufferLength);
+            $remaining -= strlen($contents);
+
+            echo $contents;
+        }
+
+        if ($remaining > 0 && ! $body->eof()) {
+            echo $body->read($remaining);
         }
     }
 

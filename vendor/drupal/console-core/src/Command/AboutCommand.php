@@ -2,20 +2,21 @@
 
 /**
  * @file
- * Contains \Drupal\Console\Command\AboutCommand.
+ * Contains \Drupal\Console\Core\Command\AboutCommand.
  */
 
-namespace Drupal\Console\Command;
+namespace Drupal\Console\Core\Command;
 
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
-use Symfony\Component\Console\Command\Command;
-use Drupal\Console\Command\Shared\CommandTrait;
-use Drupal\Console\Style\DrupalStyle;
+use Drupal\Console\Core\Style\DrupalStyle;
 
+/**
+ * Class AboutCommand
+ * @package Drupal\Console\Core\Command
+ */
 class AboutCommand extends Command
 {
-    use CommandTrait;
 
     /**
      * {@inheritdoc}
@@ -48,23 +49,23 @@ class AboutCommand extends Command
         $commands = [
             'init' => [
                 $this->trans('commands.init.description'),
-                'drupal init --override --no-interaction'
+                'drupal init'
             ],
-            //            'quick-start' => [
-            //                $this->trans('commands.common.messages.quick-start'),
-            //                'drupal chain --file=~/.console/chain/quick-start.yml'
-            //            ],
-            //            'site-new' => [
-            //                $this->trans('commands.site.new.description'),
-            //                'drupal site:new drupal8.dev --latest'
-            //            ],
+            'quick-start' => [
+                $this->trans('commands.common.messages.quick-start'),
+                'drupal quick:start'
+            ],
+            'site-new' => [
+                $this->trans('commands.site.new.description'),
+                'drupal site:new'
+            ],
             'site-install' => [
                 $this->trans('commands.site.install.description'),
                 sprintf(
                     'drupal site:install'
                 )
             ],
-            'links' => [
+            'list' => [
                 $this->trans('commands.list.description'),
                 'drupal list',
             ]
@@ -72,14 +73,11 @@ class AboutCommand extends Command
 
         foreach ($commands as $command => $commandInfo) {
             $io->writeln($commandInfo[0]);
-            $io->newLine();
-            $io->comment(sprintf('  %s', $commandInfo[1]));
+            $io->comment(sprintf(' %s', $commandInfo[1]));
             $io->newLine();
         }
 
-        $io->setDecorated(false);
-        $io->section($this->trans('commands.self-update.description'));
-        $io->setDecorated(true);
+        $io->writeln($this->trans('commands.self-update.description'));
         $io->comment('  drupal self-update');
         $io->newLine();
     }

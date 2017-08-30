@@ -3,8 +3,8 @@
 namespace Drupal\profile\Form;
 
 use Drupal\Core\Entity\ContentEntityForm;
+use Drupal\Core\Entity\RevisionableEntityBundleInterface;
 use Drupal\Core\Form\FormStateInterface;
-use Drupal\profile\Entity\ProfileType;
 
 /**
  * Form controller for profile forms.
@@ -14,28 +14,23 @@ class ProfileForm extends ContentEntityForm {
   /**
    * {@inheritdoc}
    */
-  public function buildEntity(array $form, FormStateInterface $form_state) {
-    $entity = parent::buildEntity($form, $form_state);
-    if ($entity->isNew()) {
-      $entity->setCreatedTime(REQUEST_TIME);
-    }
-    return $entity;
-  }
-
-  /**
-   * {@inheritdoc}
-   */
   protected function actions(array $form, FormStateInterface $form_state) {
     $element = parent::actions($form, $form_state);
     /** @var \Drupal\profile\Entity\ProfileInterface $profile */
     $profile = $this->entity;
 
-    // Add an "Activate" button.
-    $element['set_default'] = $element['submit'];
-    $element['set_default']['#value'] = t('Save and make default');
-    $element['set_default']['#weight'] = 10;
-    $element['set_default']['#access'] = !$profile->isDefault();
-    array_unshift($element['set_default']['#submit'], [$this, 'setDefault']);
+    $profile_type_storage = $this->entityTypeManager->getStorage('profile_type');
+    /** @var \Drupal\profile\Entity\ProfileTypeInterface $profile_type */
+    $profile_type = $profile_type_storage->load($profile->bundle());
+
+    // Allow the profile to be saved as default if type supports multiple.
+    if ($profile_type->getMultiple() && !$profile->isDefault()) {
+      // Add a "make default" button.
+      $element['set_default'] = $element['submit'];
+      $element['set_default']['#value'] = $this->t('Save and make default');
+      $element['set_default']['#weight'] = 10;
+      array_unshift($element['set_default']['#submit'], [$this, 'setDefault']);
+    }
 
     return $element;
   }
@@ -62,28 +57,31 @@ class ProfileForm extends ContentEntityForm {
    */
   public function deactivate(array $form, FormStateInterface $form_state) {
     $form_state->setValue('status', FALSE);
-    $form_state->setValue('is_default', TRUE);
   }
 
   /**
    * {@inheritdoc}
    */
   public function save(array $form, FormStateInterface $form_state) {
-    $profile_type = ProfileType::load($this->entity->bundle());
-
     switch ($this->entity->save()) {
       case SAVED_NEW:
-        drupal_set_message($this->t('%label profile has been created.', ['%label' => $profile_type->label()]));
+        drupal_set_message($this->t('%label has been created.', ['%label' => $this->entity->label()]));
         break;
 
       case SAVED_UPDATED:
-        drupal_set_message($this->t('%label profile has been updated.', ['%label' => $profile_type->label()]));
+        drupal_set_message($this->t('%label has been updated.', ['%label' => $this->entity->label()]));
         break;
     }
 
-    $form_state->setRedirect('entity.user.canonical', [
-      'user' => $this->entity->getOwnerId(),
-    ]);
+    if ($this->entity->getOwnerId()) {
+      $form_state->setRedirect('entity.user.canonical', [
+        'user' => $this->entity->getOwnerId(),
+      ]);
+    }
+    else {
+      $form_state->setRedirect('entity.profile.collection');
+    }
+
   }
 
 }

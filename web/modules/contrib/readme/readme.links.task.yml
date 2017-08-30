@@ -1,0 +1,10 @@
+help.main:
+  title: Help
+  route_name: help.main
+  base_route: help.main
+
+readme.main:
+  title: Readme
+  route_name: readme.main
+  base_route: help.main
+  weight: 0

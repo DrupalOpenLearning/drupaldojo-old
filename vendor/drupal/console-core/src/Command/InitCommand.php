@@ -2,31 +2,28 @@
 
 /**
  * @file
- * Contains \Drupal\Console\Command\InitCommand.
+ * Contains \Drupal\Console\Core\Command\InitCommand.
  */
 
-namespace Drupal\Console\Command;
+namespace Drupal\Console\Core\Command;
 
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Process\ProcessBuilder;
 use Symfony\Component\Finder\Finder;
-use Symfony\Component\Console\Command\Command;
-use Drupal\Console\Command\Shared\CommandTrait;
-use Drupal\Console\Utils\ConfigurationManager;
-use Drupal\Console\Generator\InitGenerator;
-use Drupal\Console\Utils\ShowFile;
-use Drupal\Console\Style\DrupalStyle;
+use Drupal\Console\Core\Utils\ConfigurationManager;
+use Drupal\Console\Core\Generator\InitGenerator;
+use Drupal\Console\Core\Utils\ShowFile;
+use Drupal\Console\Core\Style\DrupalStyle;
 
 /**
  * Class InitCommand
- * @package Drupal\Console\Command
+ *
+ * @package Drupal\Console\Core\Command
  */
 class InitCommand extends Command
 {
-    use CommandTrait;
-
     /**
      * @var ShowFile
      */
@@ -55,6 +52,8 @@ class InitCommand extends Command
     private $configParameters = [
         'language' => 'en',
         'temp' => '/tmp',
+        'chain' => false,
+        'sites' => false,
         'learning' => false,
         'generate_inline' => false,
         'generate_chain' => false
@@ -62,6 +61,7 @@ class InitCommand extends Command
 
     /**
      * InitCommand constructor.
+     *
      * @param ShowFile             $showFile
      * @param ConfigurationManager $configurationManager
      * @param InitGenerator        $generator
@@ -123,15 +123,11 @@ class InitCommand extends Command
 
         if (!$destination) {
             if ($this->appRoot && $this->consoleRoot) {
-                $destinationList[] = $this->configurationManager
-                    ->getConsoleDirectory();
-                $destinationList[] = $this->consoleRoot . '/console/';
                 $destination = $io->choice(
                     $this->trans('commands.init.questions.destination'),
-                    $destinationList
+                    $this->configurationManager->getConfigurationDirectories()
                 );
-            }
-            else {
+            } else {
                 $destination = $this->configurationManager
                     ->getConsoleDirectory();
             }
@@ -149,9 +145,19 @@ class InitCommand extends Command
             '/tmp'
         );
 
+        $this->configParameters['chain'] = $io->confirm(
+            $this->trans('commands.init.questions.chain'),
+            false
+        );
+
+        $this->configParameters['sites'] = $io->confirm(
+            $this->trans('commands.init.questions.sites'),
+            false
+        );
+
         $this->configParameters['learning'] = $io->confirm(
             $this->trans('commands.init.questions.learning'),
-            true
+            false
         );
 
         $this->configParameters['generate_inline'] = $io->confirm(
@@ -195,6 +201,12 @@ class InitCommand extends Command
                 DRUPAL_CONSOLE_CORE
             )
         );
+        if (!$this->configParameters['chain']) {
+            $finder->exclude('chain/optional');
+        }
+        if (!$this->configParameters['sites']) {
+            $finder->exclude('sites');
+        }
         $finder->files();
 
         foreach ($finder as $configFile) {
@@ -211,6 +223,12 @@ class InitCommand extends Command
                 $configFile->getRelativePathname()
             );
 
+            $destinationFile = str_replace(
+                'chain/optional/',
+                'chain/',
+                $destinationFile
+            );
+
             if ($this->copyFile($sourceFile, $destinationFile, $override)) {
                 $copiedFiles[] = $destinationFile;
             }
@@ -223,7 +241,7 @@ class InitCommand extends Command
 
         $executableName = null;
         if ($autocomplete) {
-            $processBuilder = new ProcessBuilder(array('bash'));
+            $processBuilder = new ProcessBuilder(['bash']);
             $process = $processBuilder->getProcess();
             $process->setCommandLine('echo $_');
             $process->run();
@@ -241,6 +259,8 @@ class InitCommand extends Command
         );
 
         $io->writeln($this->trans('application.messages.autocomplete'));
+
+        return 0;
     }
 
     /**
@@ -264,7 +284,7 @@ class InitCommand extends Command
 
         $filePath = dirname($destination);
         if (!is_dir($filePath)) {
-            mkdir($filePath);
+            mkdir($filePath, 0777, true);
         }
 
         return copy(

@@ -51,6 +51,13 @@ interface BackendInterface extends ConfigurablePluginInterface, BackendSpecificI
    *
    * The server's $original property can be used to inspect the old
    * configuration values.
+   *
+   * Take care, though, that the server at this point might be override-free and
+   * thus contain property values (and apparent changes) which will not actually
+   * go into effect. If this might influence the code in this method, you have
+   * to manually check for overrides to ensure no incorrect action is taken.
+   *
+   * @see \Drupal\search_api\Utility\Utility::getConfigOverrides()
    */
   public function preUpdate();
 

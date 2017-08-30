@@ -67,7 +67,7 @@ class GroupContentViewsData extends EntityViewsData {
       'id' => 'group_id',
       'numeric' => TRUE,
     ];
-    
+
     // Get the data table for GroupContent entities.
     $data_table = $this->entityType->getDataTable();
 
@@ -80,7 +80,7 @@ class GroupContentViewsData extends EntityViewsData {
 
     // Add views data for all defined plugins so modules can provide default
     // views even though their plugins may not have been installed yet.
-    foreach ($this->pluginManager->getAll() as $plugin_id => $plugin) {
+    foreach ($this->pluginManager->getAll() as $plugin) {
       $entity_type_id = $plugin->getEntityTypeId();
       $entity_type = $entity_types[$entity_type_id];
       $entity_data_table = $entity_type->getDataTable() ?: $entity_type->getBaseTable();
@@ -99,19 +99,19 @@ class GroupContentViewsData extends EntityViewsData {
 
       // This relationship will allow a group content entity to easily map to a
       // content entity that it ties to a group, optionally filtering by plugin.
-      $data[$data_table][$field_name] = array(
-        'title' => t('@entity_type from group content', $t_args),
-        'help' => t('Relates to the @entity_type entity the group content represents.', $t_args),
-        'relationship' => array(
+      $data[$data_table][$field_name] = [
+        'title' => $this->t('@entity_type from group content', $t_args),
+        'help' => $this->t('Relates to the @entity_type entity the group content represents.', $t_args),
+        'relationship' => [
           'group' => $entity_type->getLabel(),
           'base' => $entity_data_table,
           'base field' => $entity_type->getKey('id'),
           'relationship field' => 'entity_id',
           'id' => 'group_content_to_entity',
-          'label' => t('Group content @entity_type', $t_args),
+          'label' => $this->t('Group content @entity_type', $t_args),
           'target_entity_type' => $entity_type_id,
-        ),
-      );
+        ],
+      ];
     }
 
     return $data;

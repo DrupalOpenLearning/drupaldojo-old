@@ -26,7 +26,7 @@ class HtmlFilterTest extends UnitTestCase {
 
     $this->setUpMockContainer();
 
-    $this->processor = new HtmlFilter(array(), 'html_filter', array());
+    $this->processor = new HtmlFilter([], 'html_filter', []);
   }
 
   /**
@@ -42,14 +42,14 @@ class HtmlFilterTest extends UnitTestCase {
    * @dataProvider titleConfigurationDataProvider
    */
   public function testTitleConfiguration($passed_value, $expected_value, $title_config) {
-    $configuration = array(
-      'tags' => array(),
+    $configuration = [
+      'tags' => [],
       'title' => $title_config,
       'alt' => FALSE,
-    );
+    ];
     $this->processor->setConfiguration($configuration);
     $type = 'text';
-    $this->invokeMethod('processFieldValue', array(&$passed_value, &$type));
+    $this->invokeMethod('processFieldValue', [&$passed_value, &$type]);
     $this->assertEquals($expected_value, $passed_value);
   }
 
@@ -60,15 +60,15 @@ class HtmlFilterTest extends UnitTestCase {
    *   An array of argument arrays for testTitleConfiguration().
    */
   public function titleConfigurationDataProvider() {
-    return array(
-      array('word', 'word', FALSE),
-      array('word', 'word', TRUE),
-      array('<div>word</div>', 'word', TRUE),
-      array('<div title="TITLE">word</div>', 'TITLE word', TRUE),
-      array('<div title="TITLE">word</div>', 'word', FALSE),
-      array('<div data-title="TITLE">word</div>', 'word', TRUE),
-      array('<div title="TITLE">word</a>', 'TITLE word', TRUE),
-    );
+    return [
+      ['word', 'word', FALSE],
+      ['word', 'word', TRUE],
+      ['<div>word</div>', 'word', TRUE],
+      ['<div title="TITLE">word</div>', 'TITLE word', TRUE],
+      ['<div title="TITLE">word</div>', 'word', FALSE],
+      ['<div data-title="TITLE">word</div>', 'word', TRUE],
+      ['<div title="TITLE">word</a>', 'TITLE word', TRUE],
+    ];
   }
 
   /**
@@ -84,14 +84,14 @@ class HtmlFilterTest extends UnitTestCase {
    * @dataProvider altConfigurationDataProvider
    */
   public function testAltConfiguration($passed_value, $expected_value, $alt_config) {
-    $configuration = array(
-      'tags' => array('img' => '2'),
+    $configuration = [
+      'tags' => ['img' => '2'],
       'title' => FALSE,
       'alt' => $alt_config,
-    );
+    ];
     $this->processor->setConfiguration($configuration);
     $type = 'text';
-    $this->invokeMethod('processFieldValue', array(&$passed_value, &$type));
+    $this->invokeMethod('processFieldValue', [&$passed_value, &$type]);
     $this->assertEquals($expected_value, $passed_value);
   }
 
@@ -102,41 +102,49 @@ class HtmlFilterTest extends UnitTestCase {
    *   An array of argument arrays for testAltConfiguration().
    */
   public function altConfigurationDataProvider() {
-    return array(
-      array('word', array(Utility::createTextToken('word')), FALSE),
-      array('word', array(Utility::createTextToken('word')), TRUE),
-      array(
+    return [
+      ['word', [Utility::createTextToken('word')], FALSE],
+      ['word', [Utility::createTextToken('word')], TRUE],
+      [
         '<img src="href" />word',
-        array(Utility::createTextToken('word')),
+        [Utility::createTextToken('word')],
         TRUE,
-      ),
-      array(
+      ],
+      [
         '<img alt="ALT"/> word',
-        array(
+        [
           Utility::createTextToken('ALT', 2),
           Utility::createTextToken('word'),
-        ),
+        ],
         TRUE,
-      ),
-      array(
+      ],
+      [
         '<img alt="ALT" /> word',
-        array(Utility::createTextToken('word')),
+        [Utility::createTextToken('word')],
         FALSE,
-      ),
-      array(
+      ],
+      [
         '<img data-alt="ALT"/> word',
-        array(Utility::createTextToken('word')),
+        [Utility::createTextToken('word')],
         TRUE,
-      ),
-      array(
+      ],
+      [
         '<img src="href" alt="ALT" title="Bar" /> word </a>',
-        array(
+        [
           Utility::createTextToken('ALT', 2),
           Utility::createTextToken('word'),
-        ),
+        ],
         TRUE,
-      ),
-    );
+      ],
+      // Test fault tolerance.
+      [
+        'a < b',
+        [
+          Utility::createTextToken('a < b'),
+        ],
+        TRUE,
+      ],
+    ];
   }
 
   /**
@@ -152,14 +160,14 @@ class HtmlFilterTest extends UnitTestCase {
    * @dataProvider tagConfigurationDataProvider
    */
   public function testTagConfiguration($passed_value, $expected_value, array $tags_config) {
-    $configuration = array(
+    $configuration = [
       'tags' => $tags_config,
       'title' => TRUE,
       'alt' => TRUE,
-    );
+    ];
     $this->processor->setConfiguration($configuration);
     $type = 'text';
-    $this->invokeMethod('processFieldValue', array(&$passed_value, &$type));
+    $this->invokeMethod('processFieldValue', [&$passed_value, &$type]);
     $this->assertEquals($expected_value, $passed_value);
   }
 
@@ -170,55 +178,55 @@ class HtmlFilterTest extends UnitTestCase {
    *   An array of argument arrays for testTagConfiguration().
    */
   public function tagConfigurationDataProvider() {
-    $complex_test = array(
+    $complex_test = [
       '<h2>Foo Bar <em>Baz</em></h2>
 
 <p>Bla Bla Bla. <strong title="Foobar">Important:</strong> Bla.</p>
 <img src="/foo.png" alt="Some picture" />
 <span>This is hidden</span>',
-      array(
+      [
         Utility::createTextToken('Foo Bar', 3.0),
         Utility::createTextToken('Baz', 4.5),
         Utility::createTextToken('Bla Bla Bla.', 1.0),
         Utility::createTextToken('Foobar Important:', 2.0),
         Utility::createTextToken('Bla.', 1.0),
         Utility::createTextToken('Some picture', 0.5),
-      ),
-      array(
+      ],
+      [
         'em' => 1.5,
         'strong' => 2.0,
         'h2' => 3.0,
         'img' => 0.5,
         'span' => 0,
-      ),
-    );
-    $tags_config = array('h2' => '2');
-    return array(
-      array('h2word', 'h2word', array()),
-      array('h2word', array(Utility::createTextToken('h2word')), $tags_config),
-      array(
+      ],
+    ];
+    $tags_config = ['h2' => '2'];
+    return [
+      ['h2word', 'h2word', []],
+      ['h2word', [Utility::createTextToken('h2word')], $tags_config],
+      [
         'foo bar <h2> h2word </h2>',
-        array(
+        [
           Utility::createTextToken('foo bar'),
           Utility::createTextToken('h2word', 2.0),
-        ),
+        ],
         $tags_config,
-      ),
-      array(
+      ],
+      [
         'foo bar <h2>h2word</h2>',
-        array(
+        [
           Utility::createTextToken('foo bar'),
           Utility::createTextToken('h2word', 2.0),
-        ),
+        ],
         $tags_config,
-      ),
-      array(
+      ],
+      [
         '<div>word</div>',
-        array(Utility::createTextToken('word', 2)),
-        array('div' => 2),
-      ),
+        [Utility::createTextToken('word', 2)],
+        ['div' => 2],
+      ],
       $complex_test,
-    );
+    ];
   }
 
   /**
@@ -242,7 +250,7 @@ class HtmlFilterTest extends UnitTestCase {
     $expected_value = preg_replace('/\s+/', ' ', strip_tags($passed_value));
 
     $type = 'string';
-    $this->invokeMethod('processFieldValue', array(&$passed_value, &$type));
+    $this->invokeMethod('processFieldValue', [&$passed_value, &$type]);
     $this->assertEquals($expected_value, $passed_value);
   }
 
@@ -254,21 +262,21 @@ class HtmlFilterTest extends UnitTestCase {
    *   contains a HTML filter configuration as the only value.
    */
   public function stringProcessingDataProvider() {
-    $configs = array();
-    $configs[] = array(array());
-    $config['tags'] = array(
+    $configs = [];
+    $configs[] = [[]];
+    $config['tags'] = [
       'h2' => 2.0,
       'span' => 4.0,
       'strong' => 1.5,
       'p' => 0,
-    );
-    $configs[] = array($config);
+    ];
+    $configs[] = [$config];
     $config['title'] = TRUE;
-    $configs[] = array($config);
+    $configs[] = [$config];
     $config['alt'] = TRUE;
-    $configs[] = array($config);
+    $configs[] = [$config];
     unset($config['tags']);
-    $configs[] = array($config);
+    $configs[] = [$config];
     return $configs;
   }
 

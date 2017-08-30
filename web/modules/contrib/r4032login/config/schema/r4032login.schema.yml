@@ -1,5 +1,5 @@
 r4032login.settings:
-  type: mapping
+  type: config_object
   label: 'Redirect 403 to User Login (r4032login) settings'
   mapping:
     display_denied_message:
@@ -9,18 +9,8 @@ r4032login.settings:
       type: label
       label: "User login 'access denied' message"
     access_denied_message_type:
-      type: mapping
+      type: string
       label: "User login 'access denied' message type"
-      mapping:
-        error:
-          type: string
-          label: 'Error'
-        warning:
-          type: string
-          label: 'Warning'
-        status:
-          type: string
-          label: 'Status'
     redirect_authenticated_users_to:
       type: label
       label: 'Redirect authenticated users to'
@@ -28,15 +18,8 @@ r4032login.settings:
       type: path
       label: '/user/login'
     default_redirect_code:
-      type: mapping
+      type: integer
       label: 'HTTP redirect code'
-      mapping:
-        302:
-          type: integer
-          label: '302 Found'
-        301:
-          type: integer
-          label: '301 Moved Permanently'
     match_noredirect_pages:
       type: string
       label: 'Only the listed pages'

@@ -1,15 +1,8 @@
 <?php
 
-/**
-/**
- * @file
- * Contains \Drupal\field_group\Plugin\field_group\FieldGroupFormatter\Details.
- */
-
 namespace Drupal\field_group\Plugin\field_group\FieldGroupFormatter;
 
 use Drupal\Component\Utility\Html;
-use Drupal\Component\Utility\SafeMarkup;
 use Drupal\field_group\FieldGroupFormatterBase;
 
 /**
@@ -31,10 +24,11 @@ class Details extends FieldGroupFormatterBase {
    * {@inheritdoc}
    */
   public function preRender(&$element, $rendering_object) {
+    parent::preRender($element, $rendering_object);
 
     $element += array(
       '#type' => 'details',
-      '#title' => SafeMarkup::checkPlain($this->t($this->getLabel())),
+      '#title' => Html::escape($this->t($this->getLabel())),
       '#open' => $this->getSetting('open')
     );
 
@@ -53,6 +47,11 @@ class Details extends FieldGroupFormatterBase {
       $element += array(
         '#description' => $this->getSetting('description'),
       );
+    }
+
+    if ($this->getSetting('required_fields')) {
+      $element['#attached']['library'][] = 'field_group/formatter.details';
+      $element['#attached']['library'][] = 'field_group/core';
     }
   }
 

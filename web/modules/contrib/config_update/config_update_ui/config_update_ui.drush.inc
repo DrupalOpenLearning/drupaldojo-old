@@ -74,7 +74,7 @@ function config_update_ui_drush_command() {
   ];
 
   $items['config-different-report'] = [
-    'description' => 'Display a list of config items that differ from the versions imported from your installed modules, themes, or install profile. See config-diff to show what the differences are.',
+    'description' => 'Display a list of config items that differ from the versions provided by your installed modules, themes, or install profile. See config-diff to show what the differences are.',
     'arguments' => [
       'type' => 'Run the report for: module, theme, profile, or "type" for config entity type.',
       'name' => 'The machine name of the module, theme, etc. to report on. See config-list-types to list types for config entities; you can also use system.all for all types, or system.simple for simple config.',
@@ -83,7 +83,6 @@ function config_update_ui_drush_command() {
     'examples' => [
       'drush config-different-report type action' => 'Displays the differing config report for action config.',
     ],
-    'drupal dependencies' => ['config_update_ui'],
     'aliases' => ['crd'],
     'core' => ['8+'],
     'outputformat' => [
@@ -101,6 +100,46 @@ function config_update_ui_drush_command() {
       'drush config-diff block.block.bartik_search' => 'Displays the config differences for the search block in the Bartik theme.',
     ],
     'aliases' => ['cfd'],
+    'core' => ['8+'],
+  ];
+
+  $items['config-revert'] = [
+    'description' => 'Revert one config item in active storage to the version provided by an installed module, theme, or install profile.',
+    'arguments' => [
+      'name' => 'The config item to revert. See config-different-report to list config items that are different.',
+    ],
+    'required-arguments' => 1,
+    'examples' => [
+      'drush config-revert block.block.bartik_search' => 'Revert the config for the search block in the Bartik theme to the version provided by the install profile.',
+    ],
+    'aliases' => ['cfr'],
+    'core' => ['8+'],
+  ];
+
+  $items['config-import-missing'] = [
+    'description' => 'Import a missing or inactive config item provided by an installed module, theme, or install profile. Be sure that requirements are met.',
+    'arguments' => [
+      'name' => 'The name of the config item to import (usually the ID you would see in the user interface). See config-missing-report to list config items that are missing, and config-inactive-report to list config items that are inactive.',
+    ],
+    'required-arguments' => 1,
+    'examples' => [
+      'drush config-import-missing block.block.bartik_search' => 'Import the config for the search block in the Bartik theme from the version provided by the install profile.',
+    ],
+    'aliases' => ['cfi'],
+    'core' => ['8+'],
+  ];
+
+  $items['config-revert-multiple'] = [
+    'description' => 'Revert a set of config items to the versions provided by installed modules, themes, or install profiles. A set is all differing items from one extension, or one type of configuration.',
+    'arguments' => [
+      'type' => 'Type of set to revert: "module" for all items from a module, "theme" for all items from a theme, "profile" for all items from the install profile, or "type" for all items of one config entity type. See config-different-report to list config items that are different.',
+      'name' => 'The machine name of the module, theme, etc. to revert items of. All items in the corresponding config-different-report will be reverted.',
+    ],
+    'required-arguments' => 2,
+    'examples' => [
+      'drush config-revert-multiple type action' => 'Revert all differing config items of type action.',
+    ],
+    'aliases' => ['cfrm'],
     'core' => ['8+'],
   ];
 
@@ -222,11 +261,91 @@ function drush_config_update_ui_config_diff($name) {
 
   $extension = $reverter->getFromExtension('', $name);
   $active = $reverter->getFromActive('', $name);
-  if ($extension && !$active) {
+  if ($extension && $active) {
     $diff = $differ->diff($extension, $active);
-    drush_print($formatter->format($diff));
+    $output = $formatter->format($diff);
+    return $output;
   }
   else {
     drush_print(dt('Config is missing, cannot diff'), 0, STDERR);
+    return '';
+  }
+}
+
+/**
+ * Runs the drush config-revert command.
+ *
+ * @param string $name
+ *   Config item to revert.
+ */
+function drush_config_update_ui_config_revert($name) {
+  $lister = \Drupal::service('config_update.config_list');
+  $reverter = \Drupal::service('config_update.config_update');
+  $manager = \Drupal::service('entity.manager');
+
+  // The revert command needs the type and the unprefixed name.
+  $type = $lister->getTypeNameByConfigName($name);
+  $shortname = $name;
+  if ($type && $type != 'system.simple') {
+    $definition = $manager->getDefinition($type);
+    $prefix = $definition->getConfigPrefix() . '.';
+    if (strpos($name, $prefix) === 0) {
+      $shortname = substr($name, strlen($prefix));
+    }
+  }
+
+  if ($reverter->revert($type, $shortname)) {
+    drush_print(dt('The configuration item @name was reverted to its source.', ['@name' => $name]));
+  }
+  else {
+    drush_print(dt('There was an error and the configuration item @name was not reverted.', ['@name' => $name]), 0, STDERR);
+  }
+}
+
+/**
+ * Runs the drush config-import-missing command.
+ *
+ * @param string $name
+ *   Name of config item to import, without prefix.
+ */
+function drush_config_update_ui_config_import_missing($name) {
+  $lister = \Drupal::service('config_update.config_list');
+  $reverter = \Drupal::service('config_update.config_update');
+  $manager = \Drupal::service('entity.manager');
+
+  // The import command needs the type and the unprefixed name.
+  $type = $lister->getTypeNameByConfigName($name);
+  $shortname = $name;
+  if ($type && $type != 'system.simple') {
+    $definition = $manager->getDefinition($type);
+    $prefix = $definition->getConfigPrefix() . '.';
+    if (strpos($name, $prefix) === 0) {
+      $shortname = substr($name, strlen($prefix));
+    }
+  }
+
+  if ($reverter->import($type, $shortname)) {
+    drush_print(dt('The configuration item @name was imported from its source.', ['@name' => $name]));
+  }
+  else {
+    drush_print(dt('There was an error and the configuration item @name was not imported.', ['@name' => $name]), 0, STDERR);
+    drush_print(dt('The configuration was imported from its source.'));
+  }
+}
+
+/**
+ * Runs the drush config-revert-multiple command.
+ *
+ * @param string $type
+ *   Type of config to revert: 'type', 'module', 'theme', or 'profile'.
+ * @param string $name
+ *   Machine name of type to revert.
+ */
+function drush_config_update_ui_config_revert_multiple($type, $name) {
+  // This command will print an error if there are no items to revert.
+  $different = drush_config_update_ui_config_different_report($type, $name);
+  foreach ($different as $name) {
+    // This command will print a message if it succeeds or fails for each item.
+    drush_config_update_ui_config_revert($name);
   }
 }

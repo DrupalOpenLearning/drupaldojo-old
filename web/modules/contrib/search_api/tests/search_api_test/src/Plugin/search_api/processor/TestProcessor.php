@@ -2,6 +2,7 @@
 
 namespace Drupal\search_api_test\Plugin\search_api\processor;
 
+use Drupal\search_api\IndexInterface;
 use Drupal\search_api\Processor\ProcessorPluginBase;
 use Drupal\search_api\Query\QueryInterface;
 use Drupal\search_api\Query\ResultSetInterface;
@@ -18,6 +19,18 @@ use Drupal\search_api_test\TestPluginTrait;
 class TestProcessor extends ProcessorPluginBase {
 
   use TestPluginTrait;
+
+  /**
+   * {@inheritdoc}
+   */
+  public static function supportsIndex(IndexInterface $index) {
+    $key = 'search_api_test.processor.method.supportsIndex';
+    if ($method = \Drupal::state()->get($key)) {
+      return call_user_func($method, $index);
+    }
+
+    return TRUE;
+  }
 
   /**
    * {@inheritdoc}
@@ -76,7 +89,7 @@ class TestProcessor extends ProcessorPluginBase {
   public function onDependencyRemoval(array $dependencies) {
     $remove = $this->getReturnValue(__FUNCTION__, FALSE);
     if ($remove) {
-      $this->configuration = array();
+      $this->configuration = [];
     }
     return $remove;
   }

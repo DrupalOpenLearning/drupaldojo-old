@@ -1,11 +1,13 @@
 <?php
 
-namespace Drupal\Console\Utils;
+namespace Drupal\Console\Core\Utils;
 
 use Symfony\Component\Yaml\Yaml;
+use Symfony\Component\Console\Input\ArgvInput;
+use Symfony\Component\Finder\Finder;
 use Dflydev\DotAccessConfiguration\YamlFileConfigurationBuilder;
 use Dflydev\DotAccessConfiguration\ConfigurationInterface;
-use Symfony\Component\Console\Input\ArgvInput;
+use Webmozart\PathUtil\Path;
 
 /**
  * Class ConfigurationManager.
@@ -33,11 +35,21 @@ class ConfigurationManager
     private $configurationDirectories = [];
 
     /**
+     * @var array
+     */
+    private $sites = [];
+
+    /**
      * @param $applicationDirectory
      * @return $this
      */
     public function loadConfiguration($applicationDirectory)
     {
+        $homeConfig = Path::getHomeDirectory() . '/.console/';
+        if (!is_dir($homeConfig)) {
+            mkdir($homeConfig, 0777);
+        }
+
         $this->applicationDirectory = $applicationDirectory;
         $input = new ArgvInput();
         $root = $input->getParameterOption(['--root'], null);
@@ -46,9 +58,8 @@ class ConfigurationManager
         $configurationDirectories[] = $applicationDirectory.DRUPAL_CONSOLE_CORE;
         $configurationDirectories[] = $applicationDirectory.DRUPAL_CONSOLE;
         $configurationDirectories[] = '/etc/console/';
-        $configurationDirectories[] = $this->getHomeDirectory() . '/.console/';
+        $configurationDirectories[] = Path::getHomeDirectory() . '/.console/';
         $configurationDirectories[] = $applicationDirectory .'/console/';
-        $configurationDirectories[] = getcwd().'/console/';
         if ($root) {
             $configurationDirectories[] = $root . '/console/';
         }
@@ -58,8 +69,7 @@ class ConfigurationManager
         foreach ($configurationDirectories as $configurationDirectory) {
             $file =  $configurationDirectory . 'config.yml';
 
-            if (is_dir($configurationDirectory)
-                && stripos($configurationDirectory, '/vendor/') <= 0
+            if (stripos($configurationDirectory, '/vendor/') <= 0
                 && stripos($configurationDirectory, '/bin/') <= 0
                 && stripos($configurationDirectory, 'console/') > 0
             ) {
@@ -78,9 +88,19 @@ class ConfigurationManager
             $configurationFiles[] = $file;
         }
 
+        $this->configurationDirectories =
+            array_unique($this->configurationDirectories);
+
         $builder = new YamlFileConfigurationBuilder($configurationFiles);
         $this->configuration = $builder->build();
-        $this->appendCommandAliases();
+        $aliases = $this->configuration->get('application.extras.alias')?:'true';
+        if ($aliases === 'true') {
+            $this->appendCommandAliases();
+        }
+        $mappings = $this->configuration->get('application.extras.mappings')?:'true';
+        if ($mappings === 'true') {
+            $this->appendCommandMappings();
+        }
 
         if ($configurationFiles) {
             $this->missingConfigurationFiles = [];
@@ -120,31 +140,11 @@ class ConfigurationManager
      */
     public function readTarget($target)
     {
-        if (!$target || !strpos($target, '.')) {
+        if (!array_key_exists($target, $this->sites)) {
             return [];
         }
 
-        $site = explode('.', $target)[0];
-        $env = explode('.', $target)[1];
-
-        $siteFile = sprintf(
-            '%s%s%s.yml',
-            $this->getSitesDirectory(),
-            DIRECTORY_SEPARATOR,
-            $site
-        );
-
-        if (!file_exists($siteFile)) {
-            return [];
-        }
-
-        $targetInformation = Yaml::parse(file_get_contents($siteFile));
-
-        if (!array_key_exists($env, $targetInformation)) {
-            return [];
-        }
-
-        $targetInformation = $targetInformation[$env];
+        $targetInformation = $this->sites[$target];
 
         if (array_key_exists('host', $targetInformation) && $targetInformation['host'] != 'local') {
             $targetInformation['remote'] = true;
@@ -157,20 +157,6 @@ class ConfigurationManager
     }
 
     /**
-     * Return the user home directory.
-     *
-     * @return string
-     */
-    public function getHomeDirectory()
-    {
-        if (function_exists('posix_getuid')) {
-            return posix_getpwuid(posix_getuid())['dir'];
-        }
-
-        return realpath(rtrim(getenv('HOME') ?: getenv('USERPROFILE'), '/\\'));
-    }
-
-    /**
      * @return string
      */
     public function getApplicationDirectory()
@@ -179,16 +165,31 @@ class ConfigurationManager
     }
 
     /**
-     * Return the site config directory.
+     * Return the sites config directory.
      *
-     * @return string
+     * @return array
      */
-    public function getSitesDirectory()
+    private function getSitesDirectories()
     {
-        return sprintf(
-            '%s/sites',
-            $this->getConsoleDirectory()
+        $configurationDirectories = $this->getConfigurationDirectories();
+        $configurationDirectories = array_map(
+            function ($directory) {
+                return sprintf(
+                    '%s/sites',
+                    $directory
+                );
+            },
+            $configurationDirectories
         );
+
+        $configurationDirectories = array_filter(
+            $configurationDirectories,
+            function ($directory) {
+                return is_dir($directory);
+            }
+        );
+
+        return $configurationDirectories;
     }
 
     /**
@@ -200,13 +201,15 @@ class ConfigurationManager
         $equivalents = [];
         $aliasInformation = Yaml::parse(
             file_get_contents(
-                $this->applicationDirectory.DRUPAL_CONSOLE_CORE.'config/drush.yml'
+                $this->applicationDirectory . DRUPAL_CONSOLE_CORE . 'config/drush.yml'
             )
         );
 
         foreach ($aliasInformation['commands'] as $key => $commands) {
             foreach ($commands as $drush => $console) {
-                $equivalents[$drush] = $console;
+                if($console) {
+                    $equivalents[$drush] = $console;
+                }
             }
         }
 
@@ -231,7 +234,7 @@ class ConfigurationManager
      */
     public function getConsoleDirectory()
     {
-        return sprintf('%s/.console/', $this->getHomeDirectory());
+        return sprintf('%s/.console/', Path::getHomeDirectory());
     }
 
     /**
@@ -251,28 +254,106 @@ class ConfigurationManager
     }
 
     /**
-     * @return string
+     * @return void
      */
-    public function appendCommandAliases()
+    private function appendCommandMappings()
     {
-        $configurationDirectories = array_merge(
-            [$this->applicationDirectory . DRUPAL_CONSOLE_CORE . 'config/dist/'],
-            $this->configurationDirectories
-        );
+        $mappings = [];
+        $mappingsFile = $this->applicationDirectory.DRUPAL_CONSOLE_CORE.'config/mappings.yml';
 
-        foreach ($configurationDirectories as $directory) {
+        if (file_exists($mappingsFile)) {
+            $mappings = Yaml::parse(file_get_contents($mappingsFile));
+        }
+
+        if (array_key_exists('commands', $mappings) && array_key_exists('mappings', $mappings['commands'])) {
+            $this->configuration->set(
+                'application.commands.mappings',
+                $mappings['commands']['mappings']
+            );
+        }
+    }
+
+    /**
+     * @return void
+     */
+    private function appendCommandAliases()
+    {
+        $aliases = [];
+        foreach ($this->configurationDirectories as $directory) {
             $aliasFile = $directory . 'aliases.yml';
-            $aliases = [];
             if (file_exists($aliasFile)) {
                 $aliases = array_merge(
-                    Yaml::parse(file_get_contents($aliasFile)),
-                    $aliases
-                );
-                $this->configuration->set(
-                    'application.commands.aliases',
-                    $aliases['commands']['aliases']
+                    $aliases,
+                    Yaml::parse(file_get_contents($aliasFile))
                 );
             }
         }
+        if (array_key_exists('commands', $aliases) && array_key_exists('aliases', $aliases['commands'])) {
+            $this->configuration->set(
+                'application.commands.aliases',
+                $aliases['commands']['aliases']
+            );
+        }
+    }
+
+    public function loadExtendConfiguration()
+    {
+        $directory = Path::getHomeDirectory() . '/.console/extend/';
+        if (!is_dir($directory)) {
+            return null;
+        }
+
+        $autoloadFile = $directory . 'vendor/autoload.php';
+        if (!is_file($autoloadFile)) {
+            return null;
+        }
+        include_once $autoloadFile;
+        $extendFile= $directory . 'extend.console.config.yml';
+
+        $this->importConfigurationFile($extendFile);
+    }
+
+    public function importConfigurationFile($configFile)
+    {
+        if (is_file($configFile) && file_get_contents($configFile)!='') {
+            $builder = new YamlFileConfigurationBuilder([$configFile]);
+            $this->configuration->import($builder->build());
+        }
+    }
+
+    /**
+     * @return array
+     */
+    public function getSites()
+    {
+        if ($this->sites) {
+            return $this->sites;
+        }
+
+        $sitesDirectories = $this->getSitesDirectories();
+        $finder = new Finder();
+        $finder->in($sitesDirectories);
+        $finder->name("*.yml");
+
+        foreach ($finder as $site) {
+            $siteName = $site->getBasename('.yml');
+            $environments = $this->readSite($site->getRealPath());
+
+            if (!$environments || !is_array($environments)) {
+                continue;
+            }
+
+            foreach ($environments as $environment => $config) {
+                $site = $siteName . '.' . $environment;
+                $this->sites[$site] = $config;
+            }
+        }
+
+        return $this->sites;
+    }
+
+    public function getHomeDirectory()
+    {
+        return Path::getHomeDirectory();
     }
 }

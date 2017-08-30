@@ -36,4 +36,5 @@ class FlaggingEvent extends Event {
   public function getFlagging() {
     return $this->flagging;
   }
+
 }

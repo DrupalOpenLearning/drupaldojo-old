@@ -19,10 +19,10 @@ class Phrase extends ParseModePluginBase {
    * {@inheritdoc}
    */
   public function parseInput($keys) {
-    return array(
+    return [
       '#conjunction' => $this->getConjunction(),
       $keys,
-    );
+    ];
   }
 
 }

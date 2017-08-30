@@ -14,10 +14,10 @@ class ProfileViewsData extends EntityViewsData {
    */
   public function getViewsData() {
     $data = parent::getViewsData();
-
+    $data['profile']['type']['title'] = t('Profile type');
     $data['profile']['profile_bulk_form'] = [
-      'title' => t('Profile operations bulk form'),
-      'help' => t('Add a form element that lets you run operations on multiple profiles.'),
+      'title' => $this->t('Profile operations bulk form'),
+      'help' => $this->t('Add a form element that lets you run operations on multiple profiles.'),
       'field' => [
         'id' => 'profile_bulk_form',
       ],

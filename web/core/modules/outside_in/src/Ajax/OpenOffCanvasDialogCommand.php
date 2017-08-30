@@ -5,17 +5,24 @@ namespace Drupal\outside_in\Ajax;
 use Drupal\Core\Ajax\OpenDialogCommand;
 
 /**
- * Defines an AJAX command to open content in a dialog in a off-canvas tray.
+ * Defines an AJAX command to open content in a dialog in a off-canvas dialog.
  *
  * @ingroup ajax
  */
 class OpenOffCanvasDialogCommand extends OpenDialogCommand {
 
   /**
+   * The dialog width to use if none is provided.
+   */
+  const DEFAULT_DIALOG_WIDTH = 300;
+
+  /**
    * Constructs an OpenOffCanvasDialogCommand object.
    *
-   * Drupal provides a built-in offcanvas tray for this purpose, so no selector
-   * needs to be provided.
+   * The off-canvas dialog differs from the normal modal provided by
+   * OpenDialogCommand in that a off-canvas has built in positioning and
+   * behaviours. Drupal provides a built-in off-canvas dialog for this purpose,
+   * so the selector is hard-coded in the call to the parent constructor.
    *
    * @param string $title
    *   The title of the dialog.
@@ -31,7 +38,7 @@ class OpenOffCanvasDialogCommand extends OpenDialogCommand {
    *   populated automatically from the current request.
    */
   public function __construct($title, $content, array $dialog_options = [], $settings = NULL) {
-    parent::__construct('#drupal-offcanvas', $title, $content, $dialog_options, $settings);
+    parent::__construct('#drupal-off-canvas', $title, $content, $dialog_options, $settings);
     $this->dialogOptions['modal'] = FALSE;
     $this->dialogOptions['autoResize'] = FALSE;
     $this->dialogOptions['resizable'] = 'w';
@@ -40,21 +47,22 @@ class OpenOffCanvasDialogCommand extends OpenDialogCommand {
     // @todo drupal.ajax.js does not respect drupalAutoButtons properly, pass an
     //   empty set of buttons until https://www.drupal.org/node/2793343 is in.
     $this->dialogOptions['buttons'] = [];
+    // If no width option is provided then use the default width to avoid the
+    // dialog staying at the width of the previous instance when opened
+    // more than once, with different widths, on a single page.
+    if (!isset($this->dialogOptions['width'])) {
+      $this->dialogOptions['width'] = static::DEFAULT_DIALOG_WIDTH;
+    }
   }
 
   /**
    * {@inheritdoc}
    */
   public function render() {
-    return [
-      'command' => 'openDialog',
-      'selector' => '#drupal-offcanvas',
-      'settings' => $this->settings,
-      'data' => $this->getRenderedContent(),
-      'dialogOptions' => $this->dialogOptions,
-      'effect' => 'fade',
-      'speed' => 1000,
-    ];
+    $build = parent::render();
+    $build['effect'] = 'fade';
+    $build['speed'] = 1000;
+    return $build;
   }
 
 }

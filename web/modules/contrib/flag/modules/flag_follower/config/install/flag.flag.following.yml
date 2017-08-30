@@ -29,5 +29,4 @@ flagTypeConfig:
   show_on_form: false
   show_contextual_link: false
   show_on_profile: false
-  access_uid: false
 linkTypeConfig: {  }

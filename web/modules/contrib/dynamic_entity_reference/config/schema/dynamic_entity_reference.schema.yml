@@ -46,15 +46,18 @@ field.value.dynamic_entity_reference:
       label: 'Type of item to reference'
 
 field.formatter.settings.dynamic_entity_reference_entity_view:
-  type: mapping
+  type: sequence
   label: 'Dynamic entity reference rendered entity display format settings'
-  mapping:
-    view_mode:
-      type: string
-      label: 'View mode'
-    link:
-      type: boolean
-      label: 'Show links'
+  sequence:
+    type: mapping
+    label: 'Entity Type ID'
+    mapping:
+      view_mode:
+        type: string
+        label: 'View modes'
+      link:
+        type: boolean
+        label: 'Show links'
 
 field.formatter.settings.dynamic_entity_reference_entity_id:
   type: mapping

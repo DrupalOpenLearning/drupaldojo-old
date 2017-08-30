@@ -63,7 +63,7 @@ class DynamicEntityReferenceFormatterTest extends EntityKernelTestBase {
    *
    * @var array
    */
-  public static $modules = array('dynamic_entity_reference');
+  public static $modules = ['dynamic_entity_reference'];
 
   /**
    * {@inheritdoc}
@@ -76,7 +76,7 @@ class DynamicEntityReferenceFormatterTest extends EntityKernelTestBase {
     $this->config('system.theme')->set('default', 'classy')->save();
 
     // Grant the 'view test entity' permission.
-    $this->installConfig(array('user'));
+    $this->installConfig(['user']);
     Role::load(RoleInterface::ANONYMOUS_ID)
       ->grantPermission('view test entity')
       ->save();
@@ -85,75 +85,75 @@ class DynamicEntityReferenceFormatterTest extends EntityKernelTestBase {
     $this->installSchema('system', 'router');
     $this->container->get('router.builder')->rebuild();
 
-    FieldStorageConfig::create(array(
+    FieldStorageConfig::create([
       'field_name' => $this->fieldName,
       'type' => 'dynamic_entity_reference',
       'entity_type' => $this->entityType,
       'cardinality' => FieldStorageDefinitionInterface::CARDINALITY_UNLIMITED,
-      'settings' => array(
+      'settings' => [
         'exclude_entity_types' => FALSE,
         'entity_type_ids' => [
           $this->entityType,
         ],
-      ),
-    ))->save();
+      ],
+    ])->save();
 
-    FieldConfig::create(array(
+    FieldConfig::create([
       'field_name' => $this->fieldName,
       'entity_type' => $this->entityType,
       'bundle' => $this->bundle,
       'label' => 'Field test',
-      'settings' => array(
+      'settings' => [
         'handler' => 'default',
-        'handler_settings' => array(),
-      ),
-    ))->save();
+        'handler_settings' => [],
+      ],
+    ])->save();
 
     // Set up a field, so that the entity that'll be referenced bubbles up a
     // cache tag when rendering it entirely.
-    FieldStorageConfig::create(array(
+    FieldStorageConfig::create([
       'field_name' => 'body',
       'entity_type' => $this->entityType,
       'type' => 'text',
-      'settings' => array(),
-    ))->save();
-    FieldConfig::create(array(
+      'settings' => [],
+    ])->save();
+    FieldConfig::create([
       'entity_type' => $this->entityType,
       'bundle' => $this->bundle,
       'field_name' => 'body',
       'label' => 'Body',
-    ))->save();
-    EntityViewDisplay::create(array(
+    ])->save();
+    EntityViewDisplay::create([
       'targetEntityType' => $this->entityType,
       'bundle' => $this->bundle,
       'mode' => 'default',
       'status' => TRUE,
-    ))
-      ->setComponent('body', array(
+    ])
+      ->setComponent('body', [
         'type' => 'text_default',
-        'settings' => array(),
-      ))
+        'settings' => [],
+      ])
       ->save();
 
-    FilterFormat::create(array(
+    FilterFormat::create([
       'format' => 'full_html',
       'name' => 'Full HTML',
-    ))->save();
+    ])->save();
 
     // Create the entity to be referenced.
-    $this->referencedEntity = EntityTest::create(array('name' => $this->randomMachineName()));
-    $this->referencedEntity->body = array(
+    $this->referencedEntity = EntityTest::create(['name' => $this->randomMachineName()]);
+    $this->referencedEntity->body = [
       'value' => '<p>Hello, world!</p>',
       'format' => 'full_html',
-    );
+    ];
     $this->referencedEntity->save();
 
     // Create another entity to be referenced but do not save it.
-    $this->unsavedReferencedEntity = EntityTest::create(array('name' => $this->randomMachineName()));
-    $this->unsavedReferencedEntity->body = array(
+    $this->unsavedReferencedEntity = EntityTest::create(['name' => $this->randomMachineName()]);
+    $this->unsavedReferencedEntity->body = [
       'value' => '<p>Hello, unsaved world!</p>',
       'format' => 'full_html',
-    );
+    ];
   }
 
   /**
@@ -167,7 +167,7 @@ class DynamicEntityReferenceFormatterTest extends EntityKernelTestBase {
 
     $field_name = $this->fieldName;
 
-    $referencing_entity = EntityTest::create(array('name' => $this->randomMachineName()));
+    $referencing_entity = EntityTest::create(['name' => $this->randomMachineName()]);
     $referencing_entity->save();
     $referencing_entity->{$field_name}->entity = $this->referencedEntity;
 
@@ -180,16 +180,17 @@ class DynamicEntityReferenceFormatterTest extends EntityKernelTestBase {
     foreach ($formatter_manager->getOptions('dynamic_entity_reference') as $formatter => $name) {
       // Set formatter type for the 'full' view mode.
       entity_get_display($this->entityType, $this->bundle, 'default')
-        ->setComponent($field_name, array(
+        ->setComponent($field_name, [
           'type' => $formatter,
-        ))
+          'settings' => $formatter == 'dynamic_entity_reference_entity_view' ? ['view_mode' => [$referencing_entity->getEntityTypeId() => 'default']] : [],
+        ])
         ->save();
 
       // Invoke entity view.
       \Drupal::entityTypeManager()->getViewBuilder($referencing_entity->getEntityTypeId())->view($referencing_entity, 'default');
 
       // Verify the un-accessible item still exists.
-      $this->assertEquals($referencing_entity->{$field_name}->target_id, $this->referencedEntity->id(), (string) new FormattableMarkup('The un-accessible item still exists after @name formatter was executed.', array('@name' => $name)));
+      $this->assertEquals($referencing_entity->{$field_name}->target_id, $this->referencedEntity->id(), (string) new FormattableMarkup('The un-accessible item still exists after @name formatter was executed.', ['@name' => $name]));
     }
   }
 
@@ -212,7 +213,16 @@ class DynamicEntityReferenceFormatterTest extends EntityKernelTestBase {
     /** @var \Drupal\Core\Render\RendererInterface $renderer */
     $renderer = $this->container->get('renderer');
     $formatter = 'dynamic_entity_reference_entity_view';
-    $build = $this->buildRenderArray([$this->referencedEntity, $this->unsavedReferencedEntity], $formatter);
+    $build = $this->buildRenderArray([$this->referencedEntity, $this->unsavedReferencedEntity], $formatter, [
+      $this->referencedEntity->getEntityTypeId() => [
+        'view_mode' => 'default',
+        'link' => FALSE,
+      ],
+      $this->unsavedReferencedEntity->getEntityTypeId() => [
+        'view_mode' => 'default',
+        'link' => FALSE,
+      ],
+    ]);
 
     // Test the first field item.
     $expected_rendered_name_field_1 = '
@@ -228,11 +238,21 @@ class DynamicEntityReferenceFormatterTest extends EntityKernelTestBase {
     $this->assertEquals($build[0]['#markup'], 'default | ' . $this->referencedEntity->label() . $expected_rendered_name_field_1 . $expected_rendered_body_field_1, sprintf('The markup returned by the %s formatter is correct for an item with a saved entity.', $formatter));
     $expected_cache_tags = Cache::mergeTags(\Drupal::entityTypeManager()->getViewBuilder($this->entityType)->getCacheTags(), $this->referencedEntity->getCacheTags());
     $expected_cache_tags = Cache::mergeTags($expected_cache_tags, FilterFormat::load('full_html')->getCacheTags());
-    $this->assertEquals($build[0]['#cache']['tags'], $expected_cache_tags, (string) new FormattableMarkup('The @formatter formatter has the expected cache tags.', array('@formatter' => $formatter)));
+    $this->assertEquals($build[0]['#cache']['tags'], $expected_cache_tags, (string) new FormattableMarkup('The @formatter formatter has the expected cache tags.', ['@formatter' => $formatter]));
 
     // Test the second field item.
+    $expected_rendered_name_field_2 = '
+            <div class="field field--name-name field--type-string field--label-hidden field__item">' . $this->unsavedReferencedEntity->label() . '</div>
+      ';
+    $expected_rendered_body_field_2 = '
+  <div class="clearfix text-formatted field field--name-body field--type-text field--label-above">
+    <div class="field__label">Body</div>
+              <div class="field__item"><p>Hello, unsaved world!</p></div>
+          </div>
+';
+
     $renderer->renderRoot($build[1]);
-    $this->assertEquals($build[1]['#markup'], $this->unsavedReferencedEntity->label(), sprintf('The markup returned by the %s formatter is correct for an item with a unsaved entity.', $formatter));
+    $this->assertEquals($build[1]['#markup'], 'default | ' . $this->unsavedReferencedEntity->label() . $expected_rendered_name_field_2 . $expected_rendered_body_field_2, sprintf('The markup returned by the %s formatter is correct for an item with a unsaved entity.', $formatter));
   }
 
   /**
@@ -254,37 +274,37 @@ class DynamicEntityReferenceFormatterTest extends EntityKernelTestBase {
     ];
     $this->assertEquals($build['#cache'], $expected_field_cacheability, 'The field render array contains the entity access cacheability metadata');
 
-    $expected_item_1 = array(
+    $expected_item_1 = [
       '#type' => 'link',
       '#title' => $this->referencedEntity->label(),
       '#url' => $this->referencedEntity->toUrl(),
       '#options' => $this->referencedEntity->toUrl()->getOptions(),
-      '#cache' => array(
+      '#cache' => [
         'contexts' => [
           'user.permissions',
         ],
         'tags' => $this->referencedEntity->getCacheTags(),
-      ),
-    );
+      ],
+    ];
     $this->assertEquals($renderer->renderRoot($build[0]), $renderer->renderRoot($expected_item_1), sprintf('The markup returned by the %s formatter is correct for an item with a saved entity.', $formatter));
     $this->assertEquals(CacheableMetadata::createFromRenderArray($build[0]), CacheableMetadata::createFromRenderArray($expected_item_1));
 
     // The second referenced entity is "autocreated", therefore not saved and
     // lacking any URL info.
-    $expected_item_2 = array(
+    $expected_item_2 = [
       '#plain_text' => $this->unsavedReferencedEntity->label(),
-      '#cache' => array(
+      '#cache' => [
         'contexts' => [
           'user.permissions',
         ],
         'tags' => $this->unsavedReferencedEntity->getCacheTags(),
         'max-age' => Cache::PERMANENT,
-      ),
-    );
+      ],
+    ];
     $this->assertEquals($build[1], $expected_item_2, sprintf('The render array returned by the %s formatter is correct for an item with a unsaved entity.', $formatter));
 
     // Test with the 'link' setting set to FALSE.
-    $build = $this->buildRenderArray([$this->referencedEntity, $this->unsavedReferencedEntity], $formatter, array('link' => FALSE));
+    $build = $this->buildRenderArray([$this->referencedEntity, $this->unsavedReferencedEntity], $formatter, ['link' => FALSE]);
     $this->assertEquals($build[0]['#plain_text'], $this->referencedEntity->label(), sprintf('The markup returned by the %s formatter is correct for an item with a saved entity.', $formatter));
     $this->assertEquals($build[1]['#plain_text'], $this->unsavedReferencedEntity->label(), sprintf('The markup returned by the %s formatter is correct for an item with a unsaved entity.', $formatter));
 
@@ -300,7 +320,7 @@ class DynamicEntityReferenceFormatterTest extends EntityKernelTestBase {
     ]);
     $referenced_entity_with_no_link_template->save();
 
-    $build = $this->buildRenderArray([$referenced_entity_with_no_link_template], $formatter, array('link' => TRUE));
+    $build = $this->buildRenderArray([$referenced_entity_with_no_link_template], $formatter, ['link' => TRUE]);
     $this->assertEquals($build[0]['#plain_text'], $referenced_entity_with_no_link_template->label(), sprintf('The markup returned by the %s formatter is correct for an entity type with no valid link template.', $formatter));
   }
 
@@ -320,9 +340,9 @@ class DynamicEntityReferenceFormatterTest extends EntityKernelTestBase {
    * @return array
    *   A render array.
    */
-  protected function buildRenderArray(array $referenced_entities, $formatter, $formatter_options = array()) {
+  protected function buildRenderArray(array $referenced_entities, $formatter, array $formatter_options = []) {
     // Create the entity that will have the entity reference field.
-    $referencing_entity = EntityTest::create(array('name' => $this->randomMachineName()));
+    $referencing_entity = EntityTest::create(['name' => $this->randomMachineName()]);
 
     $items = $referencing_entity->get($this->fieldName);
 
@@ -332,7 +352,7 @@ class DynamicEntityReferenceFormatterTest extends EntityKernelTestBase {
     }
 
     // Build the renderable array for the field.
-    return $items->view(array('type' => $formatter, 'settings' => $formatter_options));
+    return $items->view(['type' => $formatter, 'settings' => $formatter_options]);
   }
 
 }

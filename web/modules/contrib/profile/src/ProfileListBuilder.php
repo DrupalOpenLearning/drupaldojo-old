@@ -104,7 +104,7 @@ class ProfileListBuilder extends EntityListBuilder {
     $options += ($langcode != LanguageInterface::LANGCODE_NOT_SPECIFIED && isset($languages[$langcode]) ? ['language' => $languages[$langcode]] : []);
     $uri->setOptions($options);
     $row['label'] = $entity->toLink();
-    $row['type'] = $entity->getType();
+    $row['type'] = $entity->bundle();
     $row['owner']['data'] = [
       '#theme' => 'username',
       '#account' => $entity->getOwner(),
@@ -126,7 +126,7 @@ class ProfileListBuilder extends EntityListBuilder {
   public function getOperations(EntityInterface $entity) {
     $operations = parent::getOperations($entity);
 
-    if (!$entity->isDefault()) {
+    if ($entity->isActive() && !$entity->isDefault()) {
       $operations['set_default'] = [
         'title' => $this->t('Mark as default'),
         'url' => $entity->toUrl('set-default'),

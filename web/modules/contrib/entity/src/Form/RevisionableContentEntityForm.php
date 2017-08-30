@@ -1,10 +1,5 @@
 <?php
 
-/**
- * @file
- * Contains \Drupal\entity\Form\RevisionableContentEntityForm.
- */
-
 namespace Drupal\entity\Form;
 
 use Drupal\Core\Entity\ContentEntityForm;
@@ -129,7 +124,7 @@ class RevisionableContentEntityForm extends ContentEntityForm {
     $insert = $this->entity->isNew();
     $this->entity->save();
     $context = ['@type' => $this->entity->bundle(), '%info' => $this->entity->label()];
-    $logger = $this->logger($this->entity->id());
+    $logger = $this->logger('content');
     $bundle_entity = $this->getBundleEntity();
     $t_args = ['@type' => $bundle_entity ? $bundle_entity->label() : 'None', '%info' => $this->entity->label()];
 

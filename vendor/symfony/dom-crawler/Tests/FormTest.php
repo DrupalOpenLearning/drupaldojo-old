@@ -11,10 +11,11 @@
 
 namespace Symfony\Component\DomCrawler\Tests;
 
+use PHPUnit\Framework\TestCase;
 use Symfony\Component\DomCrawler\Form;
 use Symfony\Component\DomCrawler\FormFieldRegistry;
 
-class FormTest extends \PHPUnit_Framework_TestCase
+class FormTest extends TestCase
 {
     public static function setUpBeforeClass()
     {
@@ -188,7 +189,8 @@ class FormTest extends \PHPUnit_Framework_TestCase
         $form = $this->createForm('<form>'.$form.'</form>');
         $this->assertEquals(
             $values,
-            array_map(function ($field) {
+            array_map(
+                function ($field) {
                     $class = get_class($field);
 
                     return array(substr($class, strrpos($class, '\\') + 1), $field->getValue());
@@ -317,6 +319,12 @@ class FormTest extends \PHPUnit_Framework_TestCase
 
         $form = $this->createForm('<form method="post"><input type="submit" /></form>', 'patch');
         $this->assertEquals('PATCH', $form->getMethod(), '->getMethod() returns the method defined in the constructor if provided');
+    }
+
+    public function testGetMethodWithOverride()
+    {
+        $form = $this->createForm('<form method="get"><input type="submit" formmethod="post" /></form>');
+        $this->assertEquals('POST', $form->getMethod(), '->getMethod() returns the method attribute value of the form');
     }
 
     public function testGetSetValue()
@@ -524,6 +532,12 @@ class FormTest extends \PHPUnit_Framework_TestCase
     {
         $form = $this->createForm('<form><input type="submit" /></form>', null, 'http://localhost/foo/bar');
         $this->assertEquals('http://localhost/foo/bar', $form->getUri(), '->getUri() returns path if no action defined');
+    }
+
+    public function testGetUriWithActionOverride()
+    {
+        $form = $this->createForm('<form action="/foo"><button type="submit" formaction="/bar" /></form>', null, 'http://localhost/foo/');
+        $this->assertEquals('http://localhost/bar', $form->getUri(), '->getUri() returns absolute URIs');
     }
 
     public function provideGetUriValues()

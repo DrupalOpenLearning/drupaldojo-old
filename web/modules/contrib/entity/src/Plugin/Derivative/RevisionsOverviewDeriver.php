@@ -1,10 +1,5 @@
 <?php
 
-/**
- * @file
- * Contains \Drupal\entity\Plugin\Derivative\RevisionsOverviewDeriver.
- */
-
 namespace Drupal\entity\Plugin\Derivative;
 
 use Drupal\Component\Plugin\Derivative\DeriverBase;

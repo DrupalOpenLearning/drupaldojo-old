@@ -1,10 +1,5 @@
 <?php
 
-/**
- * @file
- * Contains \Drupal\Tests\entity\Functional\DeleteMultipleFormTest.
- */
-
 namespace Drupal\Tests\entity\Functional;
 
 use Drupal\entity_module_test\Entity\EnhancedEntity;

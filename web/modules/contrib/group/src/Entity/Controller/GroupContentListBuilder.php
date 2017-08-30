@@ -150,11 +150,11 @@ class GroupContentListBuilder extends EntityListBuilder {
 
     // Add an operation to view the actual entity.
     if ($entity->getEntity()->access('view') && $entity->getEntity()->hasLinkTemplate('canonical')) {
-      $operations['view'] = array(
+      $operations['view'] = [
         'title' => $this->t('View related entity'),
         'weight' => 101,
         'url' => $entity->getEntity()->toUrl('canonical'),
-      );
+      ];
     }
 
     return $operations;

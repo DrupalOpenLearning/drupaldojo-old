@@ -69,42 +69,54 @@ class LinkTypeAjaxTest extends FlagTestBase {
     $this->drupalGet($node_url);
 
     // Confirm the flag link exists.
-    $this->assertLink($this->flag->getFlagShortText());
+    $this->assertLink($this->flag->getShortText('flag'));
 
     // Click the flag link. This ensures that the non-JS fallback works we are
     // redirected to back to the page and the node is flagged.
-    $this->clickLink($this->flag->getFlagShortText());
+    $this->clickLink($this->flag->getShortText('flag'));
     $this->assertUrl($node_url);
-    $this->assertLink($this->flag->getUnflagShortText());
+    $this->assertLink($this->flag->getShortText('unflag'));
 
     // Click the unflag link, repeat the check.
-    $this->clickLink($this->flag->getUnflagShortText());
+    $this->clickLink($this->flag->getShortText('unflag'));
     $this->assertUrl($node_url);
-    $this->assertLink($this->flag->getFlagShortText());
+    $this->assertLink($this->flag->getShortText('flag'));
 
-    // Now also test with an ajax request and that the correct response is
-    // returned. Use the same logic as clickLink() to find the link.
-    $urls = $this->xpath('//a[normalize-space()=:label]', array(':label' => $this->flag->getFlagShortText()));
-    $url_target = $this->getAbsoluteUrl($urls[0]['href']);
-    $ajax_response = $this->drupalGetAjax($url_target);
+    /* Assert that initially a flag action link is displayed within a wrapper.
+     *
+     * NB the xpath template to search for a div with a class member of a
+     * flag :-
+     *
+     * div[contains(concat(' ',normalize-space(@class),' '),' flag ')]
+     */
+    $links = $this->xpath('//div[contains(concat(" ",normalize-space(@class)," ")," flag ")]/a[normalize-space()=:label]', array(':label' => $this->flag->getShortText('flag')));
+    // Use the same logic as clickLink() to get an AJAX response.
+    $link_target = $this->getAbsoluteUrl($links[0]['href']);
+    $flag_response = $this->drupalGetAjax($link_target);
 
-    // Assert that the replace selector is correct.
-    $id_class_position = strpos($urls[0]['class'], ltrim($ajax_response[0]['selector'], '.'));
+    // $flag_response is a AJAX replace command with a string as the data
+    // payload. Convert the payload string into a HTML fragment for inspection.
+    $flag_xml_data = new \SimpleXMLElement($flag_response[0]['data']);
+
+    // The replace command in the AJAX response has a selector.
+    // Assert the selector identifies the div wrapping action link.
+    $id_class_position = strpos($flag_xml_data['class']->__toString(), ltrim($flag_response[0]['selector'], '.'));
     $this->assertTrue($id_class_position !== FALSE);
 
-    // Request the returned URL to ensure that link is valid and has a valid
-    // CSRF token.
-    $xml_data = new \SimpleXMLElement($ajax_response[0]['data']);
-    $this->assertEqual($this->flag->getUnflagShortText(), (string) $xml_data);
+    // Assert the flag response contains a wrapped unflag action link.
+    $this->assertEqual($this->flag->getShortText('unflag'), $flag_xml_data->a->__toString());
 
-    $ajax_response = $this->drupalGetAjax($this->getAbsoluteUrl($xml_data['href']));
+    // From the payload extract a unflag action link href.
+    // Act as if the unflag link has been clicked.
+    $unflag_response = $this->drupalGetAjax($this->getAbsoluteUrl($flag_xml_data->a['href']));
+    $unflag_xml_data = new \SimpleXMLElement($unflag_response[0]['data']);
 
     // Assert that the replace selector is correct.
-    $id_class_position = strpos($xml_data['class'], ltrim($ajax_response[0]['selector'], '.'));
-    $this->assertTrue($id_class_position !== FALSE);
+    $unflag_class_position = strpos($unflag_xml_data['class'], ltrim($unflag_response[0]['selector'], '.'));
+    $this->assertTrue($unflag_class_position !== FALSE);
 
-    $xml_data_unflag = new \SimpleXMLElement($ajax_response[0]['data']);
-    $this->assertEqual($this->flag->getFlagShortText(), (string) $xml_data_unflag);
+    // Assert the unflag response contains a wrapped flag action link.
+    $this->assertEqual($this->flag->getShortText('flag'), $unflag_xml_data->a->__toString());
 
   }
 

@@ -1,22 +1,28 @@
+# How to use
+# quick:start --directory="/path/to/drupal-project/"
+# quick:start --directory="/path/to/drupal-project/" --profile="minimal"
+# quick:start --repository="acquia/lightning-project:^8.1" --directory="/path/to/drupal-project/" --profile="lightning"
+command:
+  name: quick:start
+  description: 'Download, install and serve a new Drupal project'
+vars:
+  repository:
+    - drupal-composer/drupal-project:8.x-dev
+    - acquia/lightning-project
+    - acquia/reservoir-project
+vars:
+  repository: drupal-composer/drupal-project:8.x-dev
+  profile: standard
 commands:
-# Download Drupal
-  - command: site:new
+  # Create Drupal project using DrupalComposer
+  - command: exec
     arguments:
-      directory: 'drupal8.dev'
-    options:
-      latest: 'true'
-# Install Drupal
-  - command: site:install
-    options:
-      langcode: en
-      db-type: sqlite
-      db-file: sites/default/files/.ht.sqlite
-      site-name: 'Drupal 8 Quick Start'
-      site-mail: admin@example.com
-      account-name: admin
-      account-mail: admin@example.com
-      account-pass: admin
+      bin: composer create-project %{{repository}} %{{directory}} --prefer-dist --no-progress --no-interaction
+  # Install Drupal
+  - command: exec
     arguments:
-      profile: standard
-# Start php built-in server
-  - command: server
+      bin: drupal site:install %{{profile}} --root=%{{directory}} --db-type="sqlite" --no-interaction
+  # Start PHP built-in server
+  - command: exec
+    arguments:
+      bin: drupal server --root=%{{directory}}

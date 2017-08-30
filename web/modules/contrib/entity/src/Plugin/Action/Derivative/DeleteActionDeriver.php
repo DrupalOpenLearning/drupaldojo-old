@@ -1,10 +1,5 @@
 <?php
 
-/**
- * @file
- * Contains \Drupal\entity\Plugin\Action\Derivative\DeleteActionDeriver.
- */
-
 namespace Drupal\entity\Plugin\Action\Derivative;
 
 use Drupal\Component\Plugin\Derivative\DeriverBase;

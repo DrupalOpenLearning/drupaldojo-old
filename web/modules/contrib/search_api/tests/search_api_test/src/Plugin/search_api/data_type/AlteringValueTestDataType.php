@@ -27,7 +27,7 @@ class AlteringValueTestDataType extends DataTypePluginBase implements DependentP
    * {@inheritdoc}
    */
   public function calculateDependencies() {
-    return \Drupal::state()->get('search_api_test.data_type.dependencies', array());
+    return \Drupal::state()->get('search_api_test.data_type.dependencies', []);
   }
 
 }

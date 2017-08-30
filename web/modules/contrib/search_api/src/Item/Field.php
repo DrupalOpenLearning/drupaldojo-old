@@ -2,9 +2,10 @@
 
 namespace Drupal\search_api\Item;
 
+use Drupal\Core\TypedData\DataDefinitionInterface;
 use Drupal\search_api\DataType\DataTypePluginManager;
-use Drupal\search_api\Entity\Index;
 use Drupal\search_api\IndexInterface;
+use Drupal\search_api\LoggerTrait;
 use Drupal\search_api\Processor\ConfigurablePropertyInterface;
 use Drupal\search_api\SearchApiException;
 use Drupal\search_api\Utility\Utility;
@@ -13,6 +14,8 @@ use Drupal\search_api\Utility\Utility;
  * Represents a field on a search item that can be indexed.
  */
 class Field implements \IteratorAggregate, FieldInterface {
+
+  use LoggerTrait;
 
   /**
    * The index this field is attached to.
@@ -136,21 +139,21 @@ class Field implements \IteratorAggregate, FieldInterface {
    *
    * @var array
    */
-  protected $configuration = array();
+  protected $configuration = [];
 
   /**
    * This field's dependencies, if any.
    *
    * @var string[][]
    */
-  protected $dependencies = array();
+  protected $dependencies = [];
 
   /**
    * The field's values.
    *
    * @var array
    */
-  protected $values = array();
+  protected $values = [];
 
   /**
    * The original data type of this field.
@@ -254,12 +257,12 @@ class Field implements \IteratorAggregate, FieldInterface {
    * {@inheritdoc}
    */
   public function getSettings() {
-    $settings = array(
+    $settings = [
       'label' => $this->getLabel(),
       'datasource_id' => $this->getDatasourceId(),
       'property_path' => $this->getPropertyPath(),
       'type' => $this->getType(),
-    );
+    ];
     if ($this->getDatasourceId() === NULL) {
       unset($settings['datasource_id']);
     }
@@ -365,7 +368,7 @@ class Field implements \IteratorAggregate, FieldInterface {
         $this->description = $this->description ?: FALSE;
       }
       catch (SearchApiException $e) {
-        watchdog_exception('search_api', $e);
+        $this->logException($e);
       }
     }
     return $this->description ?: NULL;
@@ -392,7 +395,7 @@ class Field implements \IteratorAggregate, FieldInterface {
           $this->labelPrefix = $this->getDatasource()->label();
         }
         catch (SearchApiException $e) {
-          watchdog_exception('search_api', $e);
+          $this->logException($e);
         }
         $this->labelPrefix .= ' » ';
       }
@@ -429,7 +432,9 @@ class Field implements \IteratorAggregate, FieldInterface {
   public function getDataDefinition() {
     if (!isset($this->dataDefinition)) {
       $definitions = $this->index->getPropertyDefinitions($this->getDatasourceId());
-      $definition = Utility::retrieveNestedProperty($definitions, $this->getPropertyPath());
+      $definition = \Drupal::getContainer()
+        ->get('search_api.fields_helper')
+        ->retrieveNestedProperty($definitions, $this->getPropertyPath());
       if (!$definition) {
         $field_label = $this->getLabel();
         $index_label = $this->getIndex()->label();
@@ -438,6 +443,22 @@ class Field implements \IteratorAggregate, FieldInterface {
       $this->dataDefinition = $definition;
     }
     return $this->dataDefinition;
+  }
+
+  /**
+   * Sets the field's data definition.
+   *
+   * This should mainly be used only when creating a new field object. Calling
+   * this on an existing field object might not work as expected.
+   *
+   * @param \Drupal\Core\TypedData\DataDefinitionInterface $data_definition
+   *   The field's new data definition.
+   *
+   * @return $this
+   */
+  public function setDataDefinition(DataDefinitionInterface $data_definition) {
+    $this->dataDefinition = $data_definition;
+    return $this;
   }
 
   /**
@@ -511,7 +532,7 @@ class Field implements \IteratorAggregate, FieldInterface {
         $this->originalType = $this->getDataDefinition()->getDataType();
       }
       catch (SearchApiException $e) {
-        watchdog_exception('search_api', $e);
+        $this->logException($e);
       }
     }
     return $this->originalType;
@@ -615,7 +636,10 @@ class Field implements \IteratorAggregate, FieldInterface {
     $field_id = $this->getFieldIdentifier();
     $type = $this->getType();
     $out = "$label [$field_id]: indexed as type $type";
-    if (Utility::isTextType($type)) {
+    $is_text_type = \Drupal::getContainer()
+      ->get('search_api.data_type_helper')
+      ->isTextType($type);
+    if ($is_text_type) {
       $out .= ' (boost ' . $this->getBoost() . ')';
     }
     if ($this->getValues()) {
@@ -639,7 +663,6 @@ class Field implements \IteratorAggregate, FieldInterface {
     unset($properties['datasource']);
     unset($properties['dataDefinition']);
     unset($properties['dataTypeManager']);
-    unset($properties['values']);
     return array_keys($properties);
   }
 
@@ -650,8 +673,10 @@ class Field implements \IteratorAggregate, FieldInterface {
     // Make sure we have a container to do this. This is important to correctly
     // display test failures.
     if ($this->indexId && \Drupal::hasContainer()) {
-      $this->index = Index::load($this->indexId);
-      unset($this->indexId);
+      $this->index = \Drupal::entityTypeManager()
+        ->getStorage('search_api_index')
+        ->load($this->indexId);
+      $this->indexId = NULL;
     }
   }
 

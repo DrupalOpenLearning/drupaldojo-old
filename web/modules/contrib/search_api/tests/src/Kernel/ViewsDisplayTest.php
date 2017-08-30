@@ -14,7 +14,7 @@ class ViewsDisplayTest extends KernelTestBase {
   /**
    * {@inheritdoc}
    */
-  public static $modules = array(
+  public static $modules = [
     'field',
     'search_api',
     'search_api_db',
@@ -29,7 +29,7 @@ class ViewsDisplayTest extends KernelTestBase {
     'views',
     'rest',
     'serialization',
-  );
+  ];
 
   /**
    * {@inheritdoc}
@@ -53,10 +53,10 @@ class ViewsDisplayTest extends KernelTestBase {
       ->set('tracking_page_size', 100)
       ->save();
 
-    $this->installConfig(array(
+    $this->installConfig([
       'search_api_test_example_content',
       'search_api_test_db',
-    ));
+    ]);
   }
 
   /**
@@ -76,6 +76,27 @@ class ViewsDisplayTest extends KernelTestBase {
       ->get('plugin.manager.search_api.display')
       ->getDefinitions();
     $this->assertArrayHasKey('views_page:search_api_test_view__page_1', $displays);
+  }
+
+  /**
+   * Tests the dependency information on the display.
+   */
+  public function testDependencyInfo() {
+    $this->installConfig('search_api_test_views');
+
+    /** @var \Drupal\search_api\Display\DisplayInterface $display */
+    $display = $this->container
+      ->get('plugin.manager.search_api.display')
+      ->createInstance('views_page:search_api_test_view__page_1');
+
+    $this->assertEquals('views_page:search_api_test_view__page_1', $display->getPluginId());
+
+    $dependencies = $display->calculateDependencies();
+    $this->assertArrayHasKey('module', $dependencies);
+    $this->assertArrayHasKey('config', $dependencies);
+    $this->assertContains('search_api', $dependencies['module']);
+    $this->assertContains('search_api.index.database_search_index', $dependencies['config']);
+    $this->assertContains('views.view.search_api_test_view', $dependencies['config']);
   }
 
 }

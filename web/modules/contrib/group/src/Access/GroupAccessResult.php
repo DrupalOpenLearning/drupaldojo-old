@@ -56,7 +56,7 @@ abstract class GroupAccessResult extends AccessResult {
     if ($conjunction == 'AND' && !empty($permissions)) {
       $access = TRUE;
       foreach ($permissions as $permission) {
-        if (!$permission_access = $group->hasPermission($permission, $account)) {
+        if (!$group->hasPermission($permission, $account)) {
           $access = FALSE;
           break;
         }
@@ -64,7 +64,7 @@ abstract class GroupAccessResult extends AccessResult {
     }
     else {
       foreach ($permissions as $permission) {
-        if ($permission_access = $group->hasPermission($permission, $account)) {
+        if ($group->hasPermission($permission, $account)) {
           $access = TRUE;
           break;
         }

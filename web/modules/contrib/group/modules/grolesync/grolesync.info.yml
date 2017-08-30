@@ -1,15 +1,12 @@
-name: 'Group Role Sync'
-description: 'Allows you to synchronize global roles to special ''outsider'' group roles.'
-package: 'Group'
+name: 'Group role sync'
+description: 'THIS IS NOW PART OF THE MAIN MODULE. Will be removed by 8.x-1.0!'
+package: 'Group (Obsolete)'
 type: 'module'
 # version: 1.0
 # core: '8.x'
-dependencies:
-  - 'user'
-  - 'group'
 
-# Information added by Drupal.org packaging script on 2016-09-24
-version: '8.x-1.0-beta4'
+# Information added by Drupal.org packaging script on 2017-06-06
+version: '8.x-1.0-rc1'
 core: '8.x'
 project: 'group'
-datestamp: 1474722242
+datestamp: 1496752448

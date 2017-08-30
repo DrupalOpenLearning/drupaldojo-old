@@ -5,6 +5,12 @@ name: Default
 machine_name: default
 description: ''
 assignments:
+  alter:
+    core: true
+    uuid: true
+    user_permissions: true
+    enabled: true
+    weight: 0
   base:
     types:
       config:

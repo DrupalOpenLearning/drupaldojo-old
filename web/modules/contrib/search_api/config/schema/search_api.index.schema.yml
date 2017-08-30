@@ -53,18 +53,24 @@ search_api.index.*:
           dependencies:
             type: config_dependencies
             label: 'The field''s dependencies'
+    datasource_settings:
+      type: sequence
+      label: 'Datasource settings'
+      sequence:
+        type: plugin.plugin_configuration.search_api_datasource.[%key]
+        label: 'The configuration for a single datasource'
     processor_settings:
       type: sequence
       label: 'Processor settings'
       sequence:
-        type: mapping
-        label: 'A processor'
-        mapping:
-          plugin_id:
-            type: string
-            label: 'The plugin ID of the processor'
-          settings:
-            type: plugin.plugin_configuration.search_api_processor.[%parent.plugin_id]
+        type: plugin.plugin_configuration.search_api_processor.[%key]
+        label: 'The configuration for a single processor'
+    tracker_settings:
+      type: sequence
+      label: 'Tracker settings'
+      sequence:
+        type: plugin.plugin_configuration.search_api_tracker.[%key]
+        label: 'The configuration for the tracker'
     options:
       type: mapping
       label: 'Options'
@@ -75,30 +81,6 @@ search_api.index.*:
         index_directly:
           type: boolean
           label: 'Index items immediately'
-    datasource_settings:
-      type: sequence
-      label: 'Datasource settings'
-      sequence:
-        type: mapping
-        label: 'A datasource'
-        mapping:
-          plugin_id:
-            type: string
-            label: 'The plugin ID of the datasource config'
-          settings:
-            type: plugin.plugin_configuration.search_api_datasource.[%parent.plugin_id]
-    tracker_settings:
-      type: sequence
-      label: 'Tracker settings'
-      sequence:
-        type: mapping
-        label: 'A tracker'
-        mapping:
-          plugin_id:
-            type: string
-            label: 'The plugin ID of the tracker config'
-          settings:
-            type: plugin.plugin_configuration.search_api_tracker.[%parent.plugin_id]
     server:
       type: string
       label: 'Server ID'

@@ -4,6 +4,7 @@ namespace Drupal\flag\Form;
 
 use Drupal\flag\Form\FlagConfirmFormBase;
 use Drupal\Core\Form\FormStateInterface;
+use Drupal\flag\Plugin\ActionLink\FormEntryInterface;
 
 /**
  * Provides the confirm form page for flagging an entity.
@@ -23,21 +24,23 @@ class FlagConfirmForm extends FlagConfirmFormBase {
    * {@inheritdoc}
    */
   public function getQuestion() {
-    return $this->flag->getLinkTypePlugin()->getFlagQuestion();
+    $link_plugin = $this->flag->getLinkTypePlugin();
+    return $link_plugin instanceof FormEntryInterface ? $link_plugin->getFlagQuestion() : $this->t('Flag this content');
   }
 
   /**
    * {@inheritdoc}
    */
   public function getDescription() {
-    return $this->flag->getFlagLongText();
+    return $this->flag->getLongText('flag');
   }
 
   /**
    * {@inheritdoc}
    */
   public function getConfirmText() {
-    return $this->t('Flag');
+    $link_plugin = $this->flag->getLinkTypePlugin();
+    return $link_plugin instanceof FormEntryInterface ? $link_plugin->getCreateButtonText() : $this->t('Create flagging');
   }
 
   /**

@@ -14,9 +14,9 @@ class ProfileTypeListBuilder extends ConfigEntityListBuilder {
    * {@inheritdoc}
    */
   public function buildHeader() {
-    $header['type'] = t('Profile type');
-    $header['registration'] = t('Registration');
-    $header['multiple'] = t('Allow multiple profiles');
+    $header['type'] = $this->t('Profile type');
+    $header['registration'] = $this->t('Registration');
+    $header['multiple'] = $this->t('Allow multiple profiles');
     return $header + parent::buildHeader();
   }
 
@@ -25,8 +25,8 @@ class ProfileTypeListBuilder extends ConfigEntityListBuilder {
    */
   public function buildRow(EntityInterface $entity) {
     $row['type'] = $entity->toLink(NULL, 'edit-form');
-    $row['registration'] = $entity->getRegistration() ? t('Yes') : t('No');
-    $row['multiple'] = $entity->getMultiple() ? t('Yes') : t('No');
+    $row['registration'] = $entity->getRegistration() ? $this->t('Yes') : $this->t('No');
+    $row['multiple'] = $entity->getMultiple() ? $this->t('Yes') : $this->t('No');
     return $row + parent::buildRow($entity);
   }
 
@@ -39,14 +39,14 @@ class ProfileTypeListBuilder extends ConfigEntityListBuilder {
     // which have the weights 15, 20, 25.
     if (isset($operations['edit'])) {
       $operations['edit'] = [
-        'title' => t('Edit'),
+        'title' => $this->t('Edit'),
         'weight' => 30,
         'url' => $entity->toUrl('edit-form'),
       ];
     }
     if (isset($operations['delete'])) {
       $operations['delete'] = [
-        'title' => t('Delete'),
+        'title' => $this->t('Delete'),
         'weight' => 35,
         'url' => $entity->toUrl('delete-form'),
       ];

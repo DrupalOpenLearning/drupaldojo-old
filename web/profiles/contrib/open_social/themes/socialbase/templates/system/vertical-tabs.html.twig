@@ -12,6 +12,7 @@
  * @ingroup themeable
  */
 #}
-<div{{ attributes.setAttribute('data-vertical-tabs-panes', TRUE).addClass('card-body') }}>
+{{ attach_library('socialbase/nav-tabs')}}
+<div{{ attributes.setAttribute('data-vertical-tabs-panes', TRUE).addClass('card__block') }}>
   {{ children }}
 </div>

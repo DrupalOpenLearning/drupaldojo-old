@@ -78,37 +78,37 @@ class FlagPermissionsTest extends FlagTestBase {
     // Check the full flag permission user can flag...
     $this->drupalLogin($this->fullFlagUser);
     $this->drupalGet('node/' . $this->node->id());
-    $this->assertLink($this->flag->getFlagShortText());
-    $this->clickLink($this->flag->getFlagShortText());
+    $this->assertLink($this->flag->getShortText('flag'));
+    $this->clickLink($this->flag->getShortText('flag'));
     $this->assertResponse(200);
 
     // ...and also unflag.
     $this->drupalGet('node/' . $this->node->id());
     $this->assertResponse(200);
-    $this->assertLink($this->flag->getUnflagShortText());
+    $this->assertLink($this->flag->getShortText('unflag'));
 
     // Check the flag only user can flag...
     $this->drupalLogin($this->flagOnlyUser);
     $this->drupalGet('node/' . $this->node->id());
-    $this->assertLink($this->flag->getFlagShortText());
-    $this->clickLink($this->flag->getFlagShortText());
+    $this->assertLink($this->flag->getShortText('flag'));
+    $this->clickLink($this->flag->getShortText('flag'));
     $this->assertResponse(200);
 
     // ...but not unflag.
     $this->drupalGet('node/' . $this->node->id());
     $this->assertResponse(200);
-    $this->assertNoLink($this->flag->getFlagShortText());
-    $this->assertNoLink($this->flag->getUnflagShortText());
+    $this->assertNoLink($this->flag->getShortText('flag'));
+    $this->assertNoLink($this->flag->getShortText('unflag'));
 
     // Check an unprivileged authenticated user.
     $this->drupalLogin($this->authUser);
     $this->drupalGet('node/' . $this->node->id());
-    $this->assertNoLink($this->flag->getFlagShortText());
+    $this->assertNoLink($this->flag->getShortText('flag'));
 
     // Check the anonymous user.
     $this->drupalLogout();
     $this->drupalGet('node/' . $this->node->id());
-    $this->assertNoLink($this->flag->getFlagShortText());
+    $this->assertNoLink($this->flag->getShortText('flag'));
   }
 
 }

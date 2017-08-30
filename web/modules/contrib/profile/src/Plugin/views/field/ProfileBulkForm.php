@@ -15,7 +15,7 @@ class ProfileBulkForm extends BulkForm {
    * {@inheritdoc}
    */
   protected function emptySelectedMessage() {
-    return t('No profile selected.');
+    return $this->t('No profile selected.');
   }
 
 }

@@ -41,4 +41,18 @@ class SearchApiDisplay extends Plugin {
    */
   public $description;
 
+  /**
+   * The ID of the display's index.
+   *
+   * @var string
+   */
+  public $index;
+
+  /**
+   * The path to the search display, if any.
+   *
+   * @var string|null
+   */
+  public $path;
+
 }

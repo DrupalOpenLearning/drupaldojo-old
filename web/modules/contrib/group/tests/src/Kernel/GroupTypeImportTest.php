@@ -2,61 +2,18 @@
 
 namespace Drupal\Tests\group\Kernel;
 
-use Drupal\KernelTests\Core\Entity\EntityKernelTestBase;
-
 /**
  * Tests the import or synchronization of group type entities.
  *
+ * @coversDefaultClass \Drupal\group\Entity\GroupType
  * @group group
  */
-class GroupTypeImportTest extends EntityKernelTestBase {
-
-  /**
-   * Modules to enable.
-   *
-   * @var array
-   */
-  public static $modules = ['group', 'group_test_config'];
-
-  /**
-   * The entity type manager service.
-   *
-   * @var \Drupal\Core\Entity\EntityTypeManagerInterface
-   */
-  protected $entityTypeManager;
-
-  /**
-   * The content enabler plugin manager.
-   *
-   * @var \Drupal\group\Plugin\GroupContentEnablerManagerInterface
-   */
-  protected $pluginManager;
-
-  /**
-   * A dummy group type.
-   *
-   * @var \Drupal\group\Entity\GroupTypeInterface
-   */
-  protected $groupType;
-
-  /**
-   * {@inheritdoc}
-   */
-  protected function setUp() {
-    parent::setUp();
-
-    $this->entityTypeManager = $this->container->get('entity_type.manager');
-    $this->pluginManager = $this->container->get('plugin.manager.group_content_enabler');
-
-    $this->installConfig(['group']);
-    $this->installEntitySchema('group');
-    $this->installEntitySchema('group_type');
-    $this->installEntitySchema('group_content');
-    $this->installEntitySchema('group_content_type');
-  }
+class GroupTypeImportTest extends GroupKernelTestBase {
 
   /**
    * Tests special behavior during group type import.
+   *
+   * @covers ::postSave
    */
   public function testImport() {
     // Simulate config data to import.

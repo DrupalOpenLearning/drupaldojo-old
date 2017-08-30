@@ -29,7 +29,7 @@ class UserFlagTypeTest extends FlagTestBase {
       'flag_entity_type' => 'entity:user',
     ], $this->t('Continue'));
 
-    $this->assertText($this->t('Users may flag themselves'));
+    $this->assertText($this->t('Permissions for users to flag themselves.'));
 
     $this->assertText($this->t('Display link on user profile page'));
   }
@@ -38,8 +38,6 @@ class UserFlagTypeTest extends FlagTestBase {
    * Tests that user can flag themselves when and only when appropiate.
    */
   public function testFlagSelf() {
-    // Login as the admin user.
-    $this->drupalLogin($this->adminUser);
 
     $flag = $this->createFlagFromArray([
       'link_type' => 'reload',
@@ -47,26 +45,46 @@ class UserFlagTypeTest extends FlagTestBase {
       'bundles' => array_keys(\Drupal::service('entity_type.bundle.info')->getBundleInfo('user')),
       'flag_type' => $this->getFlagType('user'),
       'show_on_profile' => TRUE,
-      ]);
-    $this->grantFlagPermissions($flag);
+      'flagTypeConfig' => [
+        // Create extra permissions to self flag.
+        'extra_permissions' => ['owner'],
+       ],
+    ]);
 
+     // User can flag their own work.
+    $user = $this->createUser([
+      'flag ' . $flag->id() . ' own user account',
+      'unflag ' . $flag->id() . ' own user account',
+      'administer flags',
+      'administer flagging display',
+      'administer flagging fields',
+      'administer node display',
+      'administer nodes',
+    ]);
+
+    $this->drupalLogin($user);
+
+    // Check the state of the extra permssions checkbox.
     $this->drupalGet('admin/structure/flags/manage/' . $flag->id());
-    $this->assertFieldChecked('edit-access-uid');
+    $this->assertFieldChecked('edit-extra-permissions-owner');
 
-    $this->drupalGet('user/' . $this->adminUser->id());
+    // Assert flag appears on the profile page.
+    $this->drupalGet('user/' . $user->id());
+    $this->assertLink($flag->getShortText('flag'));
 
-    $this->assertLink($flag->getFlagShortText());
-
+    // Uncheck extra permssions.
     $edit = [
-      'access_uid' => FALSE,
+      'extra_permissions[owner]' => FALSE,
     ];
     $this->drupalPostForm('admin/structure/flags/manage/' . $flag->id(), $edit, $this->t('Save Flag'));
 
+    // Confirm extra permissions is unchecked.
     $this->drupalGet('admin/structure/flags/manage/' . $flag->id());
-    $this->assertNoFieldChecked('edit-access-uid');
+    $this->assertNoFieldChecked('edit-extra-permissions-owner');
 
-    $this->drupalGet('user/' . $this->adminUser->id());
-    $this->assertNoLink($flag->getFlagShortText());
+    // Assert the flag disapears from the profile page.
+    $this->drupalGet('user/' . $user->id());
+    $this->assertNoLink($flag->getShortText('flag'));
   }
 
 }

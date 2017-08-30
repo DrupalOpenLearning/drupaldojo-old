@@ -98,20 +98,20 @@ foreach ($foundCountries as $countryCode) {
 
     $addressFormats[$countryCode] = $addressFormat;
 }
+
+echo "Writing the final definitions to disk.\n";
+// Subdivisions are stored in JSON.
+foreach ($groupedSubdivisions as $parentId => $subdivisions) {
+    file_put_json('subdivision/' . $parentId . '.json', $subdivisions);
+}
 // Generate the subdivision depths for each country.
 $depths = generate_subdivision_depths($foundCountries);
 foreach ($depths as $countryCode => $depth) {
     $addressFormats[$countryCode]['subdivision_depth'] = $depth;
 }
-
-echo "Writing the final definitions to disk.\n";
 // Address formats are stored in PHP, then manually transferred to
 // AddressFormatRepository.
 file_put_php('address_formats.php', $addressFormats);
-// Subdivisions are stored in JSON.
-foreach ($groupedSubdivisions as $parentId => $subdivisions) {
-    file_put_json('subdivision/' . $parentId . '.json', $subdivisions);
-}
 
 echo "Done.\n";
 
@@ -233,7 +233,7 @@ function generate_subdivisions($countryCode, array $parents, $subdivisionPaths, 
             unset($subdivisions[$group]['locale']);
         }
         // Generate the subdivision.
-        $subdivisions[$group]['subdivisions'][$code] = create_subdivision_definition($countryCode, $definition);
+        $subdivisions[$group]['subdivisions'][$code] = create_subdivision_definition($countryCode, $code, $definition);
 
         if (isset($definition['sub_keys'])) {
             $subdivisions[$group]['subdivisions'][$code]['has_children'] = true;
@@ -378,18 +378,18 @@ function create_address_format_definition($countryCode, $rawDefinition)
 /**
  * Creates a subdivision definition from Google's raw definition.
  */
-function create_subdivision_definition($countryCode, $rawDefinition)
+function create_subdivision_definition($countryCode, $code, $rawDefinition)
 {
     $subdivision = [];
     if (isset($rawDefinition['lname'])) {
-        // The lname was already chosen for the code in the parent function,
-        // don't need to store it as the name cause SubdivisionRepository
-        // optimizes for that.
         $subdivision['local_code'] = $rawDefinition['key'];
         if (isset($rawDefinition['name']) && $rawDefinition['key'] != $rawDefinition['name']) {
             $subdivision['local_name'] = $rawDefinition['name'];
         }
-    } elseif (isset($rawDefinition['name'])) {
+        if ($code != $rawDefinition['lname']) {
+            $subdivision['name'] = $rawDefinition['lname'];
+        }
+    } elseif (isset($rawDefinition['name']) && $rawDefinition['key'] != $rawDefinition['name']) {
         $subdivision['name'] = $rawDefinition['name'];
     }
     if (isset($rawDefinition['isoid'])) {

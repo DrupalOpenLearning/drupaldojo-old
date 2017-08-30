@@ -26,20 +26,19 @@ class SearchApiDatasource extends Plugin {
   /**
    * The human-readable name of the datasource plugin.
    *
-   * @ingroup plugin_translatable
-   *
    * @var \Drupal\Core\Annotation\Translation
+   *
+   * @ingroup plugin_translatable
    */
   public $label;
 
   /**
    * The description of the datasource.
    *
-   * @ingroup plugin_translatable
-   *
    * @var \Drupal\Core\Annotation\Translation
+   *
+   * @ingroup plugin_translatable
    */
-  // @todo Use or remove. See #2681273.
   public $description;
 
 }

@@ -3,7 +3,6 @@
 namespace Drupal\search_api\Plugin\views\argument;
 
 use Drupal\Core\Form\FormStateInterface;
-use Drupal\search_api\UncacheableDependencyTrait;
 use Drupal\views\Plugin\views\argument\ArgumentPluginBase;
 
 /**
@@ -14,8 +13,6 @@ use Drupal\views\Plugin\views\argument\ArgumentPluginBase;
  * @ViewsArgument("search_api")
  */
 class SearchApiStandard extends ArgumentPluginBase {
-
-  use UncacheableDependencyTrait;
 
   /**
    * The Views query object used by this contextual filter.
@@ -54,8 +51,8 @@ class SearchApiStandard extends ArgumentPluginBase {
   public function defineOptions() {
     $options = parent::defineOptions();
 
-    $options['break_phrase'] = array('default' => FALSE);
-    $options['not'] = array('default' => FALSE);
+    $options['break_phrase'] = ['default' => FALSE];
+    $options['not'] = ['default' => FALSE];
 
     return $options;
   }
@@ -68,22 +65,101 @@ class SearchApiStandard extends ArgumentPluginBase {
 
     if (empty($this->definition['disable_break_phrase'])) {
       // Allow passing multiple values.
-      $form['break_phrase'] = array(
+      $form['break_phrase'] = [
         '#type' => 'checkbox',
         '#title' => $this->t('Allow multiple values'),
         '#description' => $this->t('If selected, users can enter multiple values in the form of 1+2+3 (for OR) or 1,2,3 (for AND).'),
         '#default_value' => !empty($this->options['break_phrase']),
         '#group' => 'options][more',
-      );
+      ];
     }
 
-    $form['not'] = array(
+    $form['not'] = [
       '#type' => 'checkbox',
       '#title' => $this->t('Exclude'),
       '#description' => $this->t('If selected, the values entered for the filter will be excluded rather than limiting the view to those values.'),
       '#default_value' => !empty($this->options['not']),
       '#group' => 'options][more',
-    );
+    ];
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function validateOptionsForm(&$form, FormStateInterface $form_state) {
+    $option_values = &$form_state->getValue('options');
+    if (empty($option_values)) {
+      return;
+    }
+
+    // Let the plugins do validation.
+    if (!empty($option_values['default_argument_type'])) {
+      $default_id = $option_values['default_argument_type'];
+      $plugin = $this->getPlugin('argument_default', $default_id);
+      if ($plugin) {
+        $plugin->validateOptionsForm($form['argument_default'][$default_id], $form_state, $option_values['argument_default'][$default_id]);
+      }
+    }
+
+    if (!empty($option_values['validate']['type'])) {
+      $sanitized_id = $option_values['validate']['type'];
+      // Correct ID for js sanitized version.
+      $validate_id = static::decodeValidatorId($sanitized_id);
+      $plugin = $this->getPlugin('argument_validator', $validate_id);
+      if ($plugin) {
+        $plugin->validateOptionsForm($form['validate']['options'][$sanitized_id], $form_state, $option_values['validate']['options'][$sanitized_id]);
+      }
+    }
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function submitOptionsForm(&$form, FormStateInterface $form_state) {
+    $option_values = &$form_state->getValue('options');
+    if (empty($option_values)) {
+      return;
+    }
+
+    // Let the plugins make submit modifications if necessary.
+    if (!empty($option_values['default_argument_type'])) {
+      $default_id = $option_values['default_argument_type'];
+      $plugin = $this->getPlugin('argument_default', $default_id);
+      if ($plugin) {
+        $options = &$option_values['argument_default'][$default_id];
+        $plugin->submitOptionsForm($form['argument_default'][$default_id], $form_state, $options);
+        // Copy the now submitted options to their final resting place so they get saved.
+        $option_values['default_argument_options'] = $options;
+      }
+    }
+
+    // If the 'Specify validation criteria' checkbox is not checked, reset the
+    // validation options.
+    if (empty($option_values['specify_validation'])) {
+      $option_values['validate']['type'] = 'none';
+      // We need to keep the empty array of options for the 'None' plugin as
+      // it will be needed later.
+      $option_values['validate']['options'] = ['none' => []];
+      $option_values['validate']['fail'] = 'not found';
+    }
+
+    if (!empty($option_values['validate']['type'])) {
+      $sanitized_id = $option_values['validate']['type'];
+      // Correct ID for js sanitized version.
+      $option_values['validate']['type'] = $validate_id = static::decodeValidatorId($sanitized_id);
+      $plugin = $this->getPlugin('argument_validator', $validate_id);
+      if ($plugin) {
+        $options = &$option_values['validate']['options'][$sanitized_id];
+        $plugin->submitOptionsForm($form['validate']['options'][$sanitized_id], $form_state, $options);
+        // Copy the now submitted options to their final resting place so they get saved.
+        $option_values['validate_options'] = $options;
+      }
+    }
+
+    // Clear out the content of title if it's not enabled.
+    if (empty($option_values['title_enable'])) {
+      $option_values['title'] = '';
+    }
   }
 
   /**
@@ -124,7 +200,7 @@ class SearchApiStandard extends ArgumentPluginBase {
       $this->unpackArgumentValue($force_int);
     }
     else {
-      $this->value = array($this->argument);
+      $this->value = [$this->argument];
       $this->operator = 'and';
     }
 

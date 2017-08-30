@@ -1,10 +1,5 @@
 <?php
 
-/**
- * @file
- * Contains \Drupal\Tests\entity\Kernel\DeleteActionTest.
- */
-
 namespace Drupal\Tests\entity\Kernel;
 
 use Drupal\entity\Plugin\Action\DeleteAction;

@@ -2,7 +2,11 @@
 
 Initialize Symfony Console commands from annotated command class methods.
 
-[![Travis CI](https://travis-ci.org/consolidation/annotated-command.svg?branch=master)](https://travis-ci.org/consolidation/annotated-command) [![Scrutinizer Code Quality](https://scrutinizer-ci.com/g/consolidation/annotated-command/badges/quality-score.png?b=master)](https://scrutinizer-ci.com/g/consolidation/annotated-command/?branch=master) [![Coverage Status](https://coveralls.io/repos/github/consolidation/annotated-command/badge.svg?branch=master)](https://coveralls.io/github/consolidation/annotated-command?branch=master) [![License](https://poser.pugx.org/consolidation/annotated-command/license)](https://packagist.org/packages/consolidation/annotated-command)
+[![Travis CI](https://travis-ci.org/consolidation/annotated-command.svg?branch=master)](https://travis-ci.org/consolidation/annotated-command)
+[![Windows CI](https://ci.appveyor.com/api/projects/status/c2c4lcf43ux4c30p?svg=true)](https://ci.appveyor.com/project/greg-1-anderson/annotated-command)
+[![Scrutinizer Code Quality](https://scrutinizer-ci.com/g/consolidation/annotated-command/badges/quality-score.png?b=master)](https://scrutinizer-ci.com/g/consolidation/annotated-command/?branch=master)
+[![Coverage Status](https://coveralls.io/repos/github/consolidation/annotated-command/badge.svg?branch=master)](https://coveralls.io/github/consolidation/annotated-command?branch=master) 
+[![License](https://poser.pugx.org/consolidation/annotated-command/license)](https://packagist.org/packages/consolidation/annotated-command)
 
 ## Component Status
 
@@ -47,6 +51,7 @@ class MyCommandClass
      * @command my:cat
      * @param integer $one The first parameter.
      * @param integer $two The other parameter.
+     * @option arr An option that takes multiple values.
      * @option flip Whether or not the second parameter should come first in the result.
      * @aliases c
      * @usage bet alpha --flip
@@ -61,6 +66,18 @@ class MyCommandClass
     }
 }
 ``` 
+## Option Default Values
+
+The `$options` array must be an associative array whose key is the name of the option, and whose value is one of:
+
+- The boolean value `false`, which indicates that the option takes no value.
+- A **string** containing the default value for options that may be provided a value, but are not required to.
+- NULL for options that may be provided an optional value, but that have no default when a value is not provided.
+- The special value InputOption::VALUE_REQUIRED, which indicates that the user must provide a value for the option whenever it is used.
+- An empty array, which indicates that the option may appear multiple times on the command line.
+
+No other values should be used for the default value. For example, `$options = ['a' => 1]` is **incorrect**; instead, use `$options = ['a' => '1']`. Similarly, `$options = ['a' => true]` is unsupported, or at least not useful, as this would indicate that the value of `--a` was always `true`, whether or not it appeared on the command line.
+
 ## Hooks
 
 Commandfiles may provide hooks in addition to commands. A commandfile method that contains a @hook annotation is registered as a hook instead of a command.  The format of the hook annotation is:
@@ -83,6 +100,8 @@ There are ten types of hooks supported:
 - Alter
 - Status
 - Extract
+- On-event
+- Replace Command
 
 Most of these also have "pre" and "post" varieties, to give more flexibility vis-a-vis hook ordering (and for consistency). Note that many validate, process and alter hooks may run, but the first status or extract hook that successfully returns a result will halt processing of further hooks of the same type.
 
@@ -145,6 +164,59 @@ The extract hook ([ExtractOutputInterface](src/Hooks/ExtractOutputInterface.php)
 
 If no extract hook returns any data, then the result object itself is printed if it is a string; otherwise, no output is emitted (other than any produced by the command itself).
 
+### On-Event hook
+
+Commands can define their own custom events; to do so, they need only implement the CustomEventAwareInterface, and use the CustomEventAwareTrait. Event handlers for each custom event can then be defined using the on-event hook.
+
+A handler using an on-event hook looks something like the following:
+```
+/**
+ * @hook on-event custom-event
+ */
+public function handlerForCustomEvent(/* arbitrary parameters, as defined by custom-event */)
+{
+    // do the needful, return what custom-event expects
+}
+```
+Then, to utilize this in a command:
+```
+class MyCommands implements CustomEventAwareInterface
+{
+    use CustomEventAwareTrait;
+
+    /**
+     * @command my-command
+     */
+    public myCommand($options = [])
+    {
+        $handlers = $this->getCustomEventHandlers('custom-event');
+        // iterate and call $handlers
+    }
+}
+```
+It is up to the command that defines the custom event to declare what the expected parameters for the callback function should be, and what the return value is and how it should be used.
+
+### Replace Command Hook
+
+The replace-command ([ReplaceCommandHookInterface](src/Hooks/ReplaceCommandHookInterface.php)) hook permits you to replace a command's method with another method of your own.
+
+For instance, if you'd like to replace the `foo:bar` command, you could utilize the following code:
+
+```php
+<?php
+class MyReplaceCommandHook  {
+
+  /**
+   * @hook replace-command foo:bar
+   * 
+   * Parameters must match original command method. 
+   */
+  public function myFooBarReplacement($value) {
+    print "Hello $value!";
+  }
+}
+```
+
 ## Output
 
 If a command method returns an integer, it is used as the command exit status code. If the command method returns a string, it is printed.
@@ -159,9 +231,13 @@ The Annotated-Command project is completely agnostic to logging. If a command wi
 
 If you want to use annotations, but still want access to the Symfony Command, e.g. to get a reference to the helpers in order to call some legacy code, you may create an ordinary Symfony Command that extends \Consolidation\AnnotatedCommand\AnnotatedCommand, which is a \Symfony\Component\Console\Command\Command. Omit the configure method, and place your annotations on the `execute()` method.
 
-It is also possible to add InputInterface or OutputInterface parameters to any annotated method of a command file.
+It is also possible to add InputInterface and/or OutputInterface parameters to any annotated method of a command file (the parameters must go before command arguments).
 
 ## API Usage
+
+If you would like to use Annotated Commands to build a commandline tool, it is recommended that you use [Robo as a framework](http://robo.li/framework), as it will set up all of the various command classes for you. If you would like to integrate Annotated Commands into some other framework, see the sections below.
+
+### Set up Command Factory and Instantiate Commands
 
 To use annotated commands in an application, pass an instance of your command class in to AnnotatedCommandFactory::createCommandsFromClass(). The result will be a list of Commands that may be added to your application.
 ```php
@@ -182,6 +258,8 @@ Note that the `setFormatterManager()` operation is optional; omit this if not us
 
 A CommandInfoAltererInterface can be added via AnnotatedCommandFactory::addCommandInfoAlterer(); it will be given the opportunity to adjust every CommandInfo object parsed from a command file prior to the creation of commands.
 
+### Command File Discovery
+
 A discovery class, CommandFileDiscovery, is also provided to help find command files on the filesystem. Usage is as follows:
 ```php
 $discovery = new CommandFileDiscovery();
@@ -198,6 +276,20 @@ If different namespaces are used at different command file paths, change the cal
 $myCommandFiles = $discovery->discover(['\Ns1' => $path1, '\Ns2' => $path2]);
 ```
 As a shortcut for the above, the method `discoverNamespaced()` will take the last directory name of each path, and append it to the base namespace provided. This matches the conventions used by Drupal modules, for example.
+
+### Configuring Output Formatts (e.g. to enable wordwrap)
+
+The Output Formatters project supports automatic formatting of tabular output. In order for wordwrapping to work correctly, the terminal width must be passed in to the Output Formatters handlers via `FormatterOptions::setWidth()`.
+
+In the Annotated Commands project, this is done via dependency injection. If a `PrepareFormatter` object is passed to `CommandProcessor::addPrepareFormatter()`, then it will be given an opportunity to set properties on the `FormatterOptions` when it is created.
+
+A `PrepareTerminalWidthOption` class is provided to use the Symfony Application class to fetch the terminal width, and provide it to the FormatterOptions. It is injected as follows:
+```php
+$terminalWidthOption = new PrepareTerminalWidthOption();
+$terminalWidthOption->setApplication($application);
+$commandFactory->commandProcessor()->addPrepareFormatter($terminalWidthOption);
+```
+To provide greater control over the width used, create your own `PrepareTerminalWidthOption` subclass, and adjust the width as needed.
 
 ## Other Callbacks
 

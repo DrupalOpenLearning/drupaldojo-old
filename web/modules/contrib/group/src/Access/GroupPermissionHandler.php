@@ -268,7 +268,7 @@ class GroupPermissionHandler implements GroupPermissionHandlerInterface {
           ? $permission_b['title']->__toString()
           : $permission_b['title'];
 
-        return $title_a > $title_b;
+        return strip_tags($title_a) > strip_tags($title_b);
       }
       else {
         return $modules[$permission_a['provider']] > $modules[$permission_b['provider']];

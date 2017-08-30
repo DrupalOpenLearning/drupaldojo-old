@@ -21,7 +21,7 @@ interface TaskManagerInterface {
    * @return int
    *   The number of pending tasks matching the conditions.
    */
-  public function getTasksCount(array $conditions = array());
+  public function getTasksCount(array $conditions = []);
 
   /**
    * Adds a new pending task.
@@ -51,7 +51,7 @@ interface TaskManagerInterface {
    * @return \Drupal\search_api\Task\TaskInterface[]
    *   The loaded tasks, keyed by task ID.
    */
-  public function loadTasks(array $conditions = array());
+  public function loadTasks(array $conditions = []);
 
   /**
    * Deletes the task with the given ID.
@@ -70,7 +70,7 @@ interface TaskManagerInterface {
    *   value (or values, for multiple possibilities) that the property should
    *   have. Leave empty to delete all pending tasks.
    */
-  public function deleteTasks(array $conditions = array());
+  public function deleteTasks(array $conditions = []);
 
   /**
    * Executes and deletes the given task.
@@ -98,7 +98,7 @@ interface TaskManagerInterface {
    * @throws \Drupal\search_api\SearchApiException
    *   Thrown if any error occurred while processing the task.
    */
-  public function executeSingleTask(array $conditions = array());
+  public function executeSingleTask(array $conditions = []);
 
   /**
    * Executes all (or some) pending tasks.
@@ -118,7 +118,7 @@ interface TaskManagerInterface {
    * @throws \Drupal\search_api\SearchApiException
    *   Thrown if any error occurred while processing a task.
    */
-  public function executeAllTasks(array $conditions = array(), $limit = NULL);
+  public function executeAllTasks(array $conditions = [], $limit = NULL);
 
   /**
    * Sets a batch for executing all pending tasks.
@@ -128,6 +128,6 @@ interface TaskManagerInterface {
    *   property names mapped to the value (or values, for multiple
    *   possibilities) that the property should have.
    */
-  public function setTasksBatch(array $conditions = array());
+  public function setTasksBatch(array $conditions = []);
 
 }

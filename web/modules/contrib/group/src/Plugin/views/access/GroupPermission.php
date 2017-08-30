@@ -130,7 +130,7 @@ class GroupPermission extends AccessPluginBase implements CacheableDependencyInt
    */
   protected function defineOptions() {
     $options = parent::defineOptions();
-    $options['group_permission'] = array('default' => 'view group');
+    $options['group_permission'] = ['default' => 'view group'];
     return $options;
   }
 
@@ -147,13 +147,13 @@ class GroupPermission extends AccessPluginBase implements CacheableDependencyInt
       $permissions[$display_name][$permission_name] = strip_tags($permission['title']);
     }
 
-    $form['group_permission'] = array(
+    $form['group_permission'] = [
       '#type' => 'select',
       '#options' => $permissions,
       '#title' => $this->t('Group permission'),
       '#default_value' => $this->options['group_permission'],
       '#description' => $this->t('Only users with the selected group permission will be able to access this display.<br /><strong>Warning:</strong> This will only work if there is a {group} parameter in the route. If not, it will always deny access.'),
-    );
+    ];
   }
 
   /**

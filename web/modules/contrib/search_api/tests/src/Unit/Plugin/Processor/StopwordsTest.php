@@ -3,7 +3,6 @@
 namespace Drupal\Tests\search_api\Unit\Plugin\Processor;
 
 use Drupal\search_api\Plugin\search_api\processor\Stopwords;
-use Drupal\search_api\Utility\Utility;
 use Drupal\Tests\UnitTestCase;
 
 /**
@@ -23,7 +22,7 @@ class StopwordsTest extends UnitTestCase {
   protected function setUp() {
     parent::setUp();
     $this->setUpMockContainer();
-    $this->processor = new Stopwords(array(), 'stopwords', array());;
+    $this->processor = new Stopwords([], 'stopwords', []);;
   }
 
   /**
@@ -39,8 +38,8 @@ class StopwordsTest extends UnitTestCase {
    * @dataProvider processDataProvider
    */
   public function testProcess($passed_value, $expected_value, array $stopwords) {
-    $this->processor->setConfiguration(array('stopwords' => $stopwords));
-    $this->invokeMethod('process', array(&$passed_value));
+    $this->processor->setConfiguration(['stopwords' => $stopwords]);
+    $this->invokeMethod('process', [&$passed_value]);
     $this->assertEquals($expected_value, $passed_value);
   }
 
@@ -50,43 +49,43 @@ class StopwordsTest extends UnitTestCase {
    * Processor checks for exact case, and tokenized content.
    */
   public function processDataProvider() {
-    return array(
-      array(
+    return [
+      [
         'or',
         '',
-        array('or'),
-      ),
-      array(
+        ['or'],
+      ],
+      [
         'orb',
         'orb',
-        array('or'),
-      ),
-      array(
+        ['or'],
+      ],
+      [
         'for',
         'for',
-        array('or'),
-      ),
-      array(
+        ['or'],
+      ],
+      [
         'ordor',
         'ordor',
-        array('or'),
-      ),
-      array(
+        ['or'],
+      ],
+      [
         'ÄÖÜÀÁ<>»«û',
         'ÄÖÜÀÁ<>»«û',
-        array('stopword1', 'ÄÖÜÀÁ<>»«', 'stopword3'),
-      ),
-      array(
+        ['stopword1', 'ÄÖÜÀÁ<>»«', 'stopword3'],
+      ],
+      [
         'ÄÖÜÀÁ',
         '',
-        array('stopword1', 'ÄÖÜÀÁ', 'stopword3'),
-      ),
-      array(
+        ['stopword1', 'ÄÖÜÀÁ', 'stopword3'],
+      ],
+      [
         'ÄÖÜÀÁ stopword1',
         'ÄÖÜÀÁ stopword1',
-        array('stopword1', 'ÄÖÜÀÁ', 'stopword3'),
-      ),
-    );
+        ['stopword1', 'ÄÖÜÀÁ', 'stopword3'],
+      ],
+    ];
   }
 
   /**
@@ -100,17 +99,19 @@ class StopwordsTest extends UnitTestCase {
     /** @var \Drupal\search_api\IndexInterface $index */
 
     $this->processor->setIndex($index);
-    $query = Utility::createQuery($index);
-    $keys = array('#conjunction' => 'AND', 'foo', 'bar', 'bar foo');
+    $query = \Drupal::getContainer()
+      ->get('search_api.query_helper')
+      ->createQuery($index);
+    $keys = ['#conjunction' => 'AND', 'foo', 'bar', 'bar foo'];
     $query->keys($keys);
 
-    $configuration = array('stopwords' => array('foobar', 'bar', 'barfoo'));
+    $configuration = ['stopwords' => ['foobar', 'bar', 'barfoo']];
     $this->processor->setConfiguration($configuration);
     $this->processor->preprocessSearchQuery($query);
     unset($keys[1]);
     $this->assertEquals($keys, $query->getKeys());
 
-    $this->assertEquals(array('bar'), $query->getResults()->getIgnoredSearchKeys());
+    $this->assertEquals(['bar'], $query->getResults()->getIgnoredSearchKeys());
   }
 
 }

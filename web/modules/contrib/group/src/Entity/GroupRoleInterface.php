@@ -83,7 +83,7 @@ interface GroupRoleInterface extends ConfigEntityInterface {
    *   Whether the role shows up in the default permissions UI.
    */
   public function inPermissionsUI();
-  
+
   /**
    * Returns a list of permissions assigned to the role.
    *
@@ -115,7 +115,7 @@ interface GroupRoleInterface extends ConfigEntityInterface {
   public function grantPermission($permission);
 
   /**
-   * Grants multiple permission to the role.
+   * Grants multiple permissions to the role.
    *
    * @param string[] $permissions
    *   The permissions to grant.
@@ -124,6 +124,14 @@ interface GroupRoleInterface extends ConfigEntityInterface {
    *   The group role this was called on.
    */
   public function grantPermissions($permissions);
+
+  /**
+   * Grants all available permissions to the role.
+   *
+   * @return \Drupal\group\Entity\GroupRoleInterface
+   *   The group role this was called on.
+   */
+  public function grantAllPermissions();
 
   /**
    * Revokes a permission from the role.

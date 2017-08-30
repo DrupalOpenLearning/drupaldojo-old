@@ -7,6 +7,7 @@ use Drupal\Core\Entity\EntityForm;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Plugin\PluginFormInterface;
+use Drupal\Core\Form\SubformState;
 use Drupal\search_api\Processor\ProcessorInterface;
 use Drupal\search_api\Processor\ProcessorPluginManager;
 use Psr\Log\LoggerInterface;
@@ -98,7 +99,8 @@ class IndexProcessorsForm extends EntityForm {
     }
 
     $stages = $this->processorPluginManager->getProcessingStages();
-    $processors_by_stage = array();
+    /** @var \Drupal\search_api\Processor\ProcessorInterface[][] $processors_by_stage */
+    $processors_by_stage = [];
     foreach ($all_processors as $processor_id => $processor) {
       foreach ($stages as $stage => $definition) {
         if ($processor->supportsStage($stage)) {
@@ -109,7 +111,7 @@ class IndexProcessorsForm extends EntityForm {
 
     $enabled_processors = $this->entity->getProcessors();
 
-    $backend_discouraged_processors = array();
+    $backend_discouraged_processors = [];
     if ($this->entity->getServerInstance()) {
       $backend_discouraged_processors = $this->entity->getServerInstance()
         ->getDiscouragedProcessors();
@@ -128,124 +130,129 @@ class IndexProcessorsForm extends EntityForm {
     }
 
     $form['#tree'] = TRUE;
-    $form['#attached']['library'][] = 'search_api/drupal.search_api.index-active-formatters';
-    $form['#title'] = $this->t('Manage processors for search index %label', array('%label' => $this->entity->label()));
+    $form['#attached']['library'][] = 'search_api/drupal.search_api.processors';
+    $form['#title'] = $this->t('Manage processors for search index %label', ['%label' => $this->entity->label()]);
     $form['description']['#markup'] = '<p>' . $this->t('Configure processors which will pre- and post-process data at index and search time.') . '</p>';
 
     // Add the list of processors with checkboxes to enable/disable them.
-    $form['status'] = array(
+    $form['status'] = [
       '#type' => 'fieldset',
       '#title' => $this->t('Enabled'),
-      '#attributes' => array(
-        'class' => array(
+      '#attributes' => [
+        'class' => [
           'search-api-status-wrapper',
-        ),
-      ),
-    );
+        ],
+      ],
+    ];
     foreach ($all_processors as $processor_id => $processor) {
       $clean_css_id = Html::cleanCssIdentifier($processor_id);
-      $form['status'][$processor_id] = array(
+      $form['status'][$processor_id] = [
         '#type' => 'checkbox',
         '#title' => $processor->label(),
         '#default_value' => $processor->isLocked() || !empty($enabled_processors[$processor_id]),
         '#description' => $processor->getDescription(),
-        '#attributes' => array(
-          'class' => array(
+        '#attributes' => [
+          'class' => [
             'search-api-processor-status-' . $clean_css_id,
-          ),
+          ],
           'data-id' => $clean_css_id,
-        ),
+        ],
         '#disabled' => $processor->isLocked(),
         '#access' => !$processor->isHidden(),
-      );
+      ];
       if (in_array($processor_id, $backend_discouraged_processors)) {
         $form['status'][$processor_id]['#description'] .= '<br /><strong>' . $this->t('It is recommended not to use this processor with the selected server.') . '</strong>';
       }
     }
 
-    $form['weights'] = array(
+    $form['weights'] = [
       '#type' => 'fieldset',
-      '#title' => t('Processor order'),
-    );
+      '#title' => $this->t('Processor order'),
+    ];
     // Order enabled processors per stage.
     foreach ($stages as $stage => $description) {
-      $form['weights'][$stage] = array(
+      $form['weights'][$stage] = [
         '#type' => 'fieldset',
         '#title' => $description['label'],
-        '#attributes' => array(
-          'class' => array(
+        '#attributes' => [
+          'class' => [
             'search-api-stage-wrapper',
             'search-api-stage-wrapper-' . Html::cleanCssIdentifier($stage),
-          ),
-        ),
-      );
-      $form['weights'][$stage]['order'] = array(
+          ],
+        ],
+      ];
+      $form['weights'][$stage]['order'] = [
         '#type' => 'table',
-      );
-      $form['weights'][$stage]['order']['#tabledrag'][] = array(
+      ];
+      $form['weights'][$stage]['order']['#tabledrag'][] = [
         'action' => 'order',
         'relationship' => 'sibling',
         'group' => 'search-api-processor-weight-' . Html::cleanCssIdentifier($stage),
-      );
+      ];
     }
     foreach ($processors_by_stage as $stage => $processors) {
-      /** @var \Drupal\search_api\Processor\ProcessorInterface $processor */
+      // Sort the processors by weight for this stage.
+      $processor_weights = [];
       foreach ($processors as $processor_id => $processor) {
-        $weight = $processor->getWeight($stage);
+        $processor_weights[$processor_id] = $processor->getWeight($stage);
+      }
+      asort($processor_weights);
+
+      foreach ($processor_weights as $processor_id => $weight) {
+        $processor = $processors[$processor_id];
         if ($processor->isHidden()) {
-          $form['processors'][$processor_id]['weights'][$stage] = array(
+          $form['processors'][$processor_id]['weights'][$stage] = [
             '#type' => 'value',
             '#value' => $weight,
-          );
+          ];
           continue;
         }
         $form['weights'][$stage]['order'][$processor_id]['#attributes']['class'][] = 'draggable';
         $form['weights'][$stage]['order'][$processor_id]['#attributes']['class'][] = 'search-api-processor-weight--' . Html::cleanCssIdentifier($processor_id);
         $form['weights'][$stage]['order'][$processor_id]['#weight'] = $weight;
         $form['weights'][$stage]['order'][$processor_id]['label']['#plain_text'] = $processor->label();
-        $form['weights'][$stage]['order'][$processor_id]['weight'] = array(
+        $form['weights'][$stage]['order'][$processor_id]['weight'] = [
           '#type' => 'weight',
-          '#title' => $this->t('Weight for processor %title', array('%title' => $processor->label())),
+          '#title' => $this->t('Weight for processor %title', ['%title' => $processor->label()]),
           '#title_display' => 'invisible',
+          '#delta' => 50,
           '#default_value' => $weight,
-          '#parents' => array('processors', $processor_id, 'weights', $stage),
-          '#attributes' => array(
-            'class' => array(
+          '#parents' => ['processors', $processor_id, 'weights', $stage],
+          '#attributes' => [
+            'class' => [
               'search-api-processor-weight-' . Html::cleanCssIdentifier($stage),
-            ),
-          ),
-        );
+            ],
+          ],
+        ];
       }
     }
 
     // Add vertical tabs containing the settings for the processors. Tabs for
     // disabled processors are hidden with JS magic, but need to be included in
     // case the processor is enabled.
-    $form['processor_settings'] = array(
+    $form['processor_settings'] = [
       '#title' => $this->t('Processor settings'),
       '#type' => 'vertical_tabs',
-    );
+    ];
 
     foreach ($all_processors as $processor_id => $processor) {
       if ($processor instanceof PluginFormInterface) {
-        $processor_form = array();
-        if (isset($form['settings'][$processor_id])) {
-          $processor_form = $form['settings'][$processor_id];
-        }
-        $form['settings'][$processor_id] = array(
+        $form['settings'][$processor_id] = [
           '#type' => 'details',
           '#title' => $processor->label(),
           '#group' => 'processor_settings',
-          '#parents' => array('processors', $processor_id, 'settings'),
-          '#attributes' => array(
-            'class' => array(
+          '#parents' => ['processors', $processor_id, 'settings'],
+          '#attributes' => [
+            'class' => [
               'search-api-processor-settings-' . Html::cleanCssIdentifier($processor_id),
-            ),
-          ),
-        );
-        $sub_keys = array('processors', $processor_id, 'settings');
-        $processor_form_state = new SubFormState($form_state, $sub_keys);
-        $form['settings'][$processor_id] += $processor->buildConfigurationForm($processor_form, $processor_form_state);
+            ],
+          ],
+        ];
+        $processor_form_state = SubformState::createForSubform($form['settings'][$processor_id], $form, $form_state);
+        $form['settings'][$processor_id] += $processor->buildConfigurationForm($form['settings'][$processor_id], $processor_form_state);
+      }
+      else {
+        unset($form['settings'][$processor_id]);
       }
     }
 
@@ -265,8 +272,7 @@ class IndexProcessorsForm extends EntityForm {
     foreach (array_keys(array_filter($values['status'])) as $processor_id) {
       $processor = $processors[$processor_id];
       if ($processor instanceof PluginFormInterface) {
-        $sub_keys = array('processors', $processor_id, 'settings');
-        $processor_form_state = new SubFormState($form_state, $sub_keys);
+        $processor_form_state = SubformState::createForSubform($form['settings'][$processor_id], $form, $form_state);
         $processor->validateConfigurationForm($form['settings'][$processor_id], $processor_form_state);
       }
     }
@@ -291,8 +297,7 @@ class IndexProcessorsForm extends EntityForm {
       }
       $old_configuration = $processor->getConfiguration();
       if ($processor instanceof PluginFormInterface) {
-        $sub_keys = array('processors', $processor_id, 'settings');
-        $processor_form_state = new SubFormState($form_state, $sub_keys);
+        $processor_form_state = SubformState::createForSubform($form['settings'][$processor_id], $form, $form_state);
         $processor->submitConfigurationForm($form['settings'][$processor_id], $processor_form_state);
       }
       if (!empty($values['processors'][$processor_id]['weights'])) {
@@ -316,13 +321,13 @@ class IndexProcessorsForm extends EntityForm {
   public function save(array $form, FormStateInterface $form_state) {
     if ($form_state->get('processors_changed')) {
       $save_status = parent::save($form, $form_state);
-      drupal_set_message(t('The indexing workflow was successfully edited.'));
+      drupal_set_message($this->t('The indexing workflow was successfully edited.'));
       if ($this->entity->isReindexing()) {
-        drupal_set_message(t('All content was scheduled for reindexing so the new settings can take effect.'));
+        drupal_set_message($this->t('All content was scheduled for reindexing so the new settings can take effect.'));
       }
     }
     else {
-      drupal_set_message(t('No values were changed.'));
+      drupal_set_message($this->t('No values were changed.'));
       $save_status = SAVED_UPDATED;
     }
 
@@ -342,7 +347,7 @@ class IndexProcessorsForm extends EntityForm {
   }
 
   /**
-   * Retrieves all available processor
+   * Retrieves all available processors.
    */
   protected function getAllProcessors() {
     $processors = $this->entity->getProcessors();
@@ -353,17 +358,17 @@ class IndexProcessorsForm extends EntityForm {
         continue;
       }
       elseif (class_exists($processor_definition['class'])) {
-        if (call_user_func(array($processor_definition['class'], 'supportsIndex'), $this->entity)) {
+        if (call_user_func([$processor_definition['class'], 'supportsIndex'], $this->entity)) {
           /** @var $processor \Drupal\search_api\Processor\ProcessorInterface */
           $processor = $this->processorPluginManager->createInstance($name, $settings);
           $processors[$name] = $processor;
         }
       }
       else {
-        $this->logger->warning('Processor %id specifies a non-existing class %class.', array(
+        $this->logger->warning('Processor %id specifies a non-existing class %class.', [
           '%id' => $name,
-          '%class' => $processor_definition['class']
-        ));
+          '%class' => $processor_definition['class'],
+        ]);
       }
     }
 

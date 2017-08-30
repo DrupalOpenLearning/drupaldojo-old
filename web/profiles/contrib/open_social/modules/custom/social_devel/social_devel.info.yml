@@ -9,9 +9,9 @@ dependencies:
   - config_update_ui
   - devel
   - kint
-  - devel_node_access
   - devel_generate
   - dblog
   - views_ui
   - field_ui
   - contextual
+  - link_css

@@ -1,10 +1,5 @@
 <?php
 
-/**
- * @file
- * Contains \Drupal\Tests\entity\Kernel\RevisionBasicUITest.
- */
-
 namespace Drupal\Tests\entity\Kernel;
 
 use Drupal\entity_module_test\Entity\EnhancedEntity;
@@ -84,6 +79,20 @@ class RevisionBasicUITest extends KernelTestBase {
     // This ensures that the default revision is still the first revision.
     $this->assertTrue(strpos($response->getContent(), 'entity_test_enhanced/1/revisions/2/view') !== FALSE);
     $this->assertTrue(strpos($response->getContent(), 'entity_test_enhanced/1') !== FALSE);
+
+    // Publish a new revision.
+    $revision = clone $entity;
+    $revision->name->value = 'rev 3';
+    $revision->setNewRevision(TRUE);
+    $revision->isDefaultRevision(TRUE);
+    $revision->save();
+
+    $request = Request::create($revision->url('version-history'));
+    $response = $http_kernel->handle($request);
+    $this->assertEquals(200, $response->getStatusCode());
+
+    // The first revision row should now include a revert link.
+    $this->assertTrue(strpos($response->getContent(), 'entity_test_enhanced/1/revisions/1/revert') !== FALSE);
   }
 
   public function testRevisionView() {

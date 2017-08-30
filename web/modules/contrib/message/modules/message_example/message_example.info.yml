@@ -6,9 +6,11 @@ package: Message
 dependencies:
  - message
  - token
+ - node
+ - comment
 
-# Information added by Drupal.org packaging script on 2016-10-14
-version: '8.x-1.0-alpha3'
+# Information added by Drupal.org packaging script on 2017-03-30
+version: '8.x-1.0-beta1'
 core: '8.x'
 project: 'message'
-datestamp: 1476464641
+datestamp: 1490916439

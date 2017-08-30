@@ -5,7 +5,7 @@ entity.profile.collection:
     _entity_list: 'profile'
     _title: 'Profiles'
   requirements:
-    _permission: 'administer profiles'
+    _permission: 'administer profile'
 
 entity.profile_type.collection:
   path: '/admin/config/people/profiles/types'
@@ -23,14 +23,21 @@ entity.profile_type.add_form:
   requirements:
     _permission: 'administer profile types'
 
-entity.profile.add_form:
-  path: '/user/{user}/profile/{profile_type}'
+entity.profile.type.user_profile_form:
+  path: '/user/{user}/{profile_type}'
+  defaults:
+    _controller: '\Drupal\profile\Controller\ProfileController::userProfileForm'
+    _title_callback: '\Drupal\profile\Controller\ProfileController::addPageTitle'
+  requirements:
+    _profile_access_check: 'add'
+
+entity.profile.type.user_profile_form.add:
+  path: '/user/{user}/{profile_type}/add'
   defaults:
     _controller: '\Drupal\profile\Controller\ProfileController::addProfile'
-    _title: 'Add new profile'
-    operation: 'add'
+    _title_callback: '\Drupal\profile\Controller\ProfileController::addPageTitle'
   requirements:
-    _profile_access_check: 'profile:{profile_type}'
+    _profile_access_check: 'add'
 
 entity.profile.canonical:
   path: '/profile/{profile}'
@@ -45,7 +52,7 @@ entity.profile.multiple_delete_confirm:
   defaults:
     _form: '\Drupal\profile\Form\DeleteMultiple'
   requirements:
-    _permission: 'administer profiles'
+    _permission: 'administer profile'
 
 entity.profile.set_default:
   path: '/profile/{profile}/set-default'
@@ -56,5 +63,5 @@ entity.profile.set_default:
       profile:
         type: entity:profile
   requirements:
-    _entity_access: 'profile.edit'
+    _entity_access: 'profile.update'
     _csrf_token: 'TRUE'

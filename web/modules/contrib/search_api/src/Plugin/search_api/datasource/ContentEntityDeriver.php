@@ -75,16 +75,16 @@ class ContentEntityDeriver extends DeriverBase implements ContainerDeriverInterf
    */
   public function getDerivativeDefinitions($base_plugin_definition) {
     if (!isset($this->derivatives)) {
-      $plugin_derivatives = array();
+      $plugin_derivatives = [];
       foreach ($this->getEntityTypeManager()->getDefinitions() as $entity_type => $entity_type_definition) {
         // We only support content entity types at the moment, since config
         // entities don't implement \Drupal\Core\TypedData\ComplexDataInterface.
         if ($entity_type_definition instanceof ContentEntityType) {
-          $plugin_derivatives[$entity_type] = array(
+          $plugin_derivatives[$entity_type] = [
             'entity_type' => $entity_type,
             'label' => $entity_type_definition->getLabel(),
-            'description' => $this->t('Provides %entity_type entities for indexing and searching.', array('%entity_type' => $entity_type_definition->getLabel())),
-          ) + $base_plugin_definition;
+            'description' => $this->t('Provides %entity_type entities for indexing and searching.', ['%entity_type' => $entity_type_definition->getLabel()]),
+          ] + $base_plugin_definition;
         }
       }
 

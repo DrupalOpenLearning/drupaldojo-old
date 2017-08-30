@@ -1,10 +1,5 @@
 <?php
 
-/**
- * @file
- * Contains \Drupal\Tests\crop\Kernel\CropUnitTestBase.
- */
-
 namespace Drupal\Tests\crop\Kernel;
 
 use Drupal\Core\StreamWrapper\PublicStream;
@@ -18,7 +13,7 @@ abstract class CropUnitTestBase extends KernelTestBase {
   /**
    * The crop storage.
    *
-   * @var \Drupal\crop\CropStorageInterface.
+   * @var \Drupal\crop\CropStorageInterface
    */
   protected $cropStorage;
 
@@ -32,14 +27,14 @@ abstract class CropUnitTestBase extends KernelTestBase {
   /**
    * The crop storage.
    *
-   * @var \Drupal\Core\Config\Entity\ConfigEntityStorageInterface.
+   * @var \Drupal\Core\Config\Entity\ConfigEntityStorageInterface
    */
   protected $cropTypeStorage;
 
   /**
    * The image style storage.
    *
-   * @var \Drupal\Core\Config\Entity\ConfigEntityStorageInterface.
+   * @var \Drupal\Core\Config\Entity\ConfigEntityStorageInterface
    */
   protected $imageStyleStorage;
 
@@ -58,6 +53,13 @@ abstract class CropUnitTestBase extends KernelTestBase {
   protected $cropType;
 
   /**
+   * The image effect manager.
+   *
+   * @var \Drupal\image\ImageEffectManager
+   */
+  protected $imageEffectManager;
+
+  /**
    * {@inheritdoc}
    */
   protected function setUp() {
@@ -69,6 +71,7 @@ abstract class CropUnitTestBase extends KernelTestBase {
     $this->cropTypeStorage = $entity_type_manager->getStorage('crop_type');
     $this->imageStyleStorage = $entity_type_manager->getStorage('image_style');
     $this->fileStorage = $entity_type_manager->getStorage('file');
+    $this->imageEffectManager = $this->container->get('plugin.manager.image.effect');
 
     // Create DB schemas.
     /** @var \Drupal\Core\Entity\EntityTypeListenerInterface $entity_type_listener */
@@ -89,7 +92,7 @@ abstract class CropUnitTestBase extends KernelTestBase {
           'data' => ['crop_type' => 'test_type'],
           'weight' => 0,
           'uuid' => $uuid,
-        ]
+        ],
       ],
     ]);
     $this->testStyle->save();

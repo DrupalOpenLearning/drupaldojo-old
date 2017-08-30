@@ -20,14 +20,14 @@ class DynamicEntityReferenceServiceProvider extends ServiceProviderBase {
     if (isset($modules['rest']) && isset($modules['serialization']) && isset($modules['hal'])) {
 
       // Add a normalizer service for dynamic_entity_reference fields.
-      $service_definition = new Definition('Drupal\dynamic_entity_reference\Normalizer\DynamicEntityReferenceItemNormalizer', array(
+      $service_definition = new Definition('Drupal\dynamic_entity_reference\Normalizer\DynamicEntityReferenceItemNormalizer', [
         new Reference('rest.link_manager'),
         new Reference('serializer.entity_resolver'),
         new Reference('module_handler'),
-      ));
+      ]);
       // The priority must be higher than that of
       // serializer.normalizer.entity_reference.hal in hal.services.yml.
-      $service_definition->addTag('normalizer', array('priority' => 20));
+      $service_definition->addTag('normalizer', ['priority' => 20]);
       $container->setDefinition('serializer.normalizer.entity.dynamic_entity_reference_item.hal', $service_definition);
 
     }

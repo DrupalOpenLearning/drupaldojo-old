@@ -38,13 +38,13 @@ interface ConfigListInterface {
   public function getTypeByPrefix($prefix);
 
   /**
-   * Returns the entity type object for a given config object.
+   * Returns the config type name for a given config object.
    *
    * @param string $name
    *   Name of the config object.
    *
    * @return string
-   *   Name of the entity type that this is an instance of, determined by
+   *   Name of the config type that this is an instance of, determined by
    *   prefix. NULL for simple configuration.
    */
   public function getTypeNameByConfigName($name);

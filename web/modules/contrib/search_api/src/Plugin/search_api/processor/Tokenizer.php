@@ -37,11 +37,15 @@ class Tokenizer extends FieldsProcessorPluginBase {
    * {@inheritdoc}
    */
   public function defaultConfiguration() {
-    return array(
+    $configuration = parent::defaultConfiguration();
+
+    $configuration += [
       'spaces' => '',
       'overlap_cjk' => TRUE,
       'minimum_word_size' => 3,
-    );
+    ];
+
+    return $configuration;
   }
 
   /**
@@ -58,32 +62,32 @@ class Tokenizer extends FieldsProcessorPluginBase {
   public function buildConfigurationForm(array $form, FormStateInterface $form_state) {
     $form = parent::buildConfigurationForm($form, $form_state);
 
-    $args = array(
-      ':pcre-url' => Url::fromUri('http://www.php.net/manual/regexp.reference.character-classes.php')->toString(),
+    $args = [
+      ':pcre-url' => Url::fromUri('https://php.net/manual/regexp.reference.character-classes.php')->toString(),
       ':doc-url' => Url::fromUri('https://api.drupal.org/api/drupal/core!lib!Drupal!Component!Utility!Unicode.php/constant/Unicode%3A%3APREG_CLASS_WORD_BOUNDARY/8')->toString(),
-    );
-    $form['spaces'] = array(
+    ];
+    $form['spaces'] = [
       '#type' => 'textfield',
       '#title' => $this->t('Whitespace characters'),
       '#description' => $this->t('Specify the characters that should be regarded as whitespace and therefore used as word-delimiters. Specify the characters as the inside of a <a href=":pcre-url">PCRE character class</a>. Leave empty to use a <a href=":doc-url">default</a> which should be suitable for most languages with a Latin alphabet.', $args),
       '#default_value' => $this->configuration['spaces'],
-    );
+    ];
 
-    $form['overlap_cjk'] = array(
+    $form['overlap_cjk'] = [
       '#type' => 'checkbox',
       '#title' => $this->t('Simple CJK handling'),
       '#default_value' => $this->configuration['overlap_cjk'],
       '#description' => $this->t('Whether to apply a simple Chinese/Japanese/Korean tokenizer based on overlapping sequences. Does not affect other languages.'),
-    );
+    ];
 
-    $form['minimum_word_size'] = array(
+    $form['minimum_word_size'] = [
       '#type' => 'number',
       '#title' => $this->t('Minimum word length to index'),
       '#default_value' => $this->configuration['minimum_word_size'],
       '#min' => 1,
       '#max' => 1000,
       '#description' => $this->t('The number of characters a word has to be to be indexed. A lower setting means better search result ranking, but also a larger database. Each search query must contain at least one keyword that is this size (or longer).'),
-    );
+    ];
 
     return $form;
   }
@@ -95,8 +99,8 @@ class Tokenizer extends FieldsProcessorPluginBase {
     parent::validateConfigurationForm($form, $form_state);
 
     $spaces = str_replace('/', '\/', trim($form_state->getValues()['spaces']));
-    if ($spaces !== '' && @preg_match('/(' . $spaces . ')+/u', '') === FALSE) {
-      $form_state->setError($form['spaces'], $form['spaces']['#title'] . ': ' . $this->t('The entered text is no valid regular expression.'));
+    if ($spaces !== '' && @preg_match('/[' . $spaces . ']+/u', '') === FALSE) {
+      $form_state->setError($form['spaces'], $form['spaces']['#title'] . ': ' . $this->t('The entered text is no valid PCRE character class.'));
     }
   }
 
@@ -104,7 +108,7 @@ class Tokenizer extends FieldsProcessorPluginBase {
    * {@inheritdoc}
    */
   protected function testType($type) {
-    return Utility::isTextType($type);
+    return $this->getDataTypeHelper()->isTextType($type);
   }
 
   /**
@@ -199,7 +203,7 @@ class Tokenizer extends FieldsProcessorPluginBase {
     // replaced by those already in simplifyText().
     $arr = explode(' ', $text);
 
-    $value = array();
+    $value = [];
     foreach ($arr as $token) {
       if (is_numeric($token) || Unicode::strlen($token) >= $this->configuration['minimum_word_size']) {
         $value[] = Utility::createTextToken($token);
@@ -221,7 +225,7 @@ class Tokenizer extends FieldsProcessorPluginBase {
   protected function simplifyText($text) {
     // Optionally apply simple CJK handling to the text.
     if ($this->configuration['overlap_cjk']) {
-      $text = preg_replace_callback('/[' . $this->getPregClassCjk() . ']+/u', array($this, 'expandCjk'), $text);
+      $text = preg_replace_callback('/[' . $this->getPregClassCjk() . ']+/u', [$this, 'expandCjk'], $text);
     }
 
     // To improve searching for numerical data such as dates, IP addresses or
@@ -280,7 +284,7 @@ class Tokenizer extends FieldsProcessorPluginBase {
     }
     $tokens = ' ';
     // Build a FIFO queue of characters.
-    $chars = array();
+    $chars = [];
     for ($i = 0; $i < $length; $i++) {
       // Add the next character off the beginning of the string to the queue.
       $current = Unicode::substr($str, 0, 1);

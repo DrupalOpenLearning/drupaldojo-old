@@ -47,7 +47,7 @@ class FlagPermissions implements ContainerInjectionInterface {
     $permissions = [];
 
     // Get a list of flags from the FlagService.
-    $flags = $this->flagService->getFlags();
+    $flags = $this->flagService->getAllFlags();
 
     // Provide flag and unflag permissions for each flag.
     foreach ($flags as $flag_name => $flag) {
@@ -56,4 +56,5 @@ class FlagPermissions implements ContainerInjectionInterface {
 
     return $permissions;
   }
+
 }

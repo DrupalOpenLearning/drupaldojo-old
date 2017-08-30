@@ -41,14 +41,14 @@ class EntityStringIdTest extends KernelTestBase {
   /**
    * {@inheritdoc}
    */
-  public static $modules = array(
+  public static $modules = [
     'search_api',
     'search_api_test',
     'language',
     'user',
     'system',
     'entity_test',
-  );
+  ];
 
   /**
    * An array of language codes.
@@ -63,9 +63,9 @@ class EntityStringIdTest extends KernelTestBase {
   public function setUp() {
     parent::setUp();
 
-    $this->installSchema('search_api', array(
+    $this->installSchema('search_api', [
       'search_api_item',
-    ));
+    ]);
     $this->installEntitySchema('entity_test_string_id');
     $this->installEntitySchema('search_api_task');
 
@@ -83,34 +83,28 @@ class EntityStringIdTest extends KernelTestBase {
       ->save();
 
     // Create a test server.
-    $this->server = Server::create(array(
+    $this->server = Server::create([
       'name' => 'Test Server',
       'id' => 'test_server',
       'status' => 1,
       'backend' => 'search_api_test',
-    ));
+    ]);
     $this->server->save();
 
     // Create a test index.
-    $this->index = Index::create(array(
+    $this->index = Index::create([
       'name' => 'Test Index',
       'id' => 'test_index',
       'status' => 1,
-      'datasource_settings' => array(
-        'entity:' . $this->testEntityTypeId => array(
-          'plugin_id' => 'entity:' . $this->testEntityTypeId,
-          'settings' => array(),
-        ),
-      ),
-      'tracker_settings' => array(
-        'default' => array(
-          'plugin_id' => 'default',
-          'settings' => array(),
-        ),
-      ),
+      'datasource_settings' => [
+        'entity:' . $this->testEntityTypeId => [],
+      ],
+      'tracker_settings' => [
+        'default' => [],
+      ],
       'server' => $this->server->id(),
-      'options' => array('index_directly' => FALSE),
-    ));
+      'options' => ['index_directly' => FALSE],
+    ]);
     $this->index->save();
   }
 
@@ -123,19 +117,19 @@ class EntityStringIdTest extends KernelTestBase {
    * @dataProvider entityStringIdList
    */
   public function testUriStringId($entity_id) {
-    $entity = EntityTestStringId::create(array(
+    $entity = EntityTestStringId::create([
       'id' => $entity_id,
       'name' => 'String Test',
       'user_id' => $this->container->get('current_user')->id(),
-    ));
+    ]);
     $entity->save();
 
     // Test that the datasource returns the correct item IDs.
     $datasource = $this->index->getDatasource('entity:' . $this->testEntityTypeId);
     $datasource_item_ids = $datasource->getItemIds();
-    $expected = array(
+    $expected = [
       $entity_id . ':und',
-    );
+    ];
     $this->assertEquals($expected, $datasource_item_ids, 'Datasource returns correct item ids.');
 
     // Test indexing the new entity.
@@ -153,11 +147,11 @@ class EntityStringIdTest extends KernelTestBase {
    *   testUriStringId() test method.
    */
   public function entityStringIdList() {
-    return array(
-      'Normal machine name' => array('short_string_id'),
-      'URL ID (with special characters)' => array('http://drupal.org'),
-      'Long ID' => array(str_repeat('a', 100)),
-    );
+    return [
+      'Normal machine name' => ['short_string_id'],
+      'URL ID (with special characters)' => ['http://drupal.org'],
+      'Long ID' => [str_repeat('a', 100)],
+    ];
   }
 
 }

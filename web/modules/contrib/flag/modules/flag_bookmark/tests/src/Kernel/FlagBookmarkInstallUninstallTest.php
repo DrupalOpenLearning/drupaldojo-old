@@ -35,7 +35,8 @@ class FlagBookmarkInstallUninstallTest extends FlagKernelTestBase {
   }
 
   protected function doTestsOnInstall() {
-    $this->assertEquals(['node', 'flag_bookmark'], Flag::load('bookmark')->getDependencies()['module']);
+    $this->assertEquals(['flag_bookmark'], Flag::load('bookmark')->getDependencies()['module']);
     $this->assertEquals(['flag.flag.bookmark', 'system.menu.main'], View::load('flag_bookmark')->getDependencies()['config']);
   }
+
 }

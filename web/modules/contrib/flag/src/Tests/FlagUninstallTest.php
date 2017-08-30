@@ -54,6 +54,9 @@ class FlagUninstallTest extends FlagTestBase {
     $this->flagService->flag($this->flags[0], $this->nodes[1]);
     $this->flagService->flag($this->flags[0], $this->nodes[2]);
     $this->flagService->flag($this->flags[1], $this->nodes[2]);
+
+    // Uninstall test module that depends on flag.
+    $this->container->get('module_installer')->uninstall(['flag_event_test']);
   }
 
   /**
@@ -93,11 +96,9 @@ class FlagUninstallTest extends FlagTestBase {
     $connection = Database::getConnection();
 
     // Query the table for counts.
-    $result = $connection->select('flag_counts', 'fc')
-      ->fields('fc', ['flag_id', 'count'])
-      ->countQuery()
-      ->execute()
-      ->fetchField();
+    $query = $connection->select('flag_counts', 'fc');
+    $query->addExpression('COUNT(*)');
+    $result = $query->execute()->fetchField();
 
     $this->assertNotEqual($result, 0, 'The flag_counts table is not empty.');
   }
@@ -110,12 +111,11 @@ class FlagUninstallTest extends FlagTestBase {
     $connection = Database::getConnection();
 
     // Query the table for counts.
-    $result = $connection->select('flag_counts', 'fc')
-      ->fields('fc', ['flag_id', 'count'])
-      ->countQuery()
-      ->execute()
-      ->fetchField();
+    $query = $connection->select('flag_counts', 'fc');
+    $query->addExpression('COUNT(*)');
+    $result = $query->execute()->fetchField();
 
     $this->assertEqual($result, 0, 'The flag_counts table is empty.');
   }
+
 }

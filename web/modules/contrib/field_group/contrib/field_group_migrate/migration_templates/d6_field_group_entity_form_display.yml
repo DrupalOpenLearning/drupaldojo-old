@@ -17,7 +17,6 @@ source:
     entity_type: node
     form_mode: default
     third_party_settings: {  }
-  database_state_key: migrate_upgrade_6
 process:
   mode: constants/mode
   entity_type: constants/entity_type

@@ -11,6 +11,7 @@ use Drupal\Core\Url;
 use Drupal\Component\Utility\Html;
 use Drupal\Component\Utility\UrlHelper;
 use Drupal\node\Entity\NodeType;
+use Drupal\node\Entity\Node;
 
 /**
 * Implements hook_theme().
@@ -77,6 +78,9 @@ function addtoany_page_attachments(&$page) {
     $node = \Drupal::routeMatch()->getParameter('node');
     $data = [];
     if ($node) {
+      if (is_numeric($node)) {
+        $node = Node::load($node);
+      }
        $data = ['node' => $node];
        $additional_js = \Drupal::token()->replace($additional_js, $data);
     }
@@ -136,13 +140,16 @@ function addtoany_page_attachments(&$page) {
  * @param object $node
  *   The node object to create the buttons for.
  *
+ * @param object $config
+ *   If present this will be used as custom config data. Use NULL for default config data.
+ *
  * @return string
  *   The HTML code for the buttons.
  */
-function addtoany_create_node_buttons($node) {
+function addtoany_create_node_buttons($node, $config = NULL) {
   $url = isset($node) ? $node->url('canonical', array('absolute' => true)) : NULL;
   $title = isset($node) ? $node->label() : NULL;
-  return addtoany_create_buttons($url, $title);
+  return addtoany_create_buttons($url, $title, $config);
 }
 
 /**
@@ -155,13 +162,18 @@ function addtoany_create_node_buttons($node) {
  *   If present this will be used as the title. Use an empty string for no title
  *   or NULL to use the current page title.
  *
+ * @param object $config
+ *   If present this will be used as custom config data. Use NULL for default config data.
+ *
  * @return string
  *   The HTML code for the buttons.
  */
-function addtoany_create_buttons($url = NULL, $title = NULL) {
+function addtoany_create_buttons($url = NULL, $title = NULL, $config = NULL) {
 	global $base_path;
 
-	$config = \Drupal::config('addtoany.settings');
+    if (is_null($config)) {
+      $config = \Drupal::config('addtoany.settings');
+    }
 
 	$additional_html = rtrim($config->get('additional_html'));
 	$universal_button_placement = $config->get('universal_button_placement');
@@ -246,10 +258,15 @@ function addtoany_create_buttons($url = NULL, $title = NULL) {
     $node = \Drupal::routeMatch()->getParameter('node');
     $data = [];
     if ($node) {
+      if (is_numeric($node)) {
+        $node = Node::load($node);
+      }
        $data = ['node' => $node];
        $buttons = \Drupal::token()->replace($buttons, $data);
     }
   }
+
+  $buttons = str_replace(array("\r", "\n"), '', $buttons);
 
   return $buttons;
 }

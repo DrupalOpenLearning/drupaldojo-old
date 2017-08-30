@@ -25,7 +25,7 @@ trait ProcessorTestTrait {
    * @return mixed
    *   Whatever the invoked method returned.
    */
-  protected function invokeMethod($method_name, array $args = array()) {
+  protected function invokeMethod($method_name, array $args = []) {
     $class = new \ReflectionClass(get_class($this->processor));
     $method = $class->getMethod($method_name);
     $method->setAccessible(TRUE);

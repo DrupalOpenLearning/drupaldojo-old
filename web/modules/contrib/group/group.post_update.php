@@ -16,7 +16,17 @@ function group_post_update_group_type_group_content_type_dependencies() {
   foreach (GroupType::loadMultiple() as $group_type) {
     $group_type->save();
   }
-  
+
+  foreach (GroupContentType::loadMultiple() as $group_type) {
+    $group_type->save();
+  }
+}
+
+/**
+ * Recalculate group content type dependencies after updating the group content
+ * enabler base plugin dependency logic.
+ */
+function group_post_update_group_content_type_dependencies() {
   foreach (GroupContentType::loadMultiple() as $group_type) {
     $group_type->save();
   }

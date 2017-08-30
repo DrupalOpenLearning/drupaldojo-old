@@ -1,10 +1,5 @@
 <?php
 
-/**
- * @file
- * Contains \Drupal\entity\Plugin\Action\DeleteAction.
- */
-
 namespace Drupal\entity\Plugin\Action;
 
 use Drupal\Core\Action\ActionBase;

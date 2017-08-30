@@ -3,7 +3,7 @@
 namespace Drupal\Tests\profile\Kernel;
 
 use Drupal\Component\Utility\Unicode;
-use Drupal\profile\Tests\ProfileTestTrait;
+use Drupal\profile\ProfileTestTrait;
 use Drupal\Tests\views\Kernel\ViewsKernelTestBase;
 use Drupal\user\Entity\User;
 use Drupal\views\Views;
@@ -29,6 +29,9 @@ class ProfileViewTest extends ViewsKernelTestBase {
     'users',
   ];
 
+  /**
+   * {@inheritdoc}
+   */
   protected function setUp($import_test_views = TRUE) {
     parent::setUp($import_test_views);
 

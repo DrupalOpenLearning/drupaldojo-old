@@ -19,7 +19,9 @@
     "drupal/console": "^1.0.0-rc8",
     "drush/drush": "~8",
     "drupal/address": "~1.0",
-    "goalgorilla/open_social": "~1.0"
+    "goalgorilla/open_social": "~1.0",
+    "drupal/pathauto": "^1.0",
+    "drupal/readme": "^1.0@beta"
   },
   "require-dev": {
     "mikey179/vfsstream": "~1.2",

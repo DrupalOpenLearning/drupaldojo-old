@@ -1,10 +1,5 @@
 <?php
 
-/**
- * @file
- * Contains \Drupal\webprofiler\DependencyInjection\TraceableContainer.
- */
-
 namespace Drupal\webprofiler\DependencyInjection;
 
 use Drupal\Component\Utility\Timer;

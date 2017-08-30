@@ -7,30 +7,55 @@ use Drupal\Core\Entity\EntityChangedInterface;
 use Drupal\user\EntityOwnerInterface;
 
 /**
- * Provides an interface defining a profile entity.
+ * Provides an interface for profiles.
  */
 interface ProfileInterface extends ContentEntityInterface, EntityChangedInterface, EntityOwnerInterface {
 
   /**
-   * Returns the profile type.
+   * Gets whether the profile is active.
    *
-   * @return string
-   *   The profile type name.
+   * Unpublished profiles are only visible to their authors and administrators.
+   *
+   * @return bool
+   *   TRUE if the profile is active, FALSE otherwise.
    */
-  public function getType();
+  public function isActive();
 
   /**
-   * Sets the profile type.
+   * Sets whether the profile is active.
    *
-   * @param string $type
-   *   The profile type.
+   * @param bool $active
+   *   Whether the profile is active.
    *
    * @return $this
    */
-  public function setType($type);
+  public function setActive($active);
 
   /**
-   * Returns the profile creation timestamp.
+   * Gets whether this is the user's default profile.
+   *
+   * A user can have a default profile of each type.
+   *
+   * @return bool
+   *   TRUE if this is the user's default profile, FALSE otherwise.
+   */
+  public function isDefault();
+
+  /**
+   * Sets whether this is the user's default profile.
+   *
+   * @param bool $is_default
+   *   Whether this is the user's default profile.
+   *
+   * @return $this
+   */
+  public function setDefault($is_default);
+
+  /**
+   * Gets the profile creation timestamp.
+   *
+   * @return int
+   *   The profile creation timestamp.
    */
   public function getCreatedTime();
 
@@ -45,7 +70,7 @@ interface ProfileInterface extends ContentEntityInterface, EntityChangedInterfac
   public function setCreatedTime($timestamp);
 
   /**
-   * Returns the profile revision creation timestamp.
+   * Gets the profile revision creation timestamp.
    *
    * @return int
    *   The UNIX timestamp of when this revision was created.
@@ -63,7 +88,7 @@ interface ProfileInterface extends ContentEntityInterface, EntityChangedInterfac
   public function setRevisionCreationTime($timestamp);
 
   /**
-   * Returns the profile revision author.
+   * Gets the profile revision author.
    *
    * @return \Drupal\user\UserInterface
    *   The user entity for the revision author.
@@ -79,48 +104,5 @@ interface ProfileInterface extends ContentEntityInterface, EntityChangedInterfac
    * @return $this
    */
   public function setRevisionAuthorId($uid);
-
-  /**
-   * Returns a label for the profile.
-   */
-  public function label();
-
-  /**
-   * Returns the node published status indicator.
-   *
-   * Unpublished profiles are only visible to their authors and administrators.
-   *
-   * @return bool
-   *   TRUE if the profile is active.
-   */
-  public function isActive();
-
-  /**
-   * Sets the published status of a profile.
-   *
-   * @param bool $active
-   *   TRUE to set this profile to active, FALSE to set it to inactive.
-   *
-   * @return $this
-   */
-  public function setActive($active);
-
-  /**
-   * Returns the profile default status indicator.
-   *
-   * @return bool
-   *   TRUE if the profile is default.
-   */
-  public function isDefault();
-
-  /**
-   * Sets the default status of a profile.
-   *
-   * @param bool $is_default
-   *   TRUE to set this profile to default, FALSE to set it to not default.
-   *
-   * @return $this
-   */
-  public function setDefault($is_default);
 
 }

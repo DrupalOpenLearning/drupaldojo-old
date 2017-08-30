@@ -85,15 +85,16 @@ drush config-list-types (clt)
 drush config-added-report (cra)
 drush config-missing-report (crm)
 drush config-different-report (crd)
+drush config-inactive-report (cri)
   Run config reports (see below).
 
 drush config-diff (cfd)
   Show config differences for one item between active and imported (see below).
 
 The report commands run reports that tell what config has been added, is
-missing, or is different between your active site configuration and the imported
-default configuration from config/install directories of your installed profile,
-modules, and themes.
+missing, is inactive, or is different between your active site configuration and
+the imported default configuration from config/install directories of your
+installed profile, modules, and themes.
 
 For each report except "added", the first argument is one of:
 - type: Runs the report for a configuration type; use drush config-list-types to
@@ -108,7 +109,8 @@ module, theme, or install profile you want to run the report for. For the
 configuration type.
 
 These are the same as the reports you get in the UI, which is described above;
-the only difference is that in Drush the report is separated into pieces.
+the difference is that in Drush the report is separated into pieces, and the
+UI report sections have more columns giving information about each config item.
 
 Once you have found a configuration item with differences, you can view the
 differences using the config-diff command. This is a normalized/formatted diff
@@ -130,16 +132,25 @@ different, you can:
 
 - Export them - see drush config-export.
 
-- Import missing configuration or revert to provided default values. To do this:
+- Import missing configuration or revert to provided default values. There are
+Drush commands to do this:
 
-  (1) Locate the configuration file in the install profile, module, or theme
-      config/install directory.
+drush config-revert (cfr)
+  Revert a config item found in a "different" report to the current version in
+  the module, theme, or install profile that provides it.
 
-  (2) Copy this file to your configuration staging directory.
+drush config-revert-multiple (cfrm)
+  Revert all config items of one type or from one module, theme, or install
+  profile to the provided versions.
 
-  (3) Run drush config-import. You might want to use the --preview option to see
-      what differences you are about to import, before running the import, or
-      use the drush config-diff command to look at individual differences.
+drush config-import-missing (cfi)
+  Import a config item found in a "missing" or "inactive" report from the
+  current version in the module, theme, or install profile that provides it.
+
+You can also to use the drush config-import command to import/update multiple
+configuration items. But this requires that you locate the files containing the
+configuration you want to import, and copy them to your configuration staging
+directory.
 
 
 IMPORTANT NOTES

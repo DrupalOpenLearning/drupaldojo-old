@@ -29,7 +29,7 @@ class GroupPermissionsTypeSpecificForm extends GroupPermissionsForm {
   protected $entityTypeManager;
 
   /**
-   * Constructs a new GroupPermissionsForm.
+   * Constructs a new GroupPermissionsTypeSpecificForm.
    *
    * @param \Drupal\Core\Entity\EntityTypeManagerInterface $entity_type_manager
    *   The entity type manager.

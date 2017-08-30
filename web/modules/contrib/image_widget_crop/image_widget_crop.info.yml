@@ -9,8 +9,8 @@ dependencies:
 test_dependencies:
   - file_entity
 
-# Information added by Drupal.org packaging script on 2016-08-31
-version: '8.x-1.3'
+# Information added by Drupal.org packaging script on 2017-04-05
+version: '8.x-1.5'
 core: '8.x'
 project: 'image_widget_crop'
-datestamp: 1472654212
+datestamp: 1491393486

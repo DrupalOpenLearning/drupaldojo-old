@@ -7,7 +7,17 @@ use Drupal\Core\Session\AccountInterface;
 use Drupal\group\Entity\GroupInterface;
 
 /**
- * Generates and caches the permissions hash for a group membership.
+ * Loader for wrapped GroupContent entities using the 'group_membership' plugin.
+ *
+ * Seeing as this class is part of the main module, we could have easily put its
+ * functionality in GroupContentStorage. We chose not to because other modules
+ * won't have that power and we should provide them with an example of how to
+ * write such a plugin-specific GroupContent loader.
+ *
+ * Also note that we don't simply return GroupContent entities, but wrapped
+ * copies of said entities, namely \Drupal\group\GroupMembership. In a future
+ * version we should investigate the feasibility of extending GroupContent
+ * entities rather than wrapping them.
  */
 class GroupMembershipLoader implements GroupMembershipLoaderInterface {
 
@@ -48,11 +58,11 @@ class GroupMembershipLoader implements GroupMembershipLoaderInterface {
   }
 
   /**
-   * Wraps GroupContent entities ina GroupMembership object.
+   * Wraps GroupContent entities in a GroupMembership object.
    *
    * @param \Drupal\group\Entity\GroupContentInterface[] $entities
    *   An array of GroupContent entities to wrap.
-   * 
+   *
    * @return \Drupal\group\GroupMembership[]
    *   A list of GroupMembership wrapper objects.
    */
@@ -63,7 +73,7 @@ class GroupMembershipLoader implements GroupMembershipLoaderInterface {
     }
     return $group_memberships;
   }
-  
+
   /**
    * {@inheritdoc}
    */
@@ -79,11 +89,11 @@ class GroupMembershipLoader implements GroupMembershipLoaderInterface {
    */
   public function loadByGroup(GroupInterface $group, $roles = NULL) {
     $filters = [];
-    
+
     if (isset($roles)) {
       $filters['group_roles'] = (array) $roles;
     }
-    
+
     $group_contents = $this->groupContentStorage()->loadByGroup($group, 'group_membership', $filters);
     return $this->wrapGroupContentEntities($group_contents);
   }

@@ -1,10 +1,5 @@
 <?php
 
-/**
- * @file
- * Contains \Drupal\entity\Entity\RevisionableEntityBundleInterface.
- */
-
 namespace Drupal\entity\Entity;
 
 use Drupal\Core\Config\Entity\ConfigEntityInterface;

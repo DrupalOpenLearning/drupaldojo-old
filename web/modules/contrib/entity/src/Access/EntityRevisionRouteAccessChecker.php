@@ -1,10 +1,5 @@
 <?php
 
-/**
- * @file
- * Contains \Drupal\entity\Access\EntityRevisionRouteAccessChecker
- */
-
 namespace Drupal\entity\Access;
 
 use Drupal\Core\Access\AccessResult;

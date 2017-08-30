@@ -8,9 +8,11 @@ dependencies:
   - block_content
   - crop
   - field
+  - field_group
   - file
   - help
   - image
+  - image_effects
   - image_widget_crop
   - link
   - node

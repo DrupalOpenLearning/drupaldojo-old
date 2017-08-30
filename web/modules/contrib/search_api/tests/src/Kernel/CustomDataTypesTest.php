@@ -6,7 +6,6 @@ use Drupal\entity_test\Entity\EntityTestMulRevChanged;
 use Drupal\KernelTests\KernelTestBase;
 use Drupal\search_api\Entity\Index;
 use Drupal\search_api\Entity\Server;
-use Drupal\search_api\Utility\Utility;
 
 /**
  * Tests custom data types integration.
@@ -34,7 +33,7 @@ class CustomDataTypesTest extends KernelTestBase {
    *
    * @var string[]
    */
-  public static $modules = array(
+  public static $modules = [
     'field',
     'search_api',
     'search_api_db',
@@ -44,7 +43,7 @@ class CustomDataTypesTest extends KernelTestBase {
     'system',
     'entity_test',
     'text',
-  );
+  ];
 
   /**
    * An array of test entities.
@@ -59,9 +58,9 @@ class CustomDataTypesTest extends KernelTestBase {
   public function setUp() {
     parent::setUp();
 
-    $this->installSchema('search_api', array('search_api_item'));
-    $this->installSchema('system', array('router'));
-    $this->installSchema('user', array('users_data'));
+    $this->installSchema('search_api', ['search_api_item']);
+    $this->installSchema('system', ['router']);
+    $this->installSchema('user', ['users_data']);
     $this->installEntitySchema('entity_test_mulrev_changed');
     $this->installEntitySchema('search_api_task');
 
@@ -78,33 +77,33 @@ class CustomDataTypesTest extends KernelTestBase {
       ->set('tracking_page_size', 100)
       ->save();
 
-    $this->installConfig(array('search_api_test_db'));
+    $this->installConfig(['search_api_test_db']);
 
     // Create test entities.
-    $this->entities[1] = EntityTestMulRevChanged::create(array(
+    $this->entities[1] = EntityTestMulRevChanged::create([
       'name' => 'foo bar baz föö smile' . json_decode('"\u1F601"'),
       'body' => 'test test case Case casE',
-      'type' => 'item',
-      'keywords' => array('Orange', 'orange', 'örange', 'Orange'),
+      'type' => 'entity_test_mulrev_changed',
+      'keywords' => ['Orange', 'orange', 'örange', 'Orange'],
       'category' => 'item_category',
-    ));
-    $this->entities[2] = EntityTestMulRevChanged::create(array(
+    ]);
+    $this->entities[2] = EntityTestMulRevChanged::create([
       'name' => 'foo bar baz föö smile',
       'body' => 'test test case Case casE',
-      'type' => 'item',
-      'keywords' => array('strawberry', 'llama'),
+      'type' => 'entity_test_mulrev_changed',
+      'keywords' => ['strawberry', 'llama'],
       'category' => 'item_category',
-    ));
+    ]);
     $this->entities[1]->save();
     $this->entities[2]->save();
 
     // Create a test server.
-    $this->server = Server::create(array(
+    $this->server = Server::create([
       'name' => 'Server test ~',
       'id' => 'test',
       'status' => 1,
       'backend' => 'search_api_test',
-    ));
+    ]);
     $this->server->save();
 
     // Set the server (determines the supported data types) and remove all
@@ -125,7 +124,9 @@ class CustomDataTypesTest extends KernelTestBase {
     $original_type = $this->index->getField('name')->getType();
 
     $item = $this->index->loadItem('entity:entity_test_mulrev_changed/1:en');
-    $item = Utility::createItemFromObject($this->index, $item, 'entity:entity_test_mulrev_changed/1:en');
+    $item = \Drupal::getContainer()
+      ->get('search_api.fields_helper')
+      ->createItemFromObject($this->index, $item, 'entity:entity_test_mulrev_changed/1:en');
 
     $name_field = $item->getField('name');
     $processed_value = $name_field->getValues()[0];
@@ -138,7 +139,7 @@ class CustomDataTypesTest extends KernelTestBase {
 
     // Reset the fields on the item and change to the supported data type.
     $item->setFieldsExtracted(FALSE);
-    $item->setFields(array());
+    $item->setFields([]);
     $field = $this->index->getField('name')
       ->setType('search_api_test')
       ->setLabel("Test");
@@ -154,7 +155,7 @@ class CustomDataTypesTest extends KernelTestBase {
 
     // Reset the fields on the item and change to the non-supported data type.
     $item->setFieldsExtracted(FALSE);
-    $item->setFields(array());
+    $item->setFields([]);
     $field = $this->index->getField('name')
       ->setType('search_api_test_unsupported');
     $this->index->addField($field);
@@ -168,7 +169,7 @@ class CustomDataTypesTest extends KernelTestBase {
 
     // Reset the fields on the item and change to the data altering data type.
     $item->setFieldsExtracted(FALSE);
-    $item->setFields(array());
+    $item->setFields([]);
     $field = $this->index->getField('name')
       ->setType('search_api_test_altering');
     $this->index->addField($field);

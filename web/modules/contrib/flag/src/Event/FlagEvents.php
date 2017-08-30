@@ -24,4 +24,5 @@ final class FlagEvents {
    * @var string
    */
   const ENTITY_UNFLAGGED = 'flag.entity_unflagged';
+
 }

@@ -11,13 +11,15 @@ use Drupal\Core\Theme\ThemeInitializationInterface;
 use Drupal\Core\Theme\ThemeManagerInterface;
 use Drupal\search_api\Datasource\DatasourceInterface;
 use Drupal\search_api\Item\ItemInterface;
+use Drupal\search_api\LoggerTrait;
 use Drupal\search_api\Plugin\search_api\processor\Property\RenderedItemProperty;
 use Drupal\search_api\Processor\ProcessorPluginBase;
-use Psr\Log\LoggerInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
 /**
  * Adds an additional field containing the rendered item.
+ *
+ * @see \Drupal\search_api\Plugin\search_api\processor\Property\RenderedItemProperty
  *
  * @SearchApiProcessor(
  *   id = "rendered_item",
@@ -25,13 +27,14 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
  *   description = @Translation("Adds an additional field containing the rendered item as it would look when viewed."),
  *   stages = {
  *     "add_properties" = 0,
- *     "pre_index_save" = -10,
  *   },
  *   locked = true,
  *   hidden = true,
  * )
  */
 class RenderedItem extends ProcessorPluginBase {
+
+  use LoggerTrait;
 
   /**
    * The current_user service used by this plugin.
@@ -46,13 +49,6 @@ class RenderedItem extends ProcessorPluginBase {
    * @var \Drupal\Core\Render\RendererInterface|null
    */
   protected $renderer;
-
-  /**
-   * The logger to use for log messages.
-   *
-   * @var \Psr\Log\LoggerInterface|null
-   */
-  protected $logger;
 
   /**
    * Theme manager service.
@@ -139,32 +135,9 @@ class RenderedItem extends ProcessorPluginBase {
   }
 
   /**
-   * Retrieves the logger to use for log messages.
-   *
-   * @return \Psr\Log\LoggerInterface
-   *   The logger to use.
-   */
-  public function getLogger() {
-    return $this->logger ?: \Drupal::service('logger.channel.search_api');
-  }
-
-  /**
-   * Sets the logger to use for log messages.
-   *
-   * @param \Psr\Log\LoggerInterface $logger
-   *   The new logger.
-   *
-   * @return $this
-   */
-  public function setLogger(LoggerInterface $logger) {
-    $this->logger = $logger;
-    return $this;
-  }
-
-  /**
    * Retrieves the theme manager.
    *
-   * @return \Drupal\Core\Theme\ThemeManagerInterface $theme_manager
+   * @return \Drupal\Core\Theme\ThemeManagerInterface
    *   The theme manager.
    */
   protected function getThemeManager() {
@@ -187,7 +160,7 @@ class RenderedItem extends ProcessorPluginBase {
   /**
    * Retrieves the theme initialization service.
    *
-   * @return \Drupal\Core\Theme\ThemeInitializationInterface $theme_initialization
+   * @return \Drupal\Core\Theme\ThemeInitializationInterface
    *   The theme initialization service.
    */
   protected function getThemeInitializer() {
@@ -210,7 +183,7 @@ class RenderedItem extends ProcessorPluginBase {
   /**
    * Retrieves the config factory service.
    *
-   * @return \Drupal\Core\Config\ConfigFactoryInterface $config_factory
+   * @return \Drupal\Core\Config\ConfigFactoryInterface
    *   The config factory.
    */
   protected function getConfigFactory() {
@@ -237,15 +210,15 @@ class RenderedItem extends ProcessorPluginBase {
    * {@inheritdoc}
    */
   public function getPropertyDefinitions(DatasourceInterface $datasource = NULL) {
-    $properties = array();
+    $properties = [];
 
     if (!$datasource) {
-      $definition = array(
-        'type' => 'text',
+      $definition = [
         'label' => $this->t('Rendered HTML output'),
         'description' => $this->t('The complete HTML which would be displayed when viewing the item'),
+        'type' => 'search_api_html',
         'processor_id' => $this->getPluginId(),
-      );
+      ];
       $properties['rendered_item'] = new RenderedItemProperty($definition);
     }
 
@@ -270,12 +243,14 @@ class RenderedItem extends ProcessorPluginBase {
     // Count of items that don't have a view mode.
     $unset_view_modes = 0;
 
-    foreach ($this->filterForPropertyPath($item->getFields(), 'rendered_item') as $field) {
+    $fields = $this->getFieldsHelper()
+      ->filterForPropertyPath($item->getFields(), NULL, 'rendered_item');
+    foreach ($fields as $field) {
       $configuration = $field->getConfiguration();
 
       // Change the current user to our dummy implementation to ensure we are
       // using the configured roles.
-      $this->currentUser->setAccount(new UserSession(array('roles' => $configuration['roles'])));
+      $this->currentUser->setAccount(new UserSession(['roles' => $configuration['roles']]));
 
       $datasource_id = $item->getDatasourceId();
       $datasource = $item->getDatasource();
@@ -306,11 +281,11 @@ class RenderedItem extends ProcessorPluginBase {
     $this->getThemeManager()->setActiveTheme($active_theme);
 
     if ($unset_view_modes > 0) {
-      $context = array(
+      $context = [
         '%index' => $this->index->label(),
         '%processor' => $this->label(),
         '@count' => $unset_view_modes,
-      );
+      ];
       $this->getLogger()->warning('Warning: While indexing items on search index %index, @count item(s) did not have a view mode configured for one or more "Rendered item" fields.', $context);
     }
   }
@@ -321,8 +296,8 @@ class RenderedItem extends ProcessorPluginBase {
   public function calculateDependencies() {
     $this->dependencies = parent::calculateDependencies();
 
-    $fields = $this->index->getFieldsByDatasource(NULL);
-    $fields = $this->filterForPropertyPath($fields, 'rendered_item');
+    $fields = $this->getFieldsHelper()
+      ->filterForPropertyPath($this->index->getFields(), NULL, 'rendered_item');
     foreach ($fields as $field) {
       $view_modes = $field->getConfiguration()['view_mode'];
       foreach ($this->index->getDatasources() as $datasource_id => $datasource) {
@@ -354,8 +329,8 @@ class RenderedItem extends ProcessorPluginBase {
     // dependencies.
     // The code is highly similar to calculateDependencies(), only that we
     // remove the setting (if necessary) instead of adding a dependency.
-    $fields = $this->index->getFieldsByDatasource(NULL);
-    $fields = $this->filterForPropertyPath($fields, 'rendered_item');
+    $fields = $this->getFieldsHelper()
+      ->filterForPropertyPath($this->index->getFields(), NULL, 'rendered_item');
     foreach ($fields as $field) {
       $field_config = $field->getConfiguration();
       $view_modes = $field_config['view_mode'];

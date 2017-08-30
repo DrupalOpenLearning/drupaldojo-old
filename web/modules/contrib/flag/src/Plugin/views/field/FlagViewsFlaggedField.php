@@ -50,4 +50,5 @@ class FlagViewsFlaggedField extends Boolean {
 
     parent::buildOptionsForm($form, $form_state);
   }
+
 }

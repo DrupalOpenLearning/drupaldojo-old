@@ -1,5 +1,5 @@
 addtoany.admin_settings:
-  path: '/admin/config/system/addtoany'
+  path: '/admin/config/services/addtoany'
   defaults:
     _form: '\Drupal\addtoany\Form\AddToAnySettingsForm'
     _title: 'AddToAny'

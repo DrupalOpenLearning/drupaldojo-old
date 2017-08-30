@@ -1,8 +1,4 @@
 <?php
-/**
- * @file
- * Contains \Drupal\flag\Tests\FlagContextualLinksTest.
- */
 
 namespace Drupal\flag\Tests;
 
@@ -152,7 +148,7 @@ class FlagContextualLinksTest extends FlagTestBase {
       'entity_id' => $node->id(),
     ));
 
-    $flag_short_text = $flag_action == 'flag' ? $flag->getFlagShortText() : $flag->getUnflagShortText();
+    $flag_short_text = $flag->getShortText($flag_action);
 
     $matches = array();
     $url_pattern =  preg_quote(base_path()) . '(' . preg_quote($flag_url->getInternalPath(), '@') . '[^"]*)';
@@ -167,4 +163,5 @@ class FlagContextualLinksTest extends FlagTestBase {
 
     return FALSE;
   }
+
 }

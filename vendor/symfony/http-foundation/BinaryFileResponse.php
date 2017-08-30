@@ -66,7 +66,7 @@ class BinaryFileResponse extends Response
      * @param bool                $autoEtag           Whether the ETag header should be automatically set
      * @param bool                $autoLastModified   Whether the Last-Modified header should be automatically set
      *
-     * @return BinaryFileResponse The created response
+     * @return static
      */
     public static function create($file = null, $status = 200, $headers = array(), $public = true, $contentDisposition = null, $autoEtag = false, $autoLastModified = true)
     {
@@ -81,7 +81,7 @@ class BinaryFileResponse extends Response
      * @param bool                $autoEtag
      * @param bool                $autoLastModified
      *
-     * @return BinaryFileResponse
+     * @return $this
      *
      * @throws FileException
      */
@@ -150,10 +150,10 @@ class BinaryFileResponse extends Response
      * Sets the Content-Disposition header with the given filename.
      *
      * @param string $disposition      ResponseHeaderBag::DISPOSITION_INLINE or ResponseHeaderBag::DISPOSITION_ATTACHMENT
-     * @param string $filename         Optionally use this filename instead of the real name of the file
+     * @param string $filename         Optionally use this UTF-8 encoded filename instead of the real name of the file
      * @param string $filenameFallback A fallback filename, containing only ASCII characters. Defaults to an automatically encoded filename
      *
-     * @return BinaryFileResponse
+     * @return $this
      */
     public function setContentDisposition($disposition, $filename = '', $filenameFallback = '')
     {
@@ -162,9 +162,9 @@ class BinaryFileResponse extends Response
         }
 
         if ('' === $filenameFallback && (!preg_match('/^[\x20-\x7e]*$/', $filename) || false !== strpos($filename, '%'))) {
-            $encoding = mb_detect_encoding($filename, null, true);
+            $encoding = mb_detect_encoding($filename, null, true) ?: '8bit';
 
-            for ($i = 0; $i < mb_strlen($filename, $encoding); ++$i) {
+            for ($i = 0, $filenameLength = mb_strlen($filename, $encoding); $i < $filenameLength; ++$i) {
                 $char = mb_substr($filename, $i, 1, $encoding);
 
                 if ('%' === $char || ord($char) < 32 || ord($char) > 126) {
@@ -190,7 +190,7 @@ class BinaryFileResponse extends Response
 
         if (!$this->headers->has('Accept-Ranges')) {
             // Only accept ranges on safe HTTP methods
-            $this->headers->set('Accept-Ranges', $request->isMethodSafe() ? 'bytes' : 'none');
+            $this->headers->set('Accept-Ranges', $request->isMethodSafe(false) ? 'bytes' : 'none');
         }
 
         if (!$this->headers->has('Content-Type')) {
@@ -348,7 +348,7 @@ class BinaryFileResponse extends Response
      *
      * @param bool $shouldDelete
      *
-     * @return BinaryFileResponse
+     * @return $this
      */
     public function deleteFileAfterSend($shouldDelete)
     {

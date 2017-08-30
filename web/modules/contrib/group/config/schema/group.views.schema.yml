@@ -23,10 +23,8 @@ views.argument_default.group_id_from_url:
     type: 'string'
     label: 'Group ID'
 
-# @todo Perhaps provide a base data type for these?
-views.relationship.group_content_to_entity:
+views_relationship_with_group_plugin_filter:
   type: 'views_relationship'
-  label: 'Group content to entity reference'
   mapping:
     group_content_plugins:
       type: 'sequence'
@@ -35,13 +33,14 @@ views.relationship.group_content_to_entity:
         type: 'string'
         label: 'Group content plugin ID'
 
+views.relationship.group_content_to_entity:
+  type: 'views_relationship_with_group_plugin_filter'
+  label: 'Group content to entity reference'
+
 views.relationship.group_content_to_entity_reverse:
-  type: 'views_relationship'
+  type: 'views_relationship_with_group_plugin_filter'
   label: 'Reverse group content to entity reference'
-  mapping:
-    group_content_plugins:
-      type: 'sequence'
-      label: 'Group content plugins'
-      sequence:
-        type: 'string'
-        label: 'Group content plugin ID'
+
+views.relationship.group_to_group_content:
+  type: 'views_relationship_with_group_plugin_filter'
+  label: 'Group to group content'

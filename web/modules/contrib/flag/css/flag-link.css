@@ -4,11 +4,10 @@
  *
  * @see flag.html.twig.
  */
-.flag {
-  display: block;
+.flag a {
   border: none;
 }
 
-.flag:hover {
+.flag a:hover {
   border: none;
 }

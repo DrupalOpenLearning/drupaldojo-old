@@ -2,7 +2,6 @@
 
 namespace Drupal\search_api\Plugin\views\filter;
 
-use Drupal\search_api\UncacheableDependencyTrait;
 use Drupal\views\Plugin\views\filter\LanguageFilter;
 
 /**
@@ -14,7 +13,6 @@ use Drupal\views\Plugin\views\filter\LanguageFilter;
  */
 class SearchApiLanguage extends LanguageFilter {
 
-  use UncacheableDependencyTrait;
   use SearchApiFilterTrait;
 
   /**

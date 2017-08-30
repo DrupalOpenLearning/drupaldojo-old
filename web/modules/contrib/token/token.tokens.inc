@@ -16,6 +16,8 @@ use Drupal\Core\TypedData\DataReferenceDefinitionInterface;
 use Drupal\Core\Url;
 use Drupal\field\FieldStorageConfigInterface;
 use Drupal\menu_link_content\MenuLinkContentInterface;
+use Drupal\node\Entity\Node;
+use Drupal\node\NodeInterface;
 use Drupal\system\Entity\Menu;
 use Drupal\user\UserInterface;
 use Symfony\Cmf\Component\Routing\RouteObjectInterface;
@@ -371,7 +373,7 @@ function token_token_info() {
   // Random tokens.
   $info['types']['random'] = array(
     'name' => t('Random'),
-    'description' => ('Tokens related to random data.'),
+    'description' => t('Tokens related to random data.'),
   );
   $info['tokens']['random']['number'] = array(
     'name' => t('Number'),
@@ -737,8 +739,10 @@ function token_tokens($type, array $tokens, array $data = array(), array $option
         case 'title':
           $request = \Drupal::request();
           $route = $request->attributes->get(RouteObjectInterface::ROUTE_OBJECT);
-          $title = \Drupal::service('title_resolver')->getTitle($request, $route);
-          $replacements[$original] = token_render_array_value($title);
+          if ($route) {
+            $title = \Drupal::service('title_resolver')->getTitle($request, $route);
+            $replacements[$original] = token_render_array_value($title);
+          }
           break;
         case 'url':
           $replacements[$original] = Url::fromRoute('<current>', [], $url_options)->toString();
@@ -993,10 +997,41 @@ function token_tokens($type, array $tokens, array $data = array(), array $option
  * Implements hook_token_info() on behalf of book.module.
  */
 function book_token_info() {
+  $info['types']['book'] = array(
+    'name' => t('Book'),
+    'description' => t('Tokens related to books.'),
+    'needs-data' => 'book',
+  );
+
+  $info['tokens']['book']['title'] = array(
+    'name' => t('Title'),
+    'description' => t('Title of the book.'),
+  );
+  $info['tokens']['book']['author'] = array(
+    'name' => t('Author'),
+    'description' => t('The author of the book.'),
+    'type' => 'user',
+  );
+  $info['tokens']['book']['root'] = array(
+    'name' => t('Root'),
+    'description' => t('Top level of the book.'),
+    'type' => 'node',
+  );
+  $info['tokens']['book']['parent'] = array(
+    'name' => t('Parent'),
+    'description' => t('Parent of the current page.'),
+    'type' => 'node',
+  );
+  $info['tokens']['book']['parents'] = array(
+    'name' => t('Parents'),
+    'description' => t("An array of all the node's parents, starting with the root."),
+    'type' => 'array',
+  );
+
   $info['tokens']['node']['book'] = array(
     'name' => t('Book'),
     'description' => t('The book page associated with the node.'),
-    'type' => 'menu-link',
+    'type' => 'book',
   );
   return $info;
 }
@@ -1009,22 +1044,55 @@ function book_tokens($type, $tokens, array $data = array(), array $options = arr
 
   // Node tokens.
   if ($type == 'node' && !empty($data['node'])) {
-    $node = $data['node'];
+    $book = $data['node']->book;
 
-    if (!empty($node->book['mlid'])) {
-      $link = token_book_link_load($node->book['mlid']);
+    if (!empty($book['bid'])) {
+      if ($book_tokens = \Drupal::token()->findWithPrefix($tokens, 'book')) {
+        $child_node = Node::load($book['nid']);
+        $replacements += \Drupal::token()->generate('book', $book_tokens, array('book' => $child_node), $options, $bubbleable_metadata);
+      }
+    }
+  }
+  // Book tokens.
+  else if ($type == 'book' && !empty($data['book'])) {
+    $book = $data['book']->book;
+
+    if (!empty($book['bid'])) {
+      $book_node = Node::load($book['bid']);
 
       foreach ($tokens as $name => $original) {
         switch ($name) {
-          case 'book':
-            $replacements[$original] = $link['title'];
+          case 'root':
+          case 'title':
+            $replacements[$original] = $book_node->getTitle();
+            break;
+          case 'parent':
+            if (!empty($book['pid'])) {
+              $parent_node = Node::load($book['pid']);
+              $replacements[$original] = $parent_node->getTitle();
+            }
+            break;
+          case 'parents':
+            if ($parents = token_book_load_all_parents($book)) {
+              $replacements[$original] = token_render_array($parents, $options);
+            }
             break;
         }
       }
 
-      // Chained token relationships.
-      if ($book_tokens = \Drupal::token()->findWithPrefix($tokens, 'book')) {
-        $replacements += \Drupal::token()->generate('menu-link', $book_tokens, array('menu-link' => $link), $options, $bubbleable_metadata);
+      if ($book_tokens = \Drupal::token()->findWithPrefix($tokens, 'author')) {
+        $replacements += \Drupal::token()->generate('user', $book_tokens, array('user' => $book_node->getOwner()), $options, $bubbleable_metadata);
+      }
+      if ($book_tokens = \Drupal::token()->findWithPrefix($tokens, 'root')) {
+        $replacements += \Drupal::token()->generate('node', $book_tokens, array('node' => $book_node), $options, $bubbleable_metadata);
+      }
+      if (!empty($book['pid']) && $book_tokens = \Drupal::token()->findWithPrefix($tokens, 'parent')) {
+        $parent_node = Node::load($book['pid']);
+        $replacements += \Drupal::token()->generate('node', $book_tokens, array('node' => $parent_node), $options, $bubbleable_metadata);
+      }
+      if ($book_tokens = \Drupal::token()->findWithPrefix($tokens, 'parents')) {
+        $parents = token_book_load_all_parents($book);
+        $replacements += \Drupal::token()->generate('array', $book_tokens, array('array' => $parents), $options, $bubbleable_metadata);
       }
     }
   }
@@ -1117,7 +1185,7 @@ function menu_ui_tokens($type, $tokens, array $data = array(), array $options = 
           else {
             $url = $node->toUrl();
             if ($links = $menu_link_manager->loadLinksByRoute($url->getRouteName(), $url->getRouteParameters())) {
-              $link = reset($links);
+              $link = _token_menu_link_best_match($node, $links);
               $replacements[$original] = token_menu_link_translated_title($link, $langcode);
             }
           }
@@ -1133,7 +1201,7 @@ function menu_ui_tokens($type, $tokens, array $data = array(), array $options = 
         else {
           $url = $node->urlInfo();
           if ($links = $menu_link_manager->loadLinksByRoute($url->getRouteName(), $url->getRouteParameters())) {
-            $link = reset($links);
+            $link = _token_menu_link_best_match($node, $links);
             $replacements += \Drupal::token()->generate('menu-link', $menu_tokens, array('menu-link' => $link), $options, $bubbleable_metadata);
           }
         }
@@ -1201,6 +1269,36 @@ function menu_ui_tokens($type, $tokens, array $data = array(), array $options = 
   }
 
   return $replacements;
+}
+
+/**
+ * Returns a best matched link for a given node.
+ *
+ * If the url exists in multiple menus, default to the one set on the node
+ * itself.
+ *
+ * @param \Drupal\node\NodeInterface $node
+ *   The node to look up the default menu settings from.
+ * @param array $links
+ *   An array of instances keyed by plugin ID.
+ *
+ * @return \Drupal\Core\Menu\MenuLinkInterface
+ *   A Link instance.
+ */
+function _token_menu_link_best_match(NodeInterface $node, array $links) {
+  // Get the menu ui defaults so we can determine what menu was
+  // selected for this node. This ensures that if the node was added
+  // to the menu via the node UI, we use that as a default. If it
+  // was not added via the node UI then grab the first in the
+  // retrieved array.
+  $defaults = menu_ui_get_menu_link_defaults($node);
+  if (isset($defaults['id']) && isset($links[$defaults['id']])) {
+    $link = $links[$defaults['id']];
+  }
+  else {
+    $link = reset($links);
+  }
+  return $link;
 }
 
 /**
@@ -1338,6 +1436,20 @@ function field_token_info_alter(&$info) {
             'type' => 'image_with_image_style',
           ];
         }
+      }
+      // Provide format token for datetime fields.
+      if ($field->getType() == 'datetime') {
+        $info['tokens'][$field_token_name]['date'] = $info['tokens'][$field_token_name]['value'];
+        $info['tokens'][$field_token_name]['date']['name'] .= ' ' . t('format');
+        $info['tokens'][$field_token_name]['date']['type'] = 'date';
+      }
+      if ($field->getType() == 'daterange') {
+        $info['tokens'][$field_token_name]['start_date'] = $info['tokens'][$field_token_name]['value'];
+        $info['tokens'][$field_token_name]['start_date']['name'] .= ' ' . t('format');
+        $info['tokens'][$field_token_name]['start_date']['type'] = 'date';
+        $info['tokens'][$field_token_name]['end_date'] = $info['tokens'][$field_token_name]['end_value'];
+        $info['tokens'][$field_token_name]['end_date']['name'] .= ' ' . t('format');
+        $info['tokens'][$field_token_name]['end_date']['type'] = 'date';
       }
     }
   }
@@ -1563,6 +1675,16 @@ function field_tokens($type, $tokens, array $data = array(), array $options = ar
                 break;
             }
           }
+        }
+      }
+      elseif (in_array($field_item->getFieldDefinition()->getType(), ['datetime', 'daterange']) && in_array($property_name, ['date', 'start_date', 'end_date'])) {
+        $datetime = $field_item->$property_name->getTimestamp();
+        if($property_name == $token) {
+          $replacements[$original] = $datetime;
+        }
+        else {
+          $field_tokens = \Drupal::token()->findWithPrefix($tokens, $property_name);
+          $replacements += \Drupal::token()->generate('date', $field_tokens, ['date' => $datetime], $options, $bubbleable_metadata);
         }
       }
       else {

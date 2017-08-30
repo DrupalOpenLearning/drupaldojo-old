@@ -4,12 +4,13 @@ namespace Drupal\search_api\Backend;
 
 use Drupal\search_api\Entity\Server;
 use Drupal\search_api\Item\ItemInterface;
+use Drupal\search_api\LoggerTrait;
 use Drupal\search_api\Query\QueryInterface;
 use Drupal\search_api\SearchApiException;
 use Drupal\search_api\IndexInterface;
 use Drupal\search_api\Plugin\ConfigurablePluginBase;
 use Drupal\search_api\ServerInterface;
-use Drupal\search_api\Utility\Utility;
+use Drupal\search_api\Utility\FieldsHelper;
 
 /**
  * Defines a base class for backend plugins.
@@ -40,6 +41,8 @@ use Drupal\search_api\Utility\Utility;
  */
 abstract class BackendPluginBase extends ConfigurablePluginBase implements BackendInterface {
 
+  use LoggerTrait;
+
   /**
    * The server this backend is configured for.
    *
@@ -57,14 +60,44 @@ abstract class BackendPluginBase extends ConfigurablePluginBase implements Backe
   protected $serverId;
 
   /**
+   * The fields helper.
+   *
+   * @var \Drupal\search_api\Utility\FieldsHelper|null
+   */
+  protected $fieldsHelper;
+
+  /**
    * {@inheritdoc}
    */
   public function __construct(array $configuration, $plugin_id, array $plugin_definition) {
-    if (!empty($configuration['server']) && $configuration['server'] instanceof ServerInterface) {
-      $this->setServer($configuration['server']);
-      unset($configuration['server']);
+    if (!empty($configuration['#server']) && $configuration['#server'] instanceof ServerInterface) {
+      $this->setServer($configuration['#server']);
+      unset($configuration['#server']);
     }
     parent::__construct($configuration, $plugin_id, $plugin_definition);
+  }
+
+  /**
+   * Retrieves the fields helper.
+   *
+   * @return \Drupal\search_api\Utility\FieldsHelper
+   *   The fields helper.
+   */
+  public function getFieldsHelper() {
+    return $this->fieldsHelper ?: \Drupal::service('search_api.fields_helper');
+  }
+
+  /**
+   * Sets the fields helper.
+   *
+   * @param \Drupal\search_api\Utility\FieldsHelper $fields_helper
+   *   The new fields helper.
+   *
+   * @return $this
+   */
+  public function setFieldsHelper(FieldsHelper $fields_helper) {
+    $this->fieldsHelper = $fields_helper;
+    return $this;
   }
 
   /**
@@ -79,13 +112,14 @@ abstract class BackendPluginBase extends ConfigurablePluginBase implements Backe
    */
   public function setServer(ServerInterface $server) {
     $this->server = $server;
+    return $this;
   }
 
   /**
    * {@inheritdoc}
    */
   public function viewSettings() {
-    return array();
+    return [];
   }
 
   /**
@@ -99,7 +133,7 @@ abstract class BackendPluginBase extends ConfigurablePluginBase implements Backe
    * {@inheritdoc}
    */
   public function getSupportedFeatures() {
-    return array();
+    return [];
   }
 
   /**
@@ -134,10 +168,10 @@ abstract class BackendPluginBase extends ConfigurablePluginBase implements Backe
       $this->getServer()->deleteAllItems();
     }
     catch (SearchApiException $e) {
-      $vars = array(
+      $vars = [
         '%server' => $this->getServer()->label(),
-      );
-      watchdog_exception('search_api', $e, '%type while deleting items from server %server: @message in %function (line %line of %file).', $vars);
+      ];
+      $this->logException($e, '%type while deleting items from server %server: @message in %function (line %line of %file).', $vars);
       drupal_set_message($this->t('Deleting some of the items on the server failed. Check the logs for details. The server was still removed.'), 'error');
     }
   }
@@ -146,7 +180,7 @@ abstract class BackendPluginBase extends ConfigurablePluginBase implements Backe
    * {@inheritdoc}
    */
   public function getBackendDefinedFields(IndexInterface $index) {
-    return array();
+    return [];
   }
 
   /**
@@ -174,7 +208,7 @@ abstract class BackendPluginBase extends ConfigurablePluginBase implements Backe
    * {@inheritdoc}
    */
   public function getDiscouragedProcessors() {
-    return array();
+    return [];
   }
 
   /**
@@ -191,18 +225,21 @@ abstract class BackendPluginBase extends ConfigurablePluginBase implements Backe
    *   An array of field objects for all "magic" fields, keyed by field IDs.
    */
   protected function getSpecialFields(IndexInterface $index, ItemInterface $item = NULL) {
-    $field_info = array(
+    $field_info = [
       'type' => 'string',
       'original type' => 'string',
-    );
-    $fields['search_api_id'] = Utility::createField($index, 'search_api_id', $field_info);
-    $fields['search_api_datasource'] = Utility::createField($index, 'search_api_datasource', $field_info);
-    $fields['search_api_language'] = Utility::createField($index, 'search_api_language', $field_info);
+    ];
+    $fields['search_api_id'] = $this->getFieldsHelper()
+      ->createField($index, 'search_api_id', $field_info);
+    $fields['search_api_datasource'] = $this->getFieldsHelper()
+      ->createField($index, 'search_api_datasource', $field_info);
+    $fields['search_api_language'] = $this->getFieldsHelper()
+      ->createField($index, 'search_api_language', $field_info);
 
     if ($item) {
-      $fields['search_api_id']->setValues(array($item->getId()));
-      $fields['search_api_datasource']->setValues(array($item->getDatasourceId()));
-      $fields['search_api_language']->setValues(array($item->getLanguage()));
+      $fields['search_api_id']->setValues([$item->getId()]);
+      $fields['search_api_datasource']->setValues([$item->getDatasourceId()]);
+      $fields['search_api_language']->setValues([$item->getLanguage()]);
     }
 
     return $fields;
@@ -270,6 +307,9 @@ abstract class BackendPluginBase extends ConfigurablePluginBase implements Backe
    * Automatically translates a NULL value in the query object to all fulltext
    * fields in the search index.
    *
+   * If a specific backend supports any "virtual" fulltext fields not listed in
+   * the index, it should override this method to add them, if appropriate.
+   *
    * @param \Drupal\search_api\Query\QueryInterface $query
    *   The search query.
    *
@@ -280,7 +320,8 @@ abstract class BackendPluginBase extends ConfigurablePluginBase implements Backe
    */
   protected function getQueryFulltextFields(QueryInterface $query) {
     $fulltext_fields = $query->getFulltextFields();
-    return $fulltext_fields === NULL ? $query->getIndex()->getFulltextFields() : $fulltext_fields;
+    $index_fields = $query->getIndex()->getFulltextFields();
+    return $fulltext_fields === NULL ? $index_fields : array_intersect($fulltext_fields, $index_fields);
   }
 
 }

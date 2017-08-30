@@ -11,6 +11,8 @@
 
 namespace Symfony\Component\DependencyInjection\Tests\Dumper;
 
+use DummyProxyDumper;
+use PHPUnit\Framework\TestCase;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Dumper\PhpDumper;
 use Symfony\Component\DependencyInjection\ParameterBag\ParameterBag;
@@ -19,7 +21,9 @@ use Symfony\Component\DependencyInjection\Definition;
 use Symfony\Component\DependencyInjection\Variable;
 use Symfony\Component\ExpressionLanguage\Expression;
 
-class PhpDumperTest extends \PHPUnit_Framework_TestCase
+require_once __DIR__.'/../Fixtures/includes/classes.php';
+
+class PhpDumperTest extends TestCase
 {
     protected static $fixturesPath;
 
@@ -30,13 +34,10 @@ class PhpDumperTest extends \PHPUnit_Framework_TestCase
 
     public function testDump()
     {
-        $dumper = new PhpDumper($container = new ContainerBuilder());
+        $dumper = new PhpDumper(new ContainerBuilder());
 
         $this->assertStringEqualsFile(self::$fixturesPath.'/php/services1.php', $dumper->dump(), '->dump() dumps an empty container as an empty PHP class');
         $this->assertStringEqualsFile(self::$fixturesPath.'/php/services1-1.php', $dumper->dump(array('class' => 'Container', 'base_class' => 'AbstractContainer', 'namespace' => 'Symfony\Component\DependencyInjection\Dump')), '->dump() takes a class and a base_class options');
-
-        $container = new ContainerBuilder();
-        new PhpDumper($container);
     }
 
     public function testDumpOptimizationString()
@@ -118,13 +119,13 @@ class PhpDumperTest extends \PHPUnit_Framework_TestCase
         // without compilation
         $container = include self::$fixturesPath.'/containers/container9.php';
         $dumper = new PhpDumper($container);
-        $this->assertEquals(str_replace('%path%', str_replace('\\', '\\\\', self::$fixturesPath.DIRECTORY_SEPARATOR.'includes'.DIRECTORY_SEPARATOR), file_get_contents(self::$fixturesPath.'/php/services9.php')), $dumper->dump(), '->dump() dumps services');
+        $this->assertStringEqualsFile(self::$fixturesPath.'/php/services9.php', str_replace(str_replace('\\', '\\\\', self::$fixturesPath.DIRECTORY_SEPARATOR.'includes'.DIRECTORY_SEPARATOR), '%path%', $dumper->dump()), '->dump() dumps services');
 
         // with compilation
         $container = include self::$fixturesPath.'/containers/container9.php';
         $container->compile();
         $dumper = new PhpDumper($container);
-        $this->assertEquals(str_replace('%path%', str_replace('\\', '\\\\', self::$fixturesPath.DIRECTORY_SEPARATOR.'includes'.DIRECTORY_SEPARATOR), file_get_contents(self::$fixturesPath.'/php/services9_compiled.php')), $dumper->dump(), '->dump() dumps services');
+        $this->assertStringEqualsFile(self::$fixturesPath.'/php/services9_compiled.php', str_replace(str_replace('\\', '\\\\', self::$fixturesPath.DIRECTORY_SEPARATOR.'includes'.DIRECTORY_SEPARATOR), '%path%', $dumper->dump()), '->dump() dumps services');
 
         $dumper = new PhpDumper($container = new ContainerBuilder());
         $container->register('foo', 'FooClass')->addArgument(new \stdClass());
@@ -144,7 +145,7 @@ class PhpDumperTest extends \PHPUnit_Framework_TestCase
     {
         $container = include self::$fixturesPath.'/containers/container20.php';
         $dumper = new PhpDumper($container);
-        $this->assertEquals(str_replace('%path%', str_replace('\\', '\\\\', self::$fixturesPath.DIRECTORY_SEPARATOR.'includes'.DIRECTORY_SEPARATOR), file_get_contents(self::$fixturesPath.'/php/services20.php')), $dumper->dump(), '->dump() dumps services');
+        $this->assertStringEqualsFile(self::$fixturesPath.'/php/services20.php', str_replace(str_replace('\\', '\\\\', self::$fixturesPath.DIRECTORY_SEPARATOR.'includes'.DIRECTORY_SEPARATOR), '%path%', $dumper->dump()), '->dump() dumps services');
     }
 
     public function testServicesWithAnonymousFactories()
@@ -227,7 +228,7 @@ class PhpDumperTest extends \PHPUnit_Framework_TestCase
         $container->set('bar', $bar = new \stdClass());
         $container->setParameter('foo_bar', 'foo_bar');
 
-        $this->assertEquals($bar, $container->get('bar'), '->set() overrides an already defined service');
+        $this->assertSame($bar, $container->get('bar'), '->set() overrides an already defined service');
     }
 
     public function testOverrideServiceWhenUsingADumpedContainerAndServiceIsUsedFromAnotherOne()
@@ -262,7 +263,7 @@ class PhpDumperTest extends \PHPUnit_Framework_TestCase
         $container = include self::$fixturesPath.'/containers/container24.php';
         $dumper = new PhpDumper($container);
 
-        $this->assertEquals(file_get_contents(self::$fixturesPath.'/php/services24.php'), $dumper->dump());
+        $this->assertStringEqualsFile(self::$fixturesPath.'/php/services24.php', $dumper->dump());
     }
 
     public function testInlinedDefinitionReferencingServiceContainer()
@@ -274,5 +275,115 @@ class PhpDumperTest extends \PHPUnit_Framework_TestCase
 
         $dumper = new PhpDumper($container);
         $this->assertStringEqualsFile(self::$fixturesPath.'/php/services13.php', $dumper->dump(), '->dump() dumps inline definitions which reference service_container');
+    }
+
+    public function testInitializePropertiesBeforeMethodCalls()
+    {
+        require_once self::$fixturesPath.'/includes/classes.php';
+
+        $container = new ContainerBuilder();
+        $container->register('foo', 'stdClass');
+        $container->register('bar', 'MethodCallClass')
+            ->setProperty('simple', 'bar')
+            ->setProperty('complex', new Reference('foo'))
+            ->addMethodCall('callMe');
+        $container->compile();
+
+        $dumper = new PhpDumper($container);
+        eval('?>'.$dumper->dump(array('class' => 'Symfony_DI_PhpDumper_Test_Properties_Before_Method_Calls')));
+
+        $container = new \Symfony_DI_PhpDumper_Test_Properties_Before_Method_Calls();
+        $this->assertTrue($container->get('bar')->callPassed(), '->dump() initializes properties before method calls');
+    }
+
+    public function testCircularReferenceAllowanceForLazyServices()
+    {
+        $container = new ContainerBuilder();
+        $container->register('foo', 'stdClass')->addArgument(new Reference('bar'));
+        $container->register('bar', 'stdClass')->setLazy(true)->addArgument(new Reference('foo'));
+        $container->compile();
+
+        $dumper = new PhpDumper($container);
+        $dumper->dump();
+
+        $this->addToAssertionCount(1);
+    }
+
+    public function testCircularReferenceAllowanceForInlinedDefinitionsForLazyServices()
+    {
+        /*
+         *   test graph:
+         *              [connection] -> [event_manager] --> [entity_manager](lazy)
+         *                                                           |
+         *                                                           --(call)- addEventListener ("@lazy_service")
+         *
+         *              [lazy_service](lazy) -> [entity_manager](lazy)
+         *
+         */
+
+        $container = new ContainerBuilder();
+
+        $eventManagerDefinition = new Definition('stdClass');
+
+        $connectionDefinition = $container->register('connection', 'stdClass');
+        $connectionDefinition->addArgument($eventManagerDefinition);
+
+        $container->register('entity_manager', 'stdClass')
+            ->setLazy(true)
+            ->addArgument(new Reference('connection'));
+
+        $lazyServiceDefinition = $container->register('lazy_service', 'stdClass');
+        $lazyServiceDefinition->setLazy(true);
+        $lazyServiceDefinition->addArgument(new Reference('entity_manager'));
+
+        $eventManagerDefinition->addMethodCall('addEventListener', array(new Reference('lazy_service')));
+
+        $container->compile();
+
+        $dumper = new PhpDumper($container);
+
+        $dumper->setProxyDumper(new DummyProxyDumper());
+        $dumper->dump();
+
+        $this->addToAssertionCount(1);
+    }
+
+    public function testDumpHandlesLiteralClassWithRootNamespace()
+    {
+        $container = new ContainerBuilder();
+        $container->register('foo', '\\stdClass');
+
+        $dumper = new PhpDumper($container);
+        eval('?>'.$dumper->dump(array('class' => 'Symfony_DI_PhpDumper_Test_Literal_Class_With_Root_Namespace')));
+
+        $container = new \Symfony_DI_PhpDumper_Test_Literal_Class_With_Root_Namespace();
+
+        $this->assertInstanceOf('stdClass', $container->get('foo'));
+    }
+
+    /**
+     * This test checks the trigger of a deprecation note and should not be removed in major releases.
+     *
+     * @group legacy
+     * @expectedDeprecation The "foo" service is deprecated. You should stop using it, as it will soon be removed.
+     */
+    public function testPrivateServiceTriggersDeprecation()
+    {
+        $container = new ContainerBuilder();
+        $container->register('foo', 'stdClass')
+            ->setPublic(false)
+            ->setDeprecated(true);
+        $container->register('bar', 'stdClass')
+            ->setPublic(true)
+            ->setProperty('foo', new Reference('foo'));
+
+        $container->compile();
+
+        $dumper = new PhpDumper($container);
+        eval('?>'.$dumper->dump(array('class' => 'Symfony_DI_PhpDumper_Test_Private_Service_Triggers_Deprecation')));
+
+        $container = new \Symfony_DI_PhpDumper_Test_Private_Service_Triggers_Deprecation();
+
+        $container->get('bar');
     }
 }

@@ -76,6 +76,10 @@ class ConfigDiffer implements ConfigDiffInterface {
    * @see ConfigDiffer::$ignore
    */
   protected function normalize($config) {
+    if (empty($config)) {
+      return [];
+    }
+
     // Remove "ignore" elements.
     foreach ($this->ignore as $element) {
       unset($config[$element]);

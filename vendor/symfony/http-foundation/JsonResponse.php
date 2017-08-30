@@ -61,7 +61,7 @@ class JsonResponse extends Response
      * @param int   $status  The response status code
      * @param array $headers An array of response headers
      *
-     * @return JsonResponse
+     * @return static
      */
     public static function create($data = null, $status = 200, $headers = array())
     {
@@ -73,7 +73,7 @@ class JsonResponse extends Response
      *
      * @param string|null $callback The JSONP callback or null to use none
      *
-     * @return JsonResponse
+     * @return $this
      *
      * @throws \InvalidArgumentException When the callback name is not valid
      */
@@ -108,7 +108,7 @@ class JsonResponse extends Response
      *
      * @param mixed $data
      *
-     * @return JsonResponse
+     * @return $this
      *
      * @throws \InvalidArgumentException
      */
@@ -121,7 +121,7 @@ class JsonResponse extends Response
             $data = json_encode($data, $this->encodingOptions);
         } else {
             try {
-                if (PHP_VERSION_ID < 50400) {
+                if (\PHP_VERSION_ID < 50400) {
                     // PHP 5.3 triggers annoying warnings for some
                     // types that can't be serialized as JSON (INF, resources, etc.)
                     // but doesn't provide the JsonSerializable interface.
@@ -131,7 +131,7 @@ class JsonResponse extends Response
                     // PHP 5.4 and up wrap exceptions thrown by JsonSerializable
                     // objects in a new exception that needs to be removed.
                     // Fortunately, PHP 5.5 and up do not trigger any warning anymore.
-                    if (PHP_VERSION_ID < 50500) {
+                    if (\PHP_VERSION_ID < 50500) {
                         // Clear json_last_error()
                         json_encode(null);
                         $errorHandler = set_error_handler('var_dump');
@@ -146,14 +146,14 @@ class JsonResponse extends Response
                     $data = json_encode($data, $this->encodingOptions);
                 }
 
-                if (PHP_VERSION_ID < 50500) {
+                if (\PHP_VERSION_ID < 50500) {
                     restore_error_handler();
                 }
             } catch (\Exception $e) {
-                if (PHP_VERSION_ID < 50500) {
+                if (\PHP_VERSION_ID < 50500) {
                     restore_error_handler();
                 }
-                if (PHP_VERSION_ID >= 50400 && 'Exception' === get_class($e) && 0 === strpos($e->getMessage(), 'Failed calling ')) {
+                if (\PHP_VERSION_ID >= 50400 && 'Exception' === get_class($e) && 0 === strpos($e->getMessage(), 'Failed calling ')) {
                     throw $e->getPrevious() ?: $e;
                 }
                 throw $e;
@@ -184,7 +184,7 @@ class JsonResponse extends Response
      *
      * @param int $encodingOptions
      *
-     * @return JsonResponse
+     * @return $this
      */
     public function setEncodingOptions($encodingOptions)
     {
@@ -196,7 +196,7 @@ class JsonResponse extends Response
     /**
      * Updates the content and headers according to the JSON data and callback.
      *
-     * @return JsonResponse
+     * @return $this
      */
     protected function update()
     {

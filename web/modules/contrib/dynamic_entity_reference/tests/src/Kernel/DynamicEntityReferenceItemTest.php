@@ -31,9 +31,6 @@ class DynamicEntityReferenceItemTest extends FieldKernelTestBase {
   public static $modules = [
     'dynamic_entity_reference',
     'taxonomy',
-    'text',
-    'filter',
-    'views',
   ];
 
   /**
@@ -58,41 +55,48 @@ class DynamicEntityReferenceItemTest extends FieldKernelTestBase {
 
     $this->installEntitySchema('taxonomy_term');
 
-    $this->vocabulary = Vocabulary::create(array(
+    $this->vocabulary = Vocabulary::create([
       'name' => $this->randomMachineName(),
       'vid' => Unicode::strtolower($this->randomMachineName()),
       'langcode' => LanguageInterface::LANGCODE_NOT_SPECIFIED,
-    ));
+    ]);
     $this->vocabulary->save();
 
-    $this->term = Term::create(array(
+    $this->term = Term::create([
       'name' => $this->randomMachineName(),
       'vid' => $this->vocabulary->id(),
       'langcode' => LanguageInterface::LANGCODE_NOT_SPECIFIED,
-    ));
+    ]);
     $this->term->save();
 
     // Use the util to create a field.
-    FieldStorageConfig::create(array(
+    FieldStorageConfig::create([
       'field_name' => 'field_der',
       'type' => 'dynamic_entity_reference',
       'entity_type' => 'entity_test',
       'cardinality' => 1,
-      'settings' => array(
+      'settings' => [
         'exclude_entity_types' => FALSE,
         'entity_type_ids' => [
           'taxonomy_term',
         ],
-      ),
-    ))->save();
+      ],
+    ])->save();
 
-    FieldConfig::create(array(
+    FieldConfig::create([
       'field_name' => 'field_der',
       'entity_type' => 'entity_test',
       'bundle' => 'entity_test',
       'label' => 'Foo Bar',
-      'settings' => array(),
-    ))->save();
+      'settings' => [
+        'taxonomy_term' => [
+          'handler' => 'default:taxonomy_term',
+          'handler_settings' => [
+            'target_bundles' => NULL,
+          ],
+        ],
+      ],
+    ])->save();
   }
 
   /**
@@ -126,11 +130,11 @@ class DynamicEntityReferenceItemTest extends FieldKernelTestBase {
     $this->assertEquals($term->getName(), $new_name);
 
     // Make sure the computed term reflects updates to the term id.
-    $term2 = Term::create(array(
+    $term2 = Term::create([
       'name' => $this->randomMachineName(),
       'vid' => $this->term->bundle(),
       'langcode' => LanguageInterface::LANGCODE_NOT_SPECIFIED,
-    ));
+    ]);
     $term2->save();
 
     // Test all the possible ways of assigning a value.
@@ -206,11 +210,18 @@ class DynamicEntityReferenceItemTest extends FieldKernelTestBase {
     // Delete terms so we have nothing to reference and try again.
     $term->delete();
     $term2->delete();
-    $entity = EntityTest::create(array('name' => $this->randomMachineName()));
+    $entity = EntityTest::create(['name' => $this->randomMachineName()]);
     $entity->save();
 
     // Test the generateSampleValue() method.
     $entity = EntityTest::create();
+    // Created a term because the generateSampleItems relies on having terms in
+    // vocabulary.
+    Term::create([
+      'name' => $this->randomMachineName(),
+      'vid' => $this->term->bundle(),
+      'langcode' => LanguageInterface::LANGCODE_NOT_SPECIFIED,
+    ])->save();
     $entity->field_der->generateSampleItems();
     $entity->field_der->generateSampleItems();
     $this->entityValidateAndSave($entity);
@@ -221,11 +232,11 @@ class DynamicEntityReferenceItemTest extends FieldKernelTestBase {
    */
   public function testEntitySaveOrder() {
     // The term entity is unsaved here.
-    $term = Term::create(array(
+    $term = Term::create([
       'name' => $this->randomMachineName(),
       'vid' => $this->term->bundle(),
       'langcode' => LanguageInterface::LANGCODE_NOT_SPECIFIED,
-    ));
+    ]);
     $entity = EntityTest::create();
     // Now assign the unsaved term to the field.
     $entity->field_der->entity = $term;
@@ -248,11 +259,11 @@ class DynamicEntityReferenceItemTest extends FieldKernelTestBase {
    */
   public function testEntityAutoCreate() {
     // The term entity is unsaved here.
-    $term = Term::create(array(
+    $term = Term::create([
       'name' => $this->randomMachineName(),
       'vid' => $this->term->bundle(),
       'langcode' => LanguageInterface::LANGCODE_NOT_SPECIFIED,
-    ));
+    ]);
     $entity = EntityTest::create();
     // Now assign the unsaved term to the field.
     $entity->field_der->entity = $term;
@@ -273,18 +284,18 @@ class DynamicEntityReferenceItemTest extends FieldKernelTestBase {
   public function testMultipleEntityReferenceItem() {
     // Allow to reference multiple entities.
     $field_storage = FieldStorageConfig::loadByName('entity_test', 'field_der');
-    $field_storage->set('settings', array(
+    $field_storage->set('settings', [
       'exclude_entity_types' => FALSE,
       'entity_type_ids' => [
         'taxonomy_term',
         'user',
       ],
-    ))->set('cardinality', FieldStorageDefinitionInterface::CARDINALITY_UNLIMITED)
+    ])->set('cardinality', FieldStorageDefinitionInterface::CARDINALITY_UNLIMITED)
       ->save();
     $entity = EntityTest::create();
     $account = User::load(1);
-    $entity->field_der[] = array('entity' => $this->term);
-    $entity->field_der[] = array('entity' => $account);
+    $entity->field_der[] = ['entity' => $this->term];
+    $entity->field_der[] = ['entity' => $account];
     $entity->save();
     // Check term reference correctly.
     $this->assertEquals($entity->field_der[0]->target_id, $this->term->id());
@@ -304,25 +315,25 @@ class DynamicEntityReferenceItemTest extends FieldKernelTestBase {
    */
   public function testSelectionHandlerSettings() {
     $field_name = Unicode::strtolower($this->randomMachineName());
-    $field_storage = FieldStorageConfig::create(array(
+    $field_storage = FieldStorageConfig::create([
       'field_name' => $field_name,
       'entity_type' => 'entity_test',
       'type' => 'dynamic_entity_reference',
-      'settings' => array(
+      'settings' => [
         'exclude_entity_types' => FALSE,
         'entity_type_ids' => [
           'entity_test',
         ],
-      ),
-    ));
+      ],
+    ]);
     $field_storage->save();
 
     // Do not specify any value for the 'handler' setting in order to verify
     // that the default value is properly used.
-    $field = FieldConfig::create(array(
+    $field = FieldConfig::create([
       'field_storage' => $field_storage,
       'bundle' => 'entity_test',
-    ));
+    ]);
     $field->save();
 
     $field = FieldConfig::load($field->id());
@@ -368,7 +379,7 @@ class DynamicEntityReferenceItemTest extends FieldKernelTestBase {
     $errors = $entity->validate();
     $this->assertCount(1, $errors);
     $this->assertEquals($errors[0]->getMessage(), (string) new FormattableMarkup('%property should not be null.', ['%property' => 'target_id']));
-    $this->assertEquals($errors[0]->getPropertyPath(), 'field_der.0');
+    $this->assertEquals($errors[0]->getPropertyPath(), 'field_der.0.target_id');
     // This should rectify the issue, favoring the entity over the target_id.
     $entity->save();
     $errors = $entity->validate();

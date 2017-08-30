@@ -46,6 +46,19 @@ group_type.permissions_form:
   base_route: 'entity.group_type.edit_form'
   weight: 15
 
+group_type.permissions_form.basic:
+  title: 'Basic permissions'
+  route_name: 'entity.group_type.permissions_form'
+  base_route: 'entity.group_type.edit_form'
+  parent_id: 'group_type.permissions_form'
+
+group_type.permissions_form.outsider:
+  title: 'Advanced outsider permissions'
+  route_name: 'entity.group_type.outsider_permissions_form'
+  base_route: 'entity.group_type.edit_form'
+  parent_id: 'group_type.permissions_form'
+  weight: 5
+
 group_type.roles_list:
   title: 'Roles'
   route_name: 'entity.group_role.collection'

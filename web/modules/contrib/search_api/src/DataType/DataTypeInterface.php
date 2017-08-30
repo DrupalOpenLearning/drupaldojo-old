@@ -45,8 +45,6 @@ interface DataTypeInterface extends PluginInspectionInterface, DerivativeInspect
    *
    * @return string
    *   The fallback default data type.
-   *
-   * @see \Drupal\search_api\Utility::getDefaultDataTypes()
    */
   public function getFallbackType();
 

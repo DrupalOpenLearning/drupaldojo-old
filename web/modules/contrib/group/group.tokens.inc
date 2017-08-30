@@ -8,76 +8,125 @@
 use Drupal\Core\Datetime\Entity\DateFormat;
 use Drupal\Core\Language\LanguageInterface;
 use Drupal\Core\Render\BubbleableMetadata;
-use Drupal\user\Entity\User;
 
 /**
  * Implements hook_token_info().
  */
 function group_token_info() {
-  $type = [
+  $types['group'] = [
     'name' => t('Group'),
     'description' => t('Tokens related to individual groups.'),
     'needs-data' => 'group',
   ];
 
-  $group['id'] = [
+  $tokens['group']['id'] = [
     'name' => t('Group ID'),
     'description' => t('The unique ID of the group.'),
   ];
 
-  $group['type'] = [
+  $tokens['group']['type'] = [
     'name' => t('Group type'),
     'description' => t('The machine name of the group type.'),
   ];
 
-  $group['type-name'] = [
+  $tokens['group']['type-name'] = [
     'name' => t('Group type name'),
     'description' => t('The human-readable name of the group type.'),
   ];
 
-  $group['title'] = [
+  $tokens['group']['title'] = [
     'name' => t('Title'),
   ];
 
-  $group['url'] = [
+  $tokens['group']['langcode'] = [
+    'name' => t('Language code'),
+    'description' => t('The language code of the language the group is in.'),
+  ];
+
+  $tokens['group']['url'] = [
     'name' => t('URL'),
     'description' => t('The URL of the group.'),
   ];
 
-  $group['edit-url'] = [
+  $tokens['group']['edit-url'] = [
     'name' => t('Edit URL'),
-    'description' => t('The URL of the group\'s edit page.'),
+    'description' => t("The URL of the group's edit page."),
   ];
 
-  $group['created'] = [
+  $tokens['group']['created'] = [
     'name' => t('Date created'),
     'type' => 'date',
   ];
 
-  $group['changed'] = [
+  $tokens['group']['changed'] = [
     'name' => t('Date changed'),
     'description' => t('The date the group was most recently updated.'),
     'type' => 'date',
   ];
 
-  $group['author'] = [
+  $tokens['group']['author'] = [
     'name' => t('Author'),
     'type' => 'user',
   ];
 
-  return [
-    'types' => ['group' => $type],
-    'tokens' => ['group' => $group],
+  $types['group_content'] = [
+    'name' => t('Group content'),
+    'description' => t('Tokens related to the relationships between a group and its content.'),
+    'needs-data' => 'group_content',
   ];
+
+  $tokens['group_content']['id'] = [
+    'name' => t('Group content ID'),
+    'description' => t('The unique ID of the group content.'),
+  ];
+
+  $tokens['group_content']['langcode'] = [
+    'name' => t('Language code'),
+    'description' => t('The language code of the language the group content is in.'),
+  ];
+
+  $tokens['group_content']['url'] = [
+    'name' => t('URL'),
+    'description' => t('The URL of the group content.'),
+  ];
+
+  $tokens['group_content']['edit-url'] = [
+    'name' => t('Edit URL'),
+    'description' => t("The URL of the group's edit page."),
+  ];
+
+  $tokens['group_content']['created'] = [
+    'name' => t('Date created'),
+    'type' => 'date',
+  ];
+
+  $tokens['group_content']['changed'] = [
+    'name' => t('Date changed'),
+    'description' => t('The date the group content was most recently updated.'),
+    'type' => 'date',
+  ];
+
+  $tokens['group_content']['group'] = [
+    'name' => t('Group'),
+    'type' => 'group',
+  ];
+
+  $tokens['group_content']['pretty-path-key'] = [
+    'name' => t('Pretty path key'),
+    'description' => t('A prettier way of labeling group content of the same plugin type.'),
+  ];
+
+  return ['types' => $types, 'tokens' => $tokens];
 }
 
 /**
  * Implements hook_tokens().
  */
 function group_tokens($type, $tokens, array $data, array $options, BubbleableMetadata $bubbleable_metadata) {
+  $replacements = [];
+  $url_options = ['absolute' => TRUE];
   $token_service = \Drupal::token();
 
-  $url_options = ['absolute' => TRUE];
   if (isset($options['langcode'])) {
     $url_options['language'] = \Drupal::languageManager()->getLanguage($options['langcode']);
     $langcode = $options['langcode'];
@@ -85,9 +134,8 @@ function group_tokens($type, $tokens, array $data, array $options, BubbleableMet
   else {
     $langcode = LanguageInterface::LANGCODE_DEFAULT;
   }
-  $replacements = [];
 
-  if ($type == 'group' && !empty($data['group'])) {
+  if ($type == 'group' && !empty($data[$type])) {
     /** @var \Drupal\group\Entity\GroupInterface $group */
     $group = $data['group'];
 
@@ -142,6 +190,7 @@ function group_tokens($type, $tokens, array $data, array $options, BubbleableMet
       }
     }
 
+    // Actual chaining of tokens handled below.
     if ($author_tokens = $token_service->findWithPrefix($tokens, 'author')) {
       $replacements += $token_service->generate('user', $author_tokens, ['user' => $group->getOwner()], $options, $bubbleable_metadata);
     }
@@ -152,6 +201,66 @@ function group_tokens($type, $tokens, array $data, array $options, BubbleableMet
 
     if ($changed_tokens = $token_service->findWithPrefix($tokens, 'changed')) {
       $replacements += $token_service->generate('date', $changed_tokens, ['date' => $group->getChangedTime()], $options, $bubbleable_metadata);
+    }
+  }
+  elseif ($type == 'group_content' && !empty($data[$type])) {
+    /** @var \Drupal\group\Entity\GroupContentInterface $group_content */
+    $group_content = $data['group_content'];
+
+    foreach ($tokens as $name => $original) {
+      switch ($name) {
+        case 'id':
+          $replacements[$original] = $group_content->id();
+          break;
+
+        case 'langcode':
+          $replacements[$original] = $group_content->language()->getId();
+          break;
+
+        case 'url':
+          $replacements[$original] = $group_content->toUrl('canonical', $url_options)->toString();
+          break;
+
+        case 'edit-url':
+          $replacements[$original] = $group_content->toUrl('edit-form', $url_options)->toString();
+          break;
+
+        case 'pretty-path-key':
+          $replacements[$original] = $group_content->getContentPlugin()->getPrettyPathKey();
+          break;
+
+        // Default values for the chained tokens handled below.
+        case 'group':
+          $group = $group_content->getGroup();
+          $bubbleable_metadata->addCacheableDependency($group);
+          $replacements[$original] = $group->label();
+          break;
+
+        case 'created':
+          $date_format = DateFormat::load('medium');
+          $bubbleable_metadata->addCacheableDependency($date_format);
+          $replacements[$original] = \Drupal::service('date.formatter')->format($group_content->getCreatedTime(), 'medium', '', NULL, $langcode);
+          break;
+
+        case 'changed':
+          $date_format = DateFormat::load('medium');
+          $bubbleable_metadata->addCacheableDependency($date_format);
+          $replacements[$original] = \Drupal::service('date.formatter')->format($group_content->getChangedTime(), 'medium', '', NULL, $langcode);
+          break;
+      }
+
+      // Actual chaining of tokens handled below.
+      if ($group_tokens = $token_service->findWithPrefix($tokens, 'group')) {
+        $replacements += $token_service->generate('group', $group_tokens, ['group' => $group_content->getGroup()], $options, $bubbleable_metadata);
+      }
+
+      if ($created_tokens = $token_service->findWithPrefix($tokens, 'created')) {
+        $replacements += $token_service->generate('date', $created_tokens, ['date' => $group_content->getCreatedTime()], $options, $bubbleable_metadata);
+      }
+
+      if ($changed_tokens = $token_service->findWithPrefix($tokens, 'changed')) {
+        $replacements += $token_service->generate('date', $changed_tokens, ['date' => $group_content->getChangedTime()], $options, $bubbleable_metadata);
+      }
     }
   }
 

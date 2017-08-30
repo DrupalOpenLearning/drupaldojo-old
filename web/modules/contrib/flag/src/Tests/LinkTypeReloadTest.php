@@ -74,11 +74,11 @@ class LinkTypeReloadTest extends FlagTestBase {
 
     // Click the flag link.
     $this->drupalGet('node/' . $node_id);
-    $this->clickLink($this->flag->getFlagShortText());
+    $this->clickLink($this->flag->getShortText('flag'));
 
     // Check that the node is flagged.
     $this->drupalGet('node/' . $node_id);
-    $this->assertLink($this->flag->getUnflagShortText());
+    $this->assertLink($this->flag->getShortText('unflag'));
 
     // Check the flag count was incremented.
     $flag_count_flagged = db_query('SELECT count FROM {flag_counts}
@@ -95,11 +95,11 @@ class LinkTypeReloadTest extends FlagTestBase {
 
     // Unflag the node.
     $this->drupalGet('node/' . $node_id);
-    $this->clickLink($this->flag->getUnflagShortText());
+    $this->clickLink($this->flag->getShortText('unflag'));
 
     // Check that the node is no longer flagged.
     $this->drupalGet('node/' . $node_id);
-    $this->assertLink($this->flag->getFlagShortText());
+    $this->assertLink($this->flag->getShortText('flag'));
 
     // Check the flag count was decremented.
     $flag_count_unflagged = db_query('SELECT count FROM {flag_counts}

@@ -4,7 +4,6 @@ namespace Drupal\content_moderation\Entity;
 
 use Drupal\content_moderation\ContentModerationStateInterface;
 use Drupal\Core\Entity\ContentEntityBase;
-use Drupal\Core\Entity\EntityChangedTrait;
 use Drupal\Core\Entity\EntityTypeInterface;
 use Drupal\Core\Field\BaseFieldDefinition;
 use Drupal\Core\TypedData\TranslatableInterface;
@@ -25,6 +24,7 @@ use Drupal\user\UserInterface;
  *   handlers = {
  *     "storage_schema" = "Drupal\content_moderation\ContentModerationStateStorageSchema",
  *     "views_data" = "\Drupal\views\EntityViewsData",
+ *     "access" = "Drupal\content_moderation\ContentModerationStateAccessControlHandler",
  *   },
  *   base_table = "content_moderation_state",
  *   revision_table = "content_moderation_state_revision",
@@ -42,8 +42,6 @@ use Drupal\user\UserInterface;
  */
 class ContentModerationState extends ContentEntityBase implements ContentModerationStateInterface {
 
-  use EntityChangedTrait;
-
   /**
    * {@inheritdoc}
    */
@@ -58,19 +56,26 @@ class ContentModerationState extends ContentEntityBase implements ContentModerat
       ->setTranslatable(TRUE)
       ->setRevisionable(TRUE);
 
-    $fields['moderation_state'] = BaseFieldDefinition::create('entity_reference')
-      ->setLabel(t('Moderation state'))
-      ->setDescription(t('The moderation state of the referenced content.'))
-      ->setSetting('target_type', 'moderation_state')
+    $fields['workflow'] = BaseFieldDefinition::create('entity_reference')
+      ->setLabel(t('Workflow'))
+      ->setDescription(t('The workflow the moderation state is in.'))
+      ->setSetting('target_type', 'workflow')
       ->setRequired(TRUE)
       ->setTranslatable(TRUE)
-      ->setRevisionable(TRUE)
-      ->addConstraint('ModerationState', []);
+      ->setRevisionable(TRUE);
+
+    $fields['moderation_state'] = BaseFieldDefinition::create('string')
+      ->setLabel(t('Moderation state'))
+      ->setDescription(t('The moderation state of the referenced content.'))
+      ->setRequired(TRUE)
+      ->setTranslatable(TRUE)
+      ->setRevisionable(TRUE);
 
     $fields['content_entity_type_id'] = BaseFieldDefinition::create('string')
       ->setLabel(t('Content entity type ID'))
       ->setDescription(t('The ID of the content entity type this moderation state is for.'))
       ->setRequired(TRUE)
+      ->setSetting('max_length', EntityTypeInterface::ID_MAX_LENGTH)
       ->setRevisionable(TRUE);
 
     $fields['content_entity_id'] = BaseFieldDefinition::create('integer')
@@ -78,10 +83,6 @@ class ContentModerationState extends ContentEntityBase implements ContentModerat
       ->setDescription(t('The ID of the content entity this moderation state is for.'))
       ->setRequired(TRUE)
       ->setRevisionable(TRUE);
-
-    // @todo https://www.drupal.org/node/2779931 Add constraint that enforces
-    //   unique content_entity_type_id, content_entity_id and
-    //   content_entity_revision_id.
 
     $fields['content_entity_revision_id'] = BaseFieldDefinition::create('integer')
       ->setLabel(t('Content entity revision ID'))
@@ -145,7 +146,7 @@ class ContentModerationState extends ContentEntityBase implements ContentModerat
    *   An array of default values.
    */
   public static function getCurrentUserId() {
-    return array(\Drupal::currentUser()->id());
+    return [\Drupal::currentUser()->id()];
   }
 
   /**
@@ -158,7 +159,7 @@ class ContentModerationState extends ContentEntityBase implements ContentModerat
     if ($related_entity instanceof TranslatableInterface) {
       $related_entity = $related_entity->getTranslation($this->activeLangcode);
     }
-    $related_entity->moderation_state->target_id = $this->moderation_state->target_id;
+    $related_entity->moderation_state = $this->moderation_state;
     return $related_entity->save();
   }
 

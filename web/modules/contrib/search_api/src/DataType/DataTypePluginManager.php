@@ -68,7 +68,7 @@ class DataTypePluginManager extends DefaultPluginManager {
    * @throws \Drupal\Component\Plugin\Exception\PluginException
    *   If the instance cannot be created, such as if the ID is invalid.
    */
-  public function createInstance($plugin_id, array $configuration = array()) {
+  public function createInstance($plugin_id, array $configuration = []) {
     if (empty($this->dataTypes[$plugin_id])) {
       $this->dataTypes[$plugin_id] = parent::createInstance($plugin_id, $configuration);
     }
@@ -85,7 +85,7 @@ class DataTypePluginManager extends DefaultPluginManager {
     if (!$this->allCreated) {
       $this->allCreated = TRUE;
       if (!isset($this->dataTypes)) {
-        $this->dataTypes = array();
+        $this->dataTypes = [];
       }
 
       foreach ($this->getDefinitions() as $plugin_id => $definition) {
@@ -109,7 +109,7 @@ class DataTypePluginManager extends DefaultPluginManager {
    * @see \Drupal\search_api\DataType\DataTypePluginManager::getInstances()
    */
   public function getInstancesOptions() {
-    $types = array();
+    $types = [];
     foreach ($this->getInstances() as $id => $info) {
       $types[$id] = $info->label();
     }

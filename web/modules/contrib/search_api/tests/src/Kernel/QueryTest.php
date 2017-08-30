@@ -21,7 +21,7 @@ class QueryTest extends KernelTestBase {
   /**
    * {@inheritdoc}
    */
-  public static $modules = array(
+  public static $modules = [
     'search_api',
     'search_api_test',
     'search_api_test_hooks',
@@ -29,7 +29,7 @@ class QueryTest extends KernelTestBase {
     'user',
     'system',
     'entity_test',
-  );
+  ];
 
   /**
    * The search index used for testing.
@@ -44,7 +44,7 @@ class QueryTest extends KernelTestBase {
   protected function setUp() {
     parent::setUp();
 
-    $this->installSchema('search_api', array('search_api_item'));
+    $this->installSchema('search_api', ['search_api_item']);
     $this->installEntitySchema('entity_test_mulrev_changed');
     $this->installEntitySchema('search_api_task');
 
@@ -55,40 +55,31 @@ class QueryTest extends KernelTestBase {
       ->save();
 
     // Create a test server.
-    $server = Server::create(array(
+    $server = Server::create([
       'name' => 'Test Server',
       'id' => 'test_server',
       'status' => 1,
       'backend' => 'search_api_test',
-    ));
+    ]);
     $server->save();
 
     // Create a test index.
-    Index::create(array(
+    Index::create([
       'name' => 'Test Index',
       'id' => 'test_index',
       'status' => 1,
-      'datasource_settings' => array(
-        'search_api_test' => array(
-          'plugin_id' => 'search_api_test',
-          'settings' => array(),
-        ),
-      ),
-      'processor_settings' => array(
-        'search_api_test' => array(
-          'plugin_id' => 'search_api_test',
-          'settings' => array(),
-        ),
-      ),
-      'tracker_settings' => array(
-        'default' => array(
-          'plugin_id' => 'default',
-          'settings' => array(),
-        ),
-      ),
+      'datasource_settings' => [
+        'search_api_test' => [],
+      ],
+      'processor_settings' => [
+        'search_api_test' => [],
+      ],
+      'tracker_settings' => [
+        'default' => [],
+      ],
       'server' => $server->id(),
-      'options' => array('index_directly' => FALSE),
-    ))->save();
+      'options' => ['index_directly' => FALSE],
+    ])->save();
     $this->index = Index::load('test_index');
   }
 
@@ -106,7 +97,7 @@ class QueryTest extends KernelTestBase {
   public function testProcessingLevel($level, $hooks_and_processors_invoked = TRUE) {
     /** @var \Drupal\search_api\Processor\ProcessorInterface $processor */
     $processor = $this->container->get('plugin.manager.search_api.processor')
-      ->createInstance('search_api_test', array('#index' => $this->index));
+      ->createInstance('search_api_test', ['#index' => $this->index]);
     $this->index->addProcessor($processor)->save();
 
     $query = $this->index->query();
@@ -116,18 +107,19 @@ class QueryTest extends KernelTestBase {
     $this->assertEquals($level, $query->getProcessingLevel());
     $query->addTag('andrew_hill');
 
-    $_SESSION['messages']['status'] = array();
+    $_SESSION['messages']['status'] = [];
     $query->execute();
     $messages = $_SESSION['messages']['status'];
-    $_SESSION['messages']['status'] = array();
+    $_SESSION['messages']['status'] = [];
 
     $methods = $this->getCalledMethods('processor');
     if ($hooks_and_processors_invoked) {
-      $expected = array(
+      $expected = [
         'Funky blue note',
+        'Search id: ',
         'Stepping into tomorrow',
         'Llama',
-      );
+      ];
       $this->assertEquals($expected, $messages);
       $this->assertTrue($query->getOption('tag query alter hook'));
       $this->assertContains('preprocessSearchQuery', $methods);
@@ -149,11 +141,11 @@ class QueryTest extends KernelTestBase {
    *   \Drupal\Tests\search_api\Kernel\QueryTest::testProcessingLevel() method.
    */
   public function testProcessingLevelDataProvider() {
-    return array(
-      'none' => array(QueryInterface::PROCESSING_NONE, FALSE),
-      'basic' => array(QueryInterface::PROCESSING_BASIC),
-      'full' => array(QueryInterface::PROCESSING_FULL),
-    );
+    return [
+      'none' => [QueryInterface::PROCESSING_NONE, FALSE],
+      'basic' => [QueryInterface::PROCESSING_BASIC],
+      'full' => [QueryInterface::PROCESSING_FULL],
+    ];
   }
 
   /**
@@ -173,17 +165,17 @@ class QueryTest extends KernelTestBase {
    */
   public function testQuerySerialization() {
     $query = Query::create($this->index);
-    $tags = array('tag1', 'tag2');
+    $tags = ['tag1', 'tag2'];
     $query->keys('foo bar')
       ->addCondition('field1', 'value', '<')
-      ->addCondition('field2', array(15, 25), 'BETWEEN')
+      ->addCondition('field2', [15, 25], 'BETWEEN')
       ->addConditionGroup($query->createConditionGroup('OR', $tags)
         ->addCondition('field2', 'foo')
         ->addCondition('field3', 1, '<>')
       )
       ->sort('field1', Query::SORT_DESC)
       ->sort('field2');
-    $query->setOption('option1', array('foo' => 'bar'));
+    $query->setOption('option1', ['foo' => 'bar']);
     $translation = $this->container->get('string_translation');
     $query->setStringTranslation($translation);
 
@@ -193,13 +185,12 @@ class QueryTest extends KernelTestBase {
   }
 
   /**
-   *
    * Tests that the results cache works correctly.
    */
   public function testResultsCache() {
     /** @var \Drupal\search_api\Query\QueryInterface[] $results */
-    $results = array();
-    $search_ids = array('foo', 'bar');
+    $results = [];
+    $search_ids = ['foo', 'bar'];
     foreach ($search_ids as $search_id) {
       $results[$search_id] = $this->index->query()
         ->setSearchId($search_id)

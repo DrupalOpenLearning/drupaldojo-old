@@ -4,6 +4,7 @@ namespace Drupal\flag\Plugin\Flag;
 
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Session\AccountInterface;
+use Drupal\flag\FlagInterface;
 
 /**
  * Provides a flag type for comments.
@@ -20,52 +21,56 @@ class CommentFlagType extends EntityFlagType {
   /**
    * {@inheritdoc}
    */
-  public function defaultConfiguration() {
-    $options = parent::defaultConfiguration();
-    $options += [
-      'access_author' => '',
-    ];
+  protected function getExtraPermissionsOptions() {
+    $options = parent::getExtraPermissionsOptions();
+    $options['parent_owner'] = $this->t("Permissions based on ownership of a comment's parent entity.");
     return $options;
   }
 
   /**
    * {@inheritdoc}
    */
-  public function buildConfigurationForm(array $form, FormStateInterface $form_state) {
+  public function actionPermissions(FlagInterface $flag) {
+    $permissions = parent::actionPermissions($flag);
 
-    $form = parent::buildConfigurationForm($form, $form_state);
+    if (!empty($this->configuration['extra_permissions'])) {
+      foreach ($this->configuration['extra_permissions'] as $option) {
+        switch ($option) {
+          // The 'owner' case is handled by the parent method.
 
-    /* Options form extras for comment flags. */
+          case 'parent_owner':
+            // Define additional permissions.
+            $permissions['flag ' . $flag->id() . ' comments on own parent entities'] = [
+              'title' => $this->t('Flag %flag_title comments on own parent entities', [
+                '%flag_title' => $flag->label(),
+              ]),
+            ];
 
-    $form['access']['access_author'] = [
-      '#type' => 'radios',
-      '#title' => $this->t('Flag access by content authorship'),
-      '#options' => [
-        '' => $this->t('No additional restrictions'),
-        'comment_own' => $this->t('Users may only flag own comments'),
-        'comment_others' => $this->t('Users may only flag comments by others'),
-        'node_own' => $this->t('Users may only flag comments of nodes they own'),
-        'node_others' => $this->t('Users may only flag comments of nodes by others'),
-      ],
-      '#default_value' => $this->configuration['access_author'],
-      '#description' => $this->t("Restrict access to this flag based on the user's ownership of the content. Users must also have access to the flag through the role settings."),
-    ];
+            $permissions['unflag ' . $flag->id() . ' comments on own parent entities'] = [
+              'title' => $this->t('Unflag %flag_title on own parent entities', [
+                '%flag_title' => $flag->label(),
+              ]),
+            ];
 
-    return $form;
+            $permissions['flag ' . $flag->id() . ' comments on other parent entities'] = [
+              'title' => $this->t("Flag %flag_title on others' parent entities", [
+                '%flag_title' => $flag->label(),
+              ]),
+            ];
+
+            $permissions['unflag ' . $flag->id() . ' comments on other parent entities'] = [
+              'title' => $this->t("Unflag %flag_title on others' parent entities", [
+                '%flag_title' => $flag->label(),
+              ]),
+            ];
+            break;
+        }
+      }
+    }
+
+    return $permissions;
   }
 
-  /**
-   * {@inheritdoc}
-   */
-  public function submitConfigurationForm(array &$form, FormStateInterface $form_state) {
-    parent::submitConfigurationForm($form, $form_state);
-    $this->configuration['access_author'] = $form_state->getValue('access_author');
-  }
+  // TODO: actionAccess for parent_owner permissions.
 
-  /**
-   * {@inheritdoc}
-   */
-  public function getAccessAuthorSetting() {
-    return $this->configuration['access_author'];
-  }
 }

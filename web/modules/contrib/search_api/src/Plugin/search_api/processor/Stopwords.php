@@ -5,7 +5,6 @@ namespace Drupal\search_api\Plugin\search_api\processor;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\search_api\Processor\FieldsProcessorPluginBase;
 use Drupal\search_api\Query\QueryInterface;
-use Drupal\search_api\Utility\Utility;
 
 /**
  * Allows you to define stopwords which will be ignored in searches.
@@ -28,7 +27,7 @@ class Stopwords extends FieldsProcessorPluginBase {
    *
    * @var string[]
    */
-  protected $ignored = array();
+  protected $ignored = [];
 
   /**
    * An array whose keys and values are the stopwords set for this processor.
@@ -41,14 +40,18 @@ class Stopwords extends FieldsProcessorPluginBase {
    * {@inheritdoc}
    */
   public function defaultConfiguration() {
-    return array(
-      'stopwords' => array(
+    $configuration = parent::defaultConfiguration();
+
+    $configuration += [
+      'stopwords' => [
         'a', 'an', 'and', 'are', 'as', 'at', 'be', 'but', 'by', 'for', 'if',
         'in', 'into', 'is', 'it', 'no', 'not', 'of', 'on', 'or', 's', 'such',
         't', 'that', 'the', 'their', 'then', 'there', 'these', 'they', 'this',
         'to', 'was', 'will', 'with',
-      ),
-    );
+      ],
+    ];
+
+    return $configuration;
   }
 
   /**
@@ -72,14 +75,14 @@ class Stopwords extends FieldsProcessorPluginBase {
     else {
       $default_value = $stopwords;
     }
-    $description = $this->t('Enter a list of stopwords, each on a separate line, that will be removed from content before it is indexed and from search terms before searching. <a href=":url">More info about stopwords.</a>.', array(':url' => 'https://en.wikipedia.org/wiki/Stop_words'));
+    $description = $this->t('Enter a list of stopwords, each on a separate line, that will be removed from content before it is indexed and from search terms before searching. <a href=":url">More info about stopwords.</a>.', [':url' => 'https://en.wikipedia.org/wiki/Stop_words']);
 
-    $form['stopwords'] = array(
+    $form['stopwords'] = [
       '#type' => 'textarea',
       '#title' => $this->t('Stopwords'),
       '#description' => $description,
       '#default_value' => $default_value,
-    );
+    ];
 
     return $form;
   }
@@ -98,7 +101,7 @@ class Stopwords extends FieldsProcessorPluginBase {
    * {@inheritdoc}
    */
   public function preprocessSearchQuery(QueryInterface $query) {
-    $this->ignored = array();
+    $this->ignored = [];
     parent::preprocessSearchQuery($query);
 
     $results = $query->getResults();
@@ -111,7 +114,7 @@ class Stopwords extends FieldsProcessorPluginBase {
    * {@inheritdoc}
    */
   protected function testType($type) {
-    return Utility::isTextType($type);
+    return $this->getDataTypeHelper()->isTextType($type);
   }
 
   /**

@@ -105,6 +105,16 @@ interface GroupInterface extends ContentEntityInterface, EntityOwnerInterface, E
   public function addMember(UserInterface $account, $values = []);
 
   /**
+   * Removes a user as a member from the group.
+   *
+   * Does nothing if the user is not a member of the group.
+   *
+   * @param \Drupal\user\UserInterface $account
+   *   The user entity to remove as a member.
+   */
+  public function removeMember(UserInterface $account);
+
+  /**
    * Retrieves a user's membership for the group.
    *
    * @param \Drupal\Core\Session\AccountInterface $account

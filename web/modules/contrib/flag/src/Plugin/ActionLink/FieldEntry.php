@@ -2,8 +2,10 @@
 
 namespace Drupal\flag\Plugin\ActionLink;
 
-use Drupal\flag\ActionLink\ActionLinkTypeBase;
+use Drupal\Core\Url;
 use Drupal\Core\Form\FormStateInterface;
+use Drupal\flag\FlagInterface;
+use Drupal\Core\Entity\EntityInterface;
 
 /**
  * Class FieldEntry
@@ -14,17 +16,24 @@ use Drupal\Core\Form\FormStateInterface;
  *  description = "Redirects the user to a field entry form."
  * )
  */
-class FieldEntry extends ActionLinkTypeBase {
+class FieldEntry extends FormEntryTypeBase {
 
   /**
    * {@inheritdoc}
    */
-  public function routeName($action = NULL) {
-    if ($action == 'unflag') {
-      return 'flag.field_entry.edit';
+  public function getUrl($action, FlagInterface $flag, EntityInterface $entity) {
+    switch($action) {
+      case 'flag':
+        return Url::fromRoute('flag.field_entry', [
+          'flag' => $flag->id(),
+          'entity_id' => $entity->id(),
+        ]);
+      default:
+        return Url::fromRoute('flag.field_entry.edit', [
+          'flag' => $flag->id(),
+          'entity_id' => $entity->id(),
+        ]);
     }
-
-    return 'flag.field_entry';
   }
 
   /**
@@ -33,9 +42,10 @@ class FieldEntry extends ActionLinkTypeBase {
   public function defaultConfiguration() {
     $options = parent::defaultConfiguration();
 
-    $options['flag_confirmation'] = 'Enter flagging details';
-    $options['edit_flagging'] = 'Edit flagging details';
-    $options['unflag_confirmation'] = 'Unflag this content?';
+    // Change label for flag confirmation text.
+    $options['flag_confirmation'] = $this->t('Enter flagging details');
+    $options['edit_flagging'] = $this->t('Edit flagging details');
+    $options['flag_update_button'] = $this->t('Update flagging');
 
     return $options;
   }
@@ -46,40 +56,20 @@ class FieldEntry extends ActionLinkTypeBase {
   public function buildConfigurationForm(array $form, FormStateInterface $form_state) {
     $form = parent::buildConfigurationForm($form, $form_state);
 
-    $form['display']['settings']['link_options_field'] = [
-      '#type' => 'details',
-      '#open' => TRUE,
-      '#title' => $this->t('Options for the "Field entry" link type'),
-      // Any "link type" provider module must put its settings fields inside
-      // a fieldset whose HTML ID is link-options-LINKTYPE, where LINKTYPE is
-      // the machine-name of the link type. This is necessary for the
-      // radiobutton's JavaScript dependency feature to work.
-      '#id' => 'link-options-field_entry',
-    ];
-
-    $form['display']['settings']['link_options_field']['flag_confirmation'] = [
+    $form['display']['settings']['link_options_' . $this->getPluginId()]['edit_flagging'] = [
       '#type' => 'textfield',
-      '#title' => $this->t('Flag confirmation message'),
-      '#default_value' => $this->configuration['flag_confirmation'],
-      '#description' => $this->t('Message displayed if the user has clicked the "flag this" link and field entry is required. Usually presented in the form such as, "Please enter the flagging details."'),
-      // This will get changed to a state by flag_link_type_options_states().
-      '#required' => TRUE,
-    ];
-
-    $form['display']['settings']['link_options_field']['flagging_edit_title'] = [
-      '#type' => 'textfield',
-      '#title' => $this->t('Enter flagging details message'),
+      '#title' => $this->t('Edit flagging details message'),
       '#default_value' => $this->configuration['edit_flagging'],
       '#description' => $this->t('Message displayed if the user has clicked the "Edit flag" link. Usually presented in the form such as, "Please enter the flagging details."'),
       // This will get changed to a state by flag_link_type_options_states().
       '#required' => TRUE,
     ];
 
-    $form['display']['settings']['link_options_field']['unflag_confirmation'] = [
+    $form['display']['settings']['link_options_field_entry']['flag_update_button'] = [
       '#type' => 'textfield',
-      '#title' => $this->t('Unflag confirmation message'),
-      '#default_value' => $this->configuration['unflag_confirmation'],
-      '#description' => $this->t('Message displayed if the user has clicked the "delete flag" link in the field entry form. Usually presented in the form of a question such as, "Are you sure you want to unflag this content?"'),
+      '#title' => $this->t('Update flagging button text'),
+      '#default_value' => $this->configuration['flag_update_button'],
+      '#description' => $this->t('The text for the submit button when updating a flagging.'),
       // This will get changed to a state by flag_link_type_options_states().
       '#required' => TRUE,
     ];
@@ -91,65 +81,12 @@ class FieldEntry extends ActionLinkTypeBase {
    * {@inheritdoc}
    */
   public function validateConfigurationForm(array &$form, FormStateInterface $form_state) {
+    parent::validateConfigurationForm($form, $form_state);
     $form_values = $form_state->getValues();
 
-    if ($form_state->getValue('link_type') == 'field_entry') {
-      if (empty($form_values['flag_confirmation'])) {
-        $form_state->setErrorByName('flag_confirmation', 'A flag confirmation message is required when using the field entry link type.');
-      }
-      if (empty($form_values['flagging_edit_title'])) {
-        $form_state->setErrorByName('flagging_edit_title', 'An edit flagging details message is required when using the field entry link type.');
-      }
-      if (empty($form_values['unflag_confirmation'])) {
-        $form_state->setErrorByName('unflag_confirmation', 'An unflag confirmation message is required when using the field entry link type.');
-      }
+    if (empty($form_values['edit_flagging'])) {
+      $form_state->setErrorByName('flagging_edit_title', $this->t('An edit flagging details message is required when using the field entry link type.'));
     }
   }
 
-  /**
-   * {@inheritdoc}
-   */
-  public function submitConfigurationForm(array &$form, FormStateInterface $form_state) {
-    parent::submitConfigurationForm($form, $form_state);
-
-    $this->configuration['flag_confirmation'] = $form_state->getValue('flag_confirmation');
-    $this->configuration['edit_flagging'] = $form_state->getValue('flagging_edit_title');
-    $this->configuration['unflag_confirmation'] = $form_state->getValue('unflag_confirmation');
-  }
-
-  /**
-   * Returns the flag confirm form question when flagging.
-   *
-   * We're copying the confirm form link type interface here so we can take
-   * advantage of the existing confirm form code without duplicating the class.
-   *
-   * @return string
-   *   A string containing the flag question to display.
-   */
-  public function getFlagQuestion() {
-    return $this->configuration['flag_confirmation'];
-  }
-
-  /**
-   * Returns the edit flagging details form title.
-   *
-   * @return string
-   *   A string containing the edit flagging details title to display.
-   */
-  public function getEditFlaggingTitle() {
-    return $this->configuration['edit_flagging'];
-  }
-
-  /**
-   * Returns the flag confirm form question when unflagging.
-   *
-   * We're copying the confirm form link type interface here so we can take
-   * advantage of the existing confirm form code without duplicating the class.
-   *
-   * @return string
-   *   A string containing the unflag question to display.
-   */
-  public function getUnflagQuestion() {
-    return $this->configuration['unflag_confirmation'];
-  }
 }

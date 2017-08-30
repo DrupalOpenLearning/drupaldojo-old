@@ -15,8 +15,8 @@ use Drupal\search_api\Processor\FieldsProcessorPluginBase;
  *   description = @Translation("Configure types of characters which should be ignored for searches."),
  *   stages = {
  *     "pre_index_save" = 0,
- *     "preprocess_index" = -20,
- *     "preprocess_query" = -20
+ *     "preprocess_index" = -10,
+ *     "preprocess_query" = -10,
  *   }
  * )
  */
@@ -33,13 +33,15 @@ class IgnoreCharacters extends FieldsProcessorPluginBase {
    * {@inheritdoc}
    */
   public function defaultConfiguration() {
+    $configuration = parent::defaultConfiguration();
+
     // @todo As elsewhere, the "character_sets" setting should only contain the
     //   enabled classes, in a numeric array.
     // @todo Also, nesting this setting makes no sense.
-    return array(
+    $configuration += [
       'ignorable' => "['¿¡!?,.:;]",
-      'strip' => array(
-        'character_sets' => array(
+      'strip' => [
+        'character_sets' => [
           'Pc' => 'Pc',
           'Pd' => 'Pd',
           'Pe' => 'Pe',
@@ -47,9 +49,11 @@ class IgnoreCharacters extends FieldsProcessorPluginBase {
           'Pi' => 'Pi',
           'Po' => 'Po',
           'Ps' => 'Ps',
-        ),
-      ),
-    );
+        ],
+      ],
+    ];
+
+    return $configuration;
   }
 
   /**
@@ -58,30 +62,30 @@ class IgnoreCharacters extends FieldsProcessorPluginBase {
   public function buildConfigurationForm(array $form, FormStateInterface $form_state) {
     $form = parent::buildConfigurationForm($form, $form_state);
 
-    $form['ignorable'] = array(
+    $form['ignorable'] = [
       '#type' => 'textfield',
       '#title' => $this->t('Strip by regular expression'),
-      '#description' => $this->t('Specify characters which should be removed from fulltext fields and search strings, as a <a href=":url">PCRE regular expression</a>.', array(':url' => Url::fromUri('http://php.net/manual/reference.pcre.pattern.syntax.php')->toString())),
+      '#description' => $this->t('Specify characters which should be removed from fulltext fields and search strings, as a <a href=":url">PCRE regular expression</a>.', [':url' => Url::fromUri('http://php.net/manual/reference.pcre.pattern.syntax.php')->toString()]),
       '#default_value' => $this->configuration['ignorable'],
       '#maxlength' => 1000,
-    );
+    ];
 
     $character_sets = $this->getCharacterSets();
-    $form['strip'] = array(
+    $form['strip'] = [
       '#type' => 'details',
       '#title' => $this->t('Strip by character property'),
-      '#description' => $this->t('Specify <a href=":url">Unicode character properties</a> of characters to be ignored.', array(':url' => Url::fromUri('http://www.fileformat.info/info/unicode/category/index.htm')->toString())),
+      '#description' => $this->t('Specify <a href=":url">Unicode character properties</a> of characters to be ignored.', [':url' => Url::fromUri('http://www.fileformat.info/info/unicode/category/index.htm')->toString()]),
       '#open' => FALSE,
       '#maxlength' => 300,
 
-    );
-    $form['strip']['character_sets'] = array(
+    ];
+    $form['strip']['character_sets'] = [
       '#type' => 'checkboxes',
       '#title' => $this->t('Ignored character properties'),
       '#options' => $character_sets,
       '#default_value' => $this->configuration['strip']['character_sets'],
       '#multiple' => TRUE,
-    );
+    ];
 
     return $form;
   }
@@ -126,7 +130,7 @@ class IgnoreCharacters extends FieldsProcessorPluginBase {
    *   An options list with all available Unicode character properties.
    */
   protected function getCharacterSets() {
-    return array(
+    return [
       'Pc' => $this->t('Punctuation, Connector Characters'),
       'Pd' => $this->t('Punctuation, Dash Characters'),
       'Pe' => $this->t('Punctuation, Close Characters'),
@@ -151,7 +155,7 @@ class IgnoreCharacters extends FieldsProcessorPluginBase {
       'Zl' => $this->t('Separator, Line Characters'),
       'Zp' => $this->t('Separator, Paragraph Characters'),
       'Zs' => $this->t('Separator, Space Characters'),
-    );
+    ];
   }
 
   /**

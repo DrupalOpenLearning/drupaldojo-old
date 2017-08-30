@@ -2,6 +2,7 @@
 
 namespace Drupal\flag\FlagType;
 
+use Drupal\Component\Utility\NestedArray;
 use Drupal\Core\Access\AccessResult;
 use Drupal\flag\FlagType\FlagTypePluginInterface;
 use Drupal\Component\Plugin\PluginBase;
@@ -47,10 +48,7 @@ abstract class FlagTypeBase extends PluginBase implements FlagTypePluginInterfac
   }
 
   /**
-   * Provides the default configuration values for the flag type.
-   *
-   * @return array
-   *   The flag type's default plugin configuration.
+   * {@inheritdoc}
    */
   public function defaultConfiguration() {
     return [];
@@ -64,23 +62,17 @@ abstract class FlagTypeBase extends PluginBase implements FlagTypePluginInterfac
   }
 
   /**
-   * Returns this flag type plugin's configuration array.
-   *
-   * @return array
-   *   The plugin configuration array.
+   * {@inheritdoc}
    */
   public function getConfiguration() {
     return $this->configuration;
   }
 
   /**
-   * Replaces the plugin's configurations with those given in the parameter.
-   *
-   * @param array $configuration
-   *   The plugin configuration array.
+   * {@inheritdoc}
    */
   public function setConfiguration(array $configuration) {
-    $this->configuration = $configuration;
+    $this->configuration = NestedArray::mergeDeep($this->defaultConfiguration(), $configuration);
   }
 
   /**
@@ -126,6 +118,30 @@ abstract class FlagTypeBase extends PluginBase implements FlagTypePluginInterfac
    */
   public function validateConfigurationForm(array &$form, FormStateInterface $form_state) {
     // Override this.
+  }
+
+  /**
+   * Defines options for extra permissions.
+   *
+   * @return array
+   *  An array of options suitable for FormAPI.
+   */
+  protected function getExtraPermissionsOptions() {
+    return [];
+  }
+
+  /**
+   * Determines whether the flag is set to have the extra permissions set.
+   *
+   * @param string $option
+   *   The name of an extra permissions set. These are defined in
+   *   getExtraPermissionsOptions().
+   *
+   * @return bool
+   *   TRUE if the flag is configured to have the permissions, FALSE if not.
+   */
+  protected function hasExtraPermission($option) {
+    return in_array($option, $this->configuration['extra_permissions']);
   }
 
   /**

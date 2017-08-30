@@ -2,6 +2,7 @@
 
 namespace Drupal\group\Plugin;
 
+use Drupal\Core\Access\AccessResult;
 use Drupal\group\Access\GroupAccessResult;
 use Drupal\group\Entity\GroupType;
 use Drupal\group\Entity\GroupInterface;
@@ -73,10 +74,27 @@ abstract class GroupContentEnablerBase extends PluginBase implements GroupConten
   }
 
   /**
+   * Returns the entity type definition the plugin supports.
+   *
+   * @return \Drupal\Core\Entity\EntityTypeInterface
+   *   The entity type definition.
+   */
+  protected function getEntityType() {
+    return \Drupal::entityTypeManager()->getDefinition($this->getEntityTypeId());
+  }
+
+  /**
    * {@inheritdoc}
    */
   public function getEntityBundle() {
     return $this->pluginDefinition['entity_bundle'];
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function getPrettyPathKey() {
+    return $this->pluginDefinition['pretty_path_key'];
   }
 
   /**
@@ -107,6 +125,13 @@ abstract class GroupContentEnablerBase extends PluginBase implements GroupConten
    */
   public function getGroupTypeId() {
     return $this->groupTypeId;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function definesEntityAccess() {
+    return $this->pluginDefinition['entity_access'];
   }
 
   /**
@@ -167,39 +192,127 @@ abstract class GroupContentEnablerBase extends PluginBase implements GroupConten
   }
 
   /**
-   * {@inheritdoc}
+   * Provides permissions for the group content entity; i.e. the relationship.
+   *
+   * @return array
+   *   An array of group permissions, see ::getPermissions for more info.
+   *
+   * @see GroupContentEnablerInterface::getPermissions()
    */
-  public function getPermissions() {
+  protected function getGroupContentPermissions() {
     $plugin_id = $this->getPluginId();
-    $defaults = [
-      'title_args' => ['%plugin_name' => $this->getLabel()],
+
+    // Allow permissions here and in child classes to easily use the plugin name
+    // and target entity type name in their titles and descriptions.
+    $t_args = [
+      '%plugin_name' => $this->getLabel(),
+      '%entity_type' => $this->getEntityType()->getLowercaseLabel(),
     ];
+    $defaults = ['title_args' => $t_args, 'description_args' => $t_args];
+
+    // Use the same title prefix to keep permissions sorted properly.
+    $prefix = '%plugin_name - Relationship:';
 
     $permissions["view $plugin_id content"] = [
-      'title' => '%plugin_name: View content',
+      'title' => "$prefix View entity relations",
     ] + $defaults;
 
     $permissions["create $plugin_id content"] = [
-      'title' => '%plugin_name: Create new content',
+      'title' => "$prefix Add entity relation",
+      'description' => 'Allows you to relate an existing %entity_type entity to the group.',
     ] + $defaults;
 
-    $permissions["edit own $plugin_id content"] = [
-      'title' => '%plugin_name: Edit own content',
+    $permissions["update own $plugin_id content"] = [
+      'title' => "$prefix Edit own entity relations",
     ] + $defaults;
 
-    $permissions["edit any $plugin_id content"] = [
-      'title' => '%plugin_name: Edit any content',
+    $permissions["update any $plugin_id content"] = [
+      'title' => "$prefix Edit any entity relation",
     ] + $defaults;
 
     $permissions["delete own $plugin_id content"] = [
-      'title' => '%plugin_name: Delete own content',
+      'title' => "$prefix Delete own entity relations",
     ] + $defaults;
 
     $permissions["delete any $plugin_id content"] = [
-      'title' => '%plugin_name: Delete any content',
+      'title' => "$prefix Delete any entity relation",
     ] + $defaults;
 
     return $permissions;
+  }
+
+  /**
+   * Provides permissions for the actual entity being added to the group.
+   *
+   * @return array
+   *   An array of group permissions, see ::getPermissions for more info.
+   *
+   * @see GroupContentEnablerInterface::getPermissions()
+   */
+  protected function getTargetEntityPermissions() {
+    $plugin_id = $this->getPluginId();
+
+    // Allow permissions here and in child classes to easily use the plugin and
+    // target entity type labels in their titles and descriptions.
+    $t_args = [
+      '%plugin_name' => $this->getLabel(),
+      '%entity_type' => $this->getEntityType()->getLowercaseLabel(),
+    ];
+    $defaults = ['title_args' => $t_args, 'description_args' => $t_args];
+
+    // Use the same title prefix to keep permissions sorted properly.
+    $prefix = '%plugin_name - Entity:';
+
+    $permissions["view $plugin_id entity"] = [
+      'title' => "$prefix View %entity_type entities",
+    ] + $defaults;
+
+    $permissions["create $plugin_id entity"] = [
+      'title' => "$prefix Add %entity_type entities",
+      'description' => 'Allows you to create a new %entity_type entity and relate it to the group.',
+    ] + $defaults;
+
+    $permissions["update own $plugin_id entity"] = [
+      'title' => "$prefix Edit own %entity_type entities",
+    ] + $defaults;
+
+    $permissions["update any $plugin_id entity"] = [
+      'title' => "$prefix Edit any %entity_type entities",
+    ] + $defaults;
+
+    $permissions["delete own $plugin_id entity"] = [
+      'title' => "$prefix Delete own %entity_type entities",
+    ] + $defaults;
+
+    $permissions["delete any $plugin_id entity"] = [
+      'title' => "$prefix Delete any %entity_type entities",
+    ] + $defaults;
+
+    return $permissions;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function getPermissions() {
+    $permissions = $this->getGroupContentPermissions();
+    if ($this->definesEntityAccess()) {
+      $permissions += $this->getTargetEntityPermissions();
+    }
+    return $permissions;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function createEntityAccess(GroupInterface $group, AccountInterface $account) {
+    // You cannot create target entities if the plugin does not support it.
+    if (!$this->definesEntityAccess()) {
+      return AccessResult::neutral();
+    }
+
+    $plugin_id = $this->getPluginId();
+    return GroupAccessResult::allowedIfHasGroupPermission($group, $account, "create $plugin_id entity");
   }
 
   /**
@@ -250,10 +363,10 @@ abstract class GroupContentEnablerBase extends PluginBase implements GroupConten
 
     // Allow members to edit their own group content.
     if ($group_content->getOwnerId() == $account->id()) {
-      return GroupAccessResult::allowedIfHasGroupPermission($group, $account, "edit own $plugin_id content");
+      return GroupAccessResult::allowedIfHasGroupPermission($group, $account, "update own $plugin_id content");
     }
 
-    return GroupAccessResult::allowedIfHasGroupPermission($group, $account, "edit any $plugin_id content");
+    return GroupAccessResult::allowedIfHasGroupPermission($group, $account, "update any $plugin_id content");
   }
 
   /**
@@ -306,6 +419,24 @@ abstract class GroupContentEnablerBase extends PluginBase implements GroupConten
   /**
    * {@inheritdoc}
    */
+  public function getEntityReferenceLabel() {
+    return isset($this->pluginDefinition['reference_label'])
+      ? $this->pluginDefinition['reference_label']
+      : NULL;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function getEntityReferenceDescription() {
+    return isset($this->pluginDefinition['reference_description'])
+      ? $this->pluginDefinition['reference_description']
+      : NULL;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
   public function getEntityReferenceSettings() {
     $settings['target_type'] = $this->getEntityTypeId();
     if ($bundle = $this->getEntityBundle()) {
@@ -353,11 +484,7 @@ abstract class GroupContentEnablerBase extends PluginBase implements GroupConten
     return [
       'group_cardinality' => 0,
       'entity_cardinality' => 0,
-      'info_text' => [
-        // This string will be saved as part of the group type config entity. We
-        // do not use a t() function here as it needs to be stored untranslated.
-        'value' => '<p>Please fill out any available fields to describe the relation between the content and the group.</p>',
-      ],
+      'use_creation_wizard' => 1
     ];
   }
 
@@ -392,16 +519,13 @@ abstract class GroupContentEnablerBase extends PluginBase implements GroupConten
       '#required' => TRUE,
     ];
 
-    $form['info_text'] = [
-      '#type' => 'text_format',
-      '#title' => $this->t('Informational text'),
-      '#description' => $this->t('A bit of info to show atop every form that links a %entity_type entity to a %group_type group.', $replace),
-      '#default_value' => $this->configuration['info_text']['value'],
-    ];
-
-    // Only specify a default format if the data has been saved before.
-    if (!empty($this->configuration['info_text']['format'])) {
-      $form['info_text']['#format'] = $this->configuration['info_text']['format'];
+    if ($this->definesEntityAccess()) {
+      $form['use_creation_wizard'] = [
+        '#type' => 'checkbox',
+        '#title' => $this->t('Use 2-step wizard when creating a new %entity_type entity within a %group_type group', $replace),
+        '#description' => $this->t('This will first show you the form to create the actual entity and then a form to create the relationship between the entity and the group.<br />You can choose to disable this wizard if you did not or will not add any fields to the relationship (i.e. this plugin).<br /><strong>Warning:</strong> If you do have fields on the relationship and do not use the wizard, you may end up with required fields not being filled out.'),
+        '#default_value' => $this->configuration['use_creation_wizard'],
+      ];
     }
 
     return $form;
@@ -427,7 +551,9 @@ abstract class GroupContentEnablerBase extends PluginBase implements GroupConten
    * {@inheritdoc}
    */
   public function calculateDependencies() {
-    return [];
+    $dependencies['module'][] = $this->getProvider();
+    $dependencies['module'][] = $this->getEntityType()->getProvider();
+    return $dependencies;
   }
 
 }

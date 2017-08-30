@@ -4,6 +4,7 @@ namespace Drupal\Tests\features\Kernel;
 
 use Drupal\KernelTests\KernelTestBase;
 use Drupal\features\ConfigurationItem;
+use Drupal\features\FeaturesManagerInterface;
 use Drupal\Core\Config\InstallStorage;
 
 /**
@@ -63,6 +64,117 @@ class FeaturesAssignTest extends KernelTestBase {
   }
 
   /**
+   * @covers Drupal\features\Plugin\FeaturesAssignment\FeaturesAssignmentAlter
+   */
+  public function testAssignAlter() {
+    $method_id = 'alter';
+
+    // Enable the method.
+    $this->enableAssignmentMethod($method_id);
+
+    // Add some configuration.
+    $this->addConfigurationItem('example.settings', [
+      '_core' => ['something'],
+      'uuid' => 'something',
+    ],
+    [
+      'type' => FeaturesManagerInterface::SYSTEM_SIMPLE_CONFIG,
+    ]);
+    $this->addConfigurationItem('node.type.article', [
+      '_core' => ['something'],
+      'uuid' => 'something',
+      'permissions' => [
+        'first',
+        'second',
+      ],
+    ],
+    [
+      'type' => 'node_type',
+    ]);
+    $this->addConfigurationItem('user.role.test', [
+      '_core' => ['something'],
+      'uuid' => 'something',
+      'permissions' => [
+        'first',
+        'second',
+      ],
+    ],
+    [
+      'type' => 'user_role',
+    ]);
+
+    // Set all settings to FALSE.
+    $settings = [
+      'core' => FALSE,
+      'uuid' => FALSE,
+      'user_permissions' => FALSE,
+    ];
+    $this->bundle->setAssignmentSettings($method_id, $settings);
+
+    $this->assigner->applyAssignmentMethod($method_id);
+
+    $config = $this->featuresManager->getConfigCollection();
+    $this->assertNotEmpty($config['example.settings'], 'Expected config not created.');
+    $this->assertNotEmpty($config['node.type.article'], 'Expected config not created.');
+    $this->assertNotEmpty($config['user.role.test'], 'Expected config not created.');
+
+    $example_settings_data = $config['example.settings']->getData();
+    $this->assertEquals($example_settings_data['_core'], ['something'], 'Expected _core value missing.');
+    $this->assertEquals($example_settings_data['uuid'], 'something', 'Expected uuid value missing.');
+
+    $node_type_data = $config['node.type.article']->getData();
+    $this->assertEquals($node_type_data['_core'], ['something'], 'Expected _core value missing.');
+    $this->assertEquals($node_type_data['uuid'], 'something', 'Expected uuid value missing.');
+    $this->assertEquals($node_type_data['permissions'], [
+      'first',
+      'second',
+    ], 'Expected permissions value missing.');
+
+    $user_role_data = $config['user.role.test']->getData();
+    $this->assertEquals($user_role_data['_core'], ['something'], 'Expected _core value missing.');
+    $this->assertEquals($user_role_data['uuid'], 'something', 'Expected uuid value missing.');
+    $this->assertEquals($user_role_data['permissions'], [
+      'first',
+      'second',
+    ], 'Expected permissions value missing.');
+
+    // Set all settings to TRUE.
+    $settings = [
+      'core' => TRUE,
+      'uuid' => TRUE,
+      'user_permissions' => TRUE,
+    ];
+    $this->bundle->setAssignmentSettings($method_id, $settings);
+
+    $this->assigner->applyAssignmentMethod($method_id);
+
+    $config = $this->featuresManager->getConfigCollection();
+    $this->assertNotEmpty($config['example.settings'], 'Expected config not created.');
+    $this->assertNotEmpty($config['node.type.article'], 'Expected config not created.');
+    $this->assertNotEmpty($config['user.role.test'], 'Expected config not created.');
+
+    $example_settings_data = $config['example.settings']->getData();
+    $this->assertFalse(isset($example_settings_data['_core']), 'Unexpected _core value present.');
+    // uuid should be retained for simple configuration.
+    $this->assertEquals($example_settings_data['uuid'], 'something', 'Expected uuid value missing.');
+
+    $node_type_data = $config['node.type.article']->getData();
+    $this->assertFalse(isset($node_type_data['_core']), 'Unexpected _core value present.');
+    $this->assertFalse(isset($node_type_data['uuid']), 'Unexpected uuid value present.');
+    // permissions should be stripped only for user_role configuration.
+    $this->assertEquals($node_type_data['permissions'], [
+      'first',
+      'second',
+    ], 'Expected permissions value missing.');
+
+    $user_role_data = $config['user.role.test']->getData();
+    $this->assertFalse(isset($user_role_data['_core']), 'Unexpected _core value present.');
+    $this->assertFalse(isset($user_role_data['uuid']), 'Unexpected uuid value present.');
+    $this->assertFalse(isset($user_role_data['permissions']), 'Unexpected permissions value present.');
+
+  }
+
+  /**
    * @covers Drupal\features\Plugin\FeaturesAssignment\FeaturesAssignmentBaseType
    */
   public function testAssignBase() {
@@ -96,11 +208,11 @@ class FeaturesAssignTest extends KernelTestBase {
 
     $expected_package_names = ['article', 'user'];
 
-    $this->assertEquals($expected_package_names, array_keys($packages), 'Expected packages not created.');  
+    $this->assertEquals($expected_package_names, array_keys($packages), 'Expected packages not created.');
 
+    // Dependents like field.field.node.article.body should not be assigned.
     $expected_config_items = [
       'node.type.article',
-      'field.field.node.article.body',
     ];
 
     $this->assertEquals($expected_config_items, $packages['article']->getConfig(), 'Expected configuration items not present in article package.');
@@ -139,7 +251,7 @@ class FeaturesAssignTest extends KernelTestBase {
 
     $expected_package_names = ['core'];
 
-    $this->assertEquals($expected_package_names, array_keys($packages), 'Expected packages not created.');  
+    $this->assertEquals($expected_package_names, array_keys($packages), 'Expected packages not created.');
 
     $this->assertTrue(in_array('field.storage.node.body', $packages['core']->getConfig(), 'Expected configuration item not present in core package.'));
     $this->assertFalse(in_array('field.field.node.article.body', $packages['core']->getConfig(), 'Unexpected configuration item present in core package.'));
@@ -436,25 +548,113 @@ class FeaturesAssignTest extends KernelTestBase {
     // Enable the method.
     $this->enableAssignmentMethod($method_id);
 
-    // Add some configuration.
-    $this->addConfigurationItem('node.type.prefix_article', [], [
-      'type' => 'node_type',
-      'shortName' => 'prefix_article',
-    ]);
-    $this->addConfigurationItem('node.type.nonprefix_article', [], [
-      'type' => 'node_type',
-      'shortName' => 'nonprefix_article',
-    ]);
-    $this->featuresManager->initPackage('prefix', 'My test package');
-    $this->assigner->applyAssignmentMethod($method_id);
+    // Apply the bundle
+    $this->bundle = $this->assigner->loadBundle('test_mybundle');
 
-    $packages = $this->featuresManager->getPackages();
-    $this->assertNotEmpty($packages['prefix'], 'Expected package not created.');
-
-    $expected_config_items = [
-      'node.type.prefix_article',
+    $package_data = [
+      'article' => [
+        // Items that should be assigned to 'article'.
+        'article',
+        'article-after',
+        'before.article',
+        'something_article',
+        'something-article',
+        'something.article',
+        'article_something',
+        'article-something',
+        'article.something',
+        'something_article_something',
+        'something-article-something',
+        'something.article.something',
+        'something.article_something',
+      ],
+      'article_after' => [
+        // Items that should be assigned to 'article_after'.
+        'article_after',
+        'something_article_after',
+        'something-article_after',
+        'something.article_after',
+        'article_after_something',
+        'article_after-something',
+        'article_after.something',
+        'something_article_after_something',
+        'something-article_after-something',
+        'something.article_after.something',
+        'something.article_after_something',
+      ],
+      'before_article' => [
+        // Items that should be assigned to 'before_article'.
+        'before_article',
+        'something_before_article',
+        'something-before_article',
+        'something.before_article',
+        'before_article_something',
+        'before_article-something',
+        'before_article.something',
+        'something_before_article_something',
+        'something-before_article-something',
+        'something.before_article.something',
+        'something.before_article_something',
+      ],
+      // Emulate an existing feature, which has a machine name prefixed by
+      // the bundle name.
+      'test_mybundle_page' => [
+        // Items that should be assigned to 'test_mybundle_page'.
+        // Items should match the short name, 'page'.
+        'page',
+        'page-after',
+        'before.page',
+        'something_page',
+        'something-page',
+        'something.page',
+        'page_something',
+        'page-something',
+        'page.something',
+        'something_page_something',
+        'something-page-something',
+        'something.page.something',
+        'something.page_something',
+      ],
     ];
-    $this->assertEquals($expected_config_items, $packages['prefix']->getConfig(), 'Expected configuration items not present in prefix package.');
+
+    foreach ($package_data as $machine_name => $config_short_names) {
+      $this->featuresManager->initPackage($machine_name, 'My test package ' . $machine_name);
+      foreach ($config_short_names as $short_name) {
+        $this->addConfigurationItem('node.type.' . $short_name, [], [
+          'type' => 'node_type',
+          'shortName' => $short_name,
+        ]);
+      }
+    }
+
+    // Add some config that should not be matched.
+    $config_short_names = [
+     'example',
+     'example_something',
+     'article~',
+     'myarticle',
+    ];
+    foreach ($config_short_names as $short_name) {
+      $this->addConfigurationItem('node.type.' . $short_name, [], [
+        'type' => 'node_type',
+        'shortName' => $short_name,
+      ]);
+    }
+
+    $this->assigner->applyAssignmentMethod($method_id);
+    $packages = $this->featuresManager->getPackages();
+
+    foreach ($package_data as $machine_name => $config_short_names) {
+      $this->assertNotEmpty($packages[$machine_name], 'Expected package ' . $machine_name . ' not created.');
+      array_walk($config_short_names, function(&$value) {
+        $value = 'node.type.' . $value;
+      });
+      sort($config_short_names);
+      $package_config = $packages[$machine_name]->getConfig();
+      sort($package_config);
+      $this->assertEquals($config_short_names, $package_config, 'Expected configuration items not present in ' . $machine_name . ' package.');
+    }
+
   }
 
   /**

@@ -26,4 +26,5 @@ class ProfileSelection extends DefaultSelection {
     $form['target_bundles']['#title'] = $this->t('Profile types');
     return $form;
   }
+
 }

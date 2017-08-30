@@ -1,10 +1,5 @@
 <?php
 
-/**
- * @file
- * Contains \Drupal\field_group_migrate\Plugin\migrate\destination\FieldGroupEntityFormDisplay.
- */
-
 namespace Drupal\field_group_migrate\Plugin\migrate\destination;
 
 use Drupal\migrate\Plugin\migrate\destination\PerComponentEntityFormDisplay;

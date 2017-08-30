@@ -2,6 +2,7 @@
 
 namespace Drupal\Core\Entity\Controller;
 
+use Drupal\Core\Entity\EntityDescriptionInterface;
 use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Entity\EntityRepositoryInterface;
 use Drupal\Core\Entity\EntityTypeBundleInfoInterface;
@@ -301,13 +302,13 @@ class EntityController implements ContainerInjectionInterface {
    * @param array $bundles
    *   An array of bundle information.
    * @param \Drupal\Core\Entity\EntityTypeInterface $bundle_entity_type
-   *   The ID of the bundle entity type.
+   *   The bundle entity type definition.
    *
    * @return array
    *   The expanded array of bundle information.
    */
   protected function loadBundleDescriptions(array $bundles, EntityTypeInterface $bundle_entity_type) {
-    if (!$bundle_entity_type->isSubclassOf('\Drupal\Core\Entity\EntityDescriptionInterface')) {
+    if (!$bundle_entity_type->entityClassImplements(EntityDescriptionInterface::class)) {
       return $bundles;
     }
     $bundle_names = array_keys($bundles);

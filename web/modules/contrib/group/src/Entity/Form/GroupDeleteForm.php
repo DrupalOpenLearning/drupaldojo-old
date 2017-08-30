@@ -39,10 +39,14 @@ class GroupDeleteForm extends ContentEntityConfirmFormBase {
     $entity = $this->getEntity();
     $entity->delete();
 
-    \Drupal::logger('group')->notice('@type: deleted %title.', [
+    $t_args = [
       '@type' => $this->entity->bundle(),
       '%title' => $this->entity->label(),
-    ]);
+    ];
+
+    \Drupal::logger('group')->notice('@type: deleted %title.', $t_args);
+    drupal_set_message($this->t('@type %title has been deleted.', $t_args));
+
     $form_state->setRedirect('entity.group.collection');
   }
 

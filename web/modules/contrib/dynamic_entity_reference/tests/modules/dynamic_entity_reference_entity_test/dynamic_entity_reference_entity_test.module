@@ -15,11 +15,32 @@ use Drupal\Core\StringTranslation\TranslatableMarkup;
 function dynamic_entity_reference_entity_test_entity_base_field_info(EntityTypeInterface $entity_type) {
   $fields = [];
   // 'entity_test' with no data table and 'entity_test_mul' is with data table.
-  if ($entity_type->id() == 'entity_test' || $entity_type->id() == 'entity_test_mul') {
+  $test_entities = \Drupal::state()->get('dynamic_entity_reference_entity_test_entities', ['entity_test', 'entity_test_mul']);
+  $excluded_entity = \Drupal::state()->get('dynamic_entity_reference_entity_test_exclude', []);
+  if (in_array($entity_type->id(), $test_entities)) {
+    $allowed_entities = array_diff($test_entities, $excluded_entity);
+    $settings = [
+      'exclude_entity_types' => FALSE,
+      'entity_type_ids' => array_combine($allowed_entities, $allowed_entities),
+    ];
+    foreach ($test_entities as $entity_type_id) {
+      if (!in_array($entity_type_id, $excluded_entity)) {
+        $settings += [
+          $entity_type_id => [
+            'handler' => "default:$entity_type_id",
+            'handler_settings' => [
+              'target_bundles' => NULL,
+            ],
+          ],
+        ];
+      }
+    }
     $fields['dynamic_references'] = BaseFieldDefinition::create('dynamic_entity_reference')
+      ->setName('dynamic_references')
       ->setLabel((string) new TranslatableMarkup('References'))
       ->setDescription((string) new TranslatableMarkup('Reference another entity.'))
       ->setRequired(FALSE)
+      ->setRevisionable(\Drupal::state()->get('dynamic_entity_reference_entity_test_revisionable', FALSE))
       ->setCardinality(\Drupal::state()->get('dynamic_entity_reference_entity_test_cardinality', 1))
       ->setDisplayOptions('form', [
         'type' => 'dynamic_entity_reference_default',
@@ -31,39 +52,12 @@ function dynamic_entity_reference_entity_test_entity_base_field_info(EntityTypeI
         'weight' => 10,
       ])
       ->setDisplayConfigurable('form', TRUE)
-      ->setDisplayConfigurable('view', TRUE);
-    if (\Drupal::state()->get('dynamic_entity_reference_entity_test_exclude', '') == 'entity_test') {
-      $fields['dynamic_references']
-        ->setSettings([
-          'exclude_entity_types' => FALSE,
-          'entity_type_ids' => [
-            'entity_test_mul' => 'entity_test_mul',
-          ],
-          'entity_test_mul' => [
-            'handler' => "default:entity_test_mul",
-            'handler_settings' => [],
-          ],
-        ]);
+      ->setDisplayConfigurable('view', TRUE)
+      ->setSettings($settings);
+    if (\Drupal::state()->get('dynamic_entity_reference_entity_test_with_two_base_fields', FALSE)) {
+      $fields['der'] = BaseFieldDefinition::createFromFieldStorageDefinition($fields['dynamic_references'])
+        ->setName('der');
     }
-    else {
-      $fields['dynamic_references']
-      ->setSettings([
-        'exclude_entity_types' => FALSE,
-        'entity_type_ids' => [
-          'entity_test' => 'entity_test',
-          'entity_test_mul' => 'entity_test_mul',
-        ],
-        'entity_test' => [
-          'handler' => "default:entity_test",
-          'handler_settings' => [],
-        ],
-        'entity_test_mul' => [
-          'handler' => "default:entity_test_mul",
-          'handler_settings' => [],
-        ],
-      ]);
-    }
-
   }
 
   return $fields;
@@ -185,7 +179,7 @@ function dynamic_entity_reference_entity_test_views_data() {
             'extra' => [
               [
                 'left_field' => 'langcode',
-                'field' => 'langcode'
+                'field' => 'langcode',
               ],
             ],
           ],

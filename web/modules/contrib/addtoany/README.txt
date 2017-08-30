@@ -17,7 +17,7 @@ By default, the module places share buttons below node content.
 CONFIGURATION
 -------------
 
-To configure AddToAny, go to Administration > Configuration > System > AddToAny.
+To configure AddToAny, go to Administration > Configuration > Web services > AddToAny.
 
 Explore AddToAny's documentation for the Drupal module:
 https://www.addtoany.com/buttons/customize/drupal

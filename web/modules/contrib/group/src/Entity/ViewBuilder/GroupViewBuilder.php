@@ -20,10 +20,10 @@ class GroupViewBuilder extends EntityViewBuilder {
     /** @var \Drupal\group\Entity\GroupInterface $entity */
     parent::alterBuild($build, $entity, $display, $view_mode);
     if ($entity->id()) {
-      $build['#contextual_links']['group'] = array(
-        'route_parameters' => array('group' => $entity->id()),
-        'metadata' => array('changed' => $entity->getChangedTime()),
-      );
+      $build['#contextual_links']['group'] = [
+        'route_parameters' => ['group' => $entity->id()],
+        'metadata' => ['changed' => $entity->getChangedTime()],
+      ];
     }
   }
 

@@ -1,10 +1,5 @@
 <?php
 
-/**
- * @file
- * Contains \Drupal\field_group\FieldgroupFormatterPluginManager.
- */
-
 namespace Drupal\field_group;
 
 use Drupal\Component\Plugin\Factory\DefaultFactory;

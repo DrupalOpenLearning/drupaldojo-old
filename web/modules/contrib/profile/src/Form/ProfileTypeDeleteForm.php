@@ -48,7 +48,7 @@ class ProfileTypeDeleteForm extends EntityDeleteForm {
       ->execute();
     if ($num_profiles) {
       $caption = '<p>' . \Drupal::translation()
-          ->formatPlural($num_profiles, '%type is used by 1 profile on your site. You can not remove this profile type until you have removed all of the %type profiles.', '%type is used by @count profiles on your site. You may not remove %type until you have removed all of the %type profiles.', ['%type' => $this->entity->label()]) . '</p>';
+        ->formatPlural($num_profiles, '%type is used by 1 profile on your site. You can not remove this profile type until you have removed all of the %type profiles.', '%type is used by @count profiles on your site. You may not remove %type until you have removed all of the %type profiles.', ['%type' => $this->entity->label()]) . '</p>';
       $form['#title'] = $this->entity->label();
       $form['description'] = ['#markup' => $caption];
       return $form;

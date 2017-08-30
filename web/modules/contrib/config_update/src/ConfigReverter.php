@@ -129,21 +129,25 @@ class ConfigReverter implements ConfigRevertInterface, ConfigDeleteInterface {
     }
 
     if ($type == 'system.simple') {
-      // Load the current config and replace the value.
-      $this->configFactory->getEditable($full_name)->setData($value)->save();
+      // Load the current config and replace the value, retaining the config
+      // hash (which is part of the _core config key's value).
+      $config = $this->configFactory->getEditable($full_name);
+      $core = $config->get('_core');
+      $config->setData($value);
+      $config->set('_core', $core);
+      $config->save();
     }
     else {
-      // Load the current config entity and replace the value, with the
-      // old UUID.
+      // Load the current config entity and replace the value. Note that
+      // the uuid and _core/hash values are retained for entity-based config,
+      // since updateFromStorageRecord() only updates values that are part of
+      // the passed-in array, and doesn't remove or alter other values.
       $definition = $this->entityManager->getDefinition($type);
       $id_key = $definition->getKey('id');
-
       $id = $value[$id_key];
       $entity_storage = $this->entityManager->getStorage($type);
       $entity = $entity_storage->load($id);
-      $uuid = $entity->get('uuid');
       $entity = $entity_storage->updateFromStorageRecord($entity, $value);
-      $entity->set('uuid', $uuid);
       $entity->save();
     }
 

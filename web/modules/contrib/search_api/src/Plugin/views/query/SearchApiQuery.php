@@ -6,21 +6,21 @@ use Drupal\Component\Render\FormattableMarkup;
 use Drupal\Component\Utility\Html;
 use Drupal\Core\Database\Query\ConditionInterface;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
+use Drupal\Core\Extension\ModuleHandlerInterface;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Url;
 use Drupal\search_api\Entity\Index;
+use Drupal\search_api\LoggerTrait;
 use Drupal\search_api\ParseMode\ParseModeInterface;
 use Drupal\search_api\Query\ConditionGroupInterface;
 use Drupal\search_api\Query\QueryInterface;
 use Drupal\search_api\Query\ResultSetInterface;
-use Drupal\search_api\UncacheableDependencyTrait;
 use Drupal\search_api\Utility\Utility;
 use Drupal\user\Entity\User;
 use Drupal\views\Plugin\views\display\DisplayPluginBase;
 use Drupal\views\Plugin\views\query\QueryPluginBase;
 use Drupal\views\ResultRow;
 use Drupal\views\ViewExecutable;
-use Psr\Log\LoggerInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
 /**
@@ -34,7 +34,7 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
  */
 class SearchApiQuery extends QueryPluginBase {
 
-  use UncacheableDependencyTrait;
+  use LoggerTrait;
 
   /**
    * Number of results to display.
@@ -65,13 +65,6 @@ class SearchApiQuery extends QueryPluginBase {
   protected $query;
 
   /**
-   * The results returned by the query, after it was executed.
-   *
-   * @var \Drupal\search_api\Query\ResultSetInterface
-   */
-  protected $searchApiResults;
-
-  /**
    * Array of all encountered errors.
    *
    * Each of these is fatal, meaning that a non-empty $errors property will
@@ -79,7 +72,7 @@ class SearchApiQuery extends QueryPluginBase {
    *
    * @var array
    */
-  protected $errors = array();
+  protected $errors = [];
 
   /**
    * Whether to abort the search instead of executing it.
@@ -96,14 +89,14 @@ class SearchApiQuery extends QueryPluginBase {
    *
    * @var string[][]
    */
-  protected $retrievedProperties = array();
+  protected $retrievedProperties = [];
 
   /**
    * The query's conditions representing the different Views filter groups.
    *
    * @var array
    */
-  protected $where = array();
+  protected $where = [];
 
   /**
    * The conjunction with which multiple filter groups are combined.
@@ -113,11 +106,11 @@ class SearchApiQuery extends QueryPluginBase {
   protected $groupOperator = 'AND';
 
   /**
-   * The logger to use for log messages.
+   * The module handler.
    *
-   * @var \Psr\Log\LoggerInterface|null
+   * @var \Drupal\Core\Extension\ModuleHandlerInterface|null
    */
-  protected $logger;
+  protected $moduleHandler;
 
   /**
    * {@inheritdoc}
@@ -126,32 +119,10 @@ class SearchApiQuery extends QueryPluginBase {
     /** @var static $plugin */
     $plugin = parent::create($container, $configuration, $plugin_id, $plugin_definition);
 
+    $plugin->setModuleHandler($container->get('module_handler'));
     $plugin->setLogger($container->get('logger.channel.search_api'));
 
     return $plugin;
-  }
-
-  /**
-   * Retrieves the logger to use for log messages.
-   *
-   * @return \Psr\Log\LoggerInterface
-   *   The logger to use.
-   */
-  public function getLogger() {
-    return $this->logger ?: \Drupal::service('logger.channel.search_api');
-  }
-
-  /**
-   * Sets the logger to use for log messages.
-   *
-   * @param \Psr\Log\LoggerInterface $logger
-   *   The new logger.
-   *
-   * @return $this
-   */
-  public function setLogger(LoggerInterface $logger) {
-    $this->logger = $logger;
-    return $this;
   }
 
   /**
@@ -172,11 +143,35 @@ class SearchApiQuery extends QueryPluginBase {
     if (substr($table, 0, 17) == 'search_api_index_') {
       $index_id = substr($table, 17);
       if ($entity_type_manager) {
-        return $entity_type_manager->getStorage('search_api_index')->load($index_id);
+        return $entity_type_manager->getStorage('search_api_index')
+          ->load($index_id);
       }
       return Index::load($index_id);
     }
     return NULL;
+  }
+
+  /**
+   * Retrieves the module handler.
+   *
+   * @return \Drupal\Core\Extension\ModuleHandlerInterface
+   *   The module handler.
+   */
+  public function getModuleHandler() {
+    return $this->moduleHandler ?: \Drupal::moduleHandler();
+  }
+
+  /**
+   * Sets the module handler.
+   *
+   * @param \Drupal\Core\Extension\ModuleHandlerInterface $module_handler
+   *   The new module handler.
+   *
+   * @return $this
+   */
+  public function setModuleHandler(ModuleHandlerInterface $module_handler) {
+    $this->moduleHandler = $module_handler;
+    return $this;
   }
 
   /**
@@ -187,14 +182,18 @@ class SearchApiQuery extends QueryPluginBase {
       parent::init($view, $display, $options);
       $this->index = static::getIndexFromTable($view->storage->get('base_table'));
       if (!$this->index) {
-        $this->abort(new FormattableMarkup('View %view is not based on Search API but tries to use its query plugin.', array('%view' => $view->storage->label())));
+        $this->abort(new FormattableMarkup('View %view is not based on Search API but tries to use its query plugin.', ['%view' => $view->storage->label()]));
       }
-      $this->retrievedProperties = array_fill_keys($this->index->getDatasourceIds(), array());
-      $this->retrievedProperties[NULL] = array();
+      $this->retrievedProperties = array_fill_keys($this->index->getDatasourceIds(), []);
+      $this->retrievedProperties[NULL] = [];
       $this->query = $this->index->query();
       $this->query->addTag('views');
       $this->query->addTag('views_' . $view->id());
-      $this->query->setSearchId('views_page:' . $view->id() . '__' . $view->current_display);
+      $display_type = $display->getPluginId();
+      if ($display_type === 'rest_export') {
+        $display_type = 'rest';
+      }
+      $this->query->setSearchId("views_$display_type:" . $view->id() . '__' . $view->current_display);
       $this->query->setOption('search_api_view', $view);
     }
     catch (\Exception $e) {
@@ -243,7 +242,7 @@ class SearchApiQuery extends QueryPluginBase {
    * @see \Drupal\views\Plugin\views\query\Sql::addField()
    * @see \Drupal\search_api\Plugin\views\query\SearchApiQuery::addField()
    */
-  public function addField($table, $field, $alias = '', $params = array()) {
+  public function addField($table, $field, $alias = '', $params = []) {
     $this->addRetrievedProperty($field);
     return $field;
   }
@@ -252,14 +251,14 @@ class SearchApiQuery extends QueryPluginBase {
    * {@inheritdoc}
    */
   public function defineOptions() {
-    return parent::defineOptions() + array(
-      'bypass_access' => array(
+    return parent::defineOptions() + [
+      'bypass_access' => [
         'default' => FALSE,
-      ),
-      'skip_access' => array(
+      ],
+      'skip_access' => [
         'default' => FALSE,
-      ),
-    );
+      ],
+    ];
   }
 
   /**
@@ -268,20 +267,20 @@ class SearchApiQuery extends QueryPluginBase {
   public function buildOptionsForm(&$form, FormStateInterface $form_state) {
     parent::buildOptionsForm($form, $form_state);
 
-    $form['skip_access'] = array(
+    $form['skip_access'] = [
       '#type' => 'checkbox',
       '#title' => $this->t('Skip item access checks'),
       '#description' => $this->t("By default, an additional access check will be executed for each item returned by the search query. However, since removing results this way will break paging and result counts, it is preferable to configure the view in a way that it will only return accessible results. If you are sure that only accessible results will be returned in the search, or if you want to show results to which the user normally wouldn't have access, you can enable this option to skip those additional access checks. This should be used with care."),
       '#default_value' => $this->options['skip_access'],
       '#weight' => -1,
-    );
+    ];
 
-    $form['bypass_access'] = array(
+    $form['bypass_access'] = [
       '#type' => 'checkbox',
       '#title' => $this->t('Bypass access checks'),
       '#description' => $this->t('If the underlying search index has access checks enabled (for example, through the "Content access" processor), this option allows you to disable them for this view. This will never disable any filters placed on this view.'),
       '#default_value' => $this->options['bypass_access'],
-    );
+    ];
     $form['bypass_access']['#states']['visible'][':input[name="query[options][skip_access]"]']['checked'] = TRUE;
   }
 
@@ -299,7 +298,7 @@ class SearchApiQuery extends QueryPluginBase {
   public function getEntityTypes($return_bool = FALSE) {
     // @todo Might be useful enough to be moved to the Index class? Or maybe
     //   Utility, to finally stop the growth of the Index class.
-    $types = array();
+    $types = [];
     foreach ($this->index->getDatasources() as $datasource_id => $datasource) {
       if ($type = $datasource->getEntityTypeId()) {
         if ($return_bool) {
@@ -317,6 +316,15 @@ class SearchApiQuery extends QueryPluginBase {
   public function build(ViewExecutable $view) {
     $this->view = $view;
 
+    // Initialize the pager and let it modify the query to add limits. This has
+    // to be done even for aborted queries since it might otherwise lead to a
+    // fatal error when Views tries to access $view->pager.
+    $view->initPager();
+    $view->pager->query();
+
+    // If the query was aborted by some plugin (or, possibly, hook), we don't
+    // need to do anything else here. Adding conditions or other options to an
+    // aborted query doesn't make sense.
     if ($this->shouldAbort()) {
       return;
     }
@@ -336,7 +344,7 @@ class SearchApiQuery extends QueryPluginBase {
       // Add a nested filter for each filter group, with its set conjunction.
       foreach ($this->where as $group_id => $group) {
         if (!empty($group['conditions']) || !empty($group['condition_groups'])) {
-          $group += array('type' => 'AND');
+          $group += ['type' => 'AND'];
           // For filters without a group, we want to always add them directly to
           // the query.
           $conditions = ($group_id === '') ? $this->query : $this->query->createConditionGroup($group['type']);
@@ -359,10 +367,6 @@ class SearchApiQuery extends QueryPluginBase {
       }
     }
 
-    // Initialize the pager and let it modify the query to add limits.
-    $view->initPager();
-    $view->pager->query();
-
     // Add the "search_api_bypass_access" option to the query, if desired.
     if (!empty($this->options['bypass_access'])) {
       $this->query->setOption('search_api_bypass_access', TRUE);
@@ -373,13 +377,20 @@ class SearchApiQuery extends QueryPluginBase {
     if (($path = $this->view->getPath()) && strpos(Url::fromRoute('<current>')->toString(), $this->view->override_path) !== 0) {
       $this->query->setOption('search_api_base_path', $path);
     }
+
+    // Save query information for Views UI.
+    $view->build_info['query'] = (string) $this->query;
+
+    // Add the properties to be retrieved to the query, as information for the
+    // backend.
+    $this->query->setOption('search_api_retrieved_properties', $this->retrievedProperties);
   }
 
   /**
    * {@inheritdoc}
    */
   public function alter(ViewExecutable $view) {
-    \Drupal::moduleHandler()->invokeAll('views_query_alter', array($view, $this));
+    $this->getModuleHandler()->invokeAll('views_query_alter', [$view, $this]);
   }
 
   /**
@@ -392,7 +403,7 @@ class SearchApiQuery extends QueryPluginBase {
           drupal_set_message(Html::escape($msg), 'error');
         }
       }
-      $view->result = array();
+      $view->result = [];
       $view->total_rows = 0;
       $view->execute_time = 0;
       return;
@@ -424,7 +435,6 @@ class SearchApiQuery extends QueryPluginBase {
 
       // Execute the search.
       $results = $this->query->execute();
-      $this->searchApiResults = $results;
 
       // Store the results.
       if (!$skip_result_count) {
@@ -433,7 +443,7 @@ class SearchApiQuery extends QueryPluginBase {
           $view->pager->total_items -= $view->pager->options['offset'];
         }
       }
-      $view->result = array();
+      $view->result = [];
       if ($results->getResultItems()) {
         $this->addResults($results->getResultItems(), $view);
       }
@@ -478,7 +488,7 @@ class SearchApiQuery extends QueryPluginBase {
    * @see SearchApiQuery::abort()
    */
   public function shouldAbort() {
-    return $this->abort;
+    return $this->abort || !$this->query || $this->query->wasAborted();
   }
 
   /**
@@ -506,12 +516,12 @@ class SearchApiQuery extends QueryPluginBase {
     }
 
     foreach ($results as $item_id => $result) {
-      $values = array();
+      $values = [];
       $values['_item'] = $result;
       $object = $result->getOriginalObject(FALSE);
       if ($object) {
         $values['_object'] = $object;
-        $values['_relationship_objects'][NULL] = array($object);
+        $values['_relationship_objects'][NULL] = [$object];
       }
       $values['search_api_id'] = $item_id;
       $values['search_api_datasource'] = $result->getDatasourceId();
@@ -530,6 +540,30 @@ class SearchApiQuery extends QueryPluginBase {
 
       $view->result[] = new ResultRow($values);
     }
+  }
+
+  /**
+   * Retrieves the conditions placed on this query.
+   *
+   * @return array
+   *   The conditions placed on this query, separated by groups, as an
+   *   associative array with a structure like this:
+   *   - GROUP_ID:
+   *     - type: "AND"/"OR"
+   *     - conditions:
+   *       - [FILTER, VALUE, OPERATOR]
+   *       - [FILTER, VALUE, OPERATOR]
+   *       …
+   *     - condition_groups:
+   *       - ConditionGroupInterface object
+   *       - ConditionGroupInterface object
+   *       …
+   *   - GROUP_ID:
+   *     …
+   *   Returned by reference.
+   */
+  public function &getWhere() {
+    return $this->where;
   }
 
   /**
@@ -578,29 +612,12 @@ class SearchApiQuery extends QueryPluginBase {
   /**
    * Retrieves the Search API result set returned for this query.
    *
-   * @return \Drupal\search_api\Query\ResultSetInterface|null
-   *   The result set of this query, if it has been retrieved already. NULL
-   *   otherwise.
+   * @return \Drupal\search_api\Query\ResultSetInterface
+   *   The result set of this query. Might not contain the actual results yet if
+   *   the query hasn't been executed yet.
    */
   public function getSearchApiResults() {
-    return $this->searchApiResults;
-  }
-
-  /**
-   * Sets the Search API result set.
-   *
-   * Usually this is done by the query plugin class itself, but in rare cases
-   * (such as for caching purposes) it might be necessary to set it from
-   * outside.
-   *
-   * @param \Drupal\search_api\Query\ResultSetInterface $search_api_results
-   *   The result set.
-   *
-   * @return $this
-   */
-  public function setSearchApiResults(ResultSetInterface $search_api_results) {
-    $this->searchApiResults = $search_api_results;
-    return $this;
+    return $this->query->getResults();
   }
 
   /**
@@ -695,7 +712,7 @@ class SearchApiQuery extends QueryPluginBase {
    *
    * @see \Drupal\search_api\Query\QueryInterface::createConditionGroup()
    */
-  public function createConditionGroup($conjunction = 'AND', array $tags = array()) {
+  public function createConditionGroup($conjunction = 'AND', array $tags = []) {
     if (!$this->shouldAbort()) {
       return $this->query->createConditionGroup($conjunction, $tags);
     }
@@ -817,7 +834,7 @@ class SearchApiQuery extends QueryPluginBase {
       if (empty($group)) {
         $group = 0;
       }
-      $condition = array($field, $value, $operator);
+      $condition = [$field, $value, $operator];
       $this->where[$group]['conditions'][] = $condition;
     }
     return $this;
@@ -886,11 +903,11 @@ class SearchApiQuery extends QueryPluginBase {
       }
     }
     else {
-      $condition = array(
+      $condition = [
         $this->sanitizeFieldId($field),
         $value,
         $this->sanitizeOperator($operator),
-      );
+      ];
       $this->where[$group]['conditions'][] = $condition;
     }
 
@@ -990,6 +1007,12 @@ class SearchApiQuery extends QueryPluginBase {
     if ($operator === '!=') {
       $operator = '<>';
     }
+    elseif (in_array($operator, ['in', 'not in', 'between', 'not between'])) {
+      $operator = strtoupper($operator);
+    }
+    elseif (in_array($operator, ['IS NULL', 'IS NOT NULL'])) {
+      $operator = ($operator == 'IS NULL') ? '=' : '<>';
+    }
     return $operator;
   }
 
@@ -1049,7 +1072,7 @@ class SearchApiQuery extends QueryPluginBase {
    *
    * @see \Drupal\views\Plugin\views\query\Sql::addOrderBy()
    */
-  public function addOrderBy($table, $field = NULL, $order = 'ASC', $alias = '', $params = array()) {
+  public function addOrderBy($table, $field = NULL, $order = 'ASC', $alias = '', $params = []) {
     $server = $this->getIndex()->getServerInstance();
     if ($table == 'rand') {
       if ($server->supportsFeature('search_api_random_sort')) {
@@ -1215,9 +1238,6 @@ class SearchApiQuery extends QueryPluginBase {
    *
    * @param string $name
    *   The name of an option. The following options are recognized by default:
-   *   - conjunction: The type of conjunction to use for this query – either
-   *     'AND' or 'OR'. 'AND' by default. This only influences the search keys,
-   *     condition groups will always use AND by default.
    *   - offset: The position of the first returned search results relative to
    *     the whole result in the index.
    *   - limit: The maximum number of search results to return. -1 means no

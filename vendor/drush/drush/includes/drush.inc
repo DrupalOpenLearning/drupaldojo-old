@@ -281,7 +281,7 @@ function drush_get_global_options($brief = FALSE) {
 
   if (!$brief) {
     $options['version']            = array('description' => "Show drush version.");
-    $options['php']                = array('description' => "The absolute path to your PHP intepreter, if not 'php' in the path.", 'example-value' => '/path/to/file', 'never-propagate' => TRUE);
+    $options['php']                = array('description' => "The absolute path to your PHP interpreter, if not 'php' in the path.", 'example-value' => '/path/to/file', 'never-propagate' => TRUE);
     $options['interactive']        = array('short-form' => 'ia', 'description' => "Force interactive mode for commands run on multiple targets (e.g. `drush @site1,@site2 cc --ia`).", 'never-propagate' => TRUE);
     $options['tty']                = array('hidden' => TRUE, 'description' => "Force allocation of tty for remote commands", 'never-propagate' => TRUE);
     $options['quiet']               = array('short-form' => 'q', 'description' => 'Suppress non-error messages.');
@@ -1028,9 +1028,19 @@ function drush_tarball_extract($path, $destination = FALSE, $listing = FALSE, $t
       // Remove the header line.
       array_shift($output);
       // Remove the prefix verb from each line.
-      $output = array_map(create_function('$str', 'return substr($str, strpos($str, ":") + 3 + ' . strlen($destination) . ');'), $output);
+      $output = array_map(
+        function ($str) use ($destination) {
+          return substr($str, strpos($str, ":") + 3 + strlen($destination));
+        },
+        $output
+      );
       // Remove any remaining blank lines.
-      $return = array_filter($output, create_function('$str', 'return $str != "";'));
+      $return = array_filter(
+        $output,
+        function ($str) {
+          return $str != "";
+        }
+      );
     }
   }
   // Otherwise we have a possibly-compressed Tar file.

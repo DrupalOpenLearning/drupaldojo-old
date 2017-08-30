@@ -18,23 +18,46 @@ interface FlagServiceInterface {
    * For example to list all flags operating on articles:
    *
    * @code
-   *   $this->flagService->getFlags('node', 'article');
+   *   $this->flagService->getAllFlags('node', 'article');
    * @endcode
    *
    * If all the parameters are omitted, a list of all flags will be returned.
+   *
+   * Note that this does not check for any kind of access; see getUsersFlags()
+   * for that.
    *
    * @param string $entity_type
    *   (optional) The type of entity for which to load the flags.
    * @param string $bundle
    *   (optional) The bundle for which to load the flags.
-   * @param \Drupal\Core\Session\AccountInterface $account
-   *   (optional) The user account to filter available flags. If not set, all
-   *   flags for the given entity and bundle will be returned.
    *
-   * @return array
+   * @return \Drupal\flag\FlagInterface[]
    *   An array of flag entities, keyed by the entity IDs.
    */
-  public function getFlags($entity_type = NULL, $bundle = NULL, AccountInterface $account = NULL);
+  public function getAllFlags($entity_type = NULL, $bundle = NULL);
+
+  /**
+   * Lists the flags available to a given user, for an entity type and bundle.
+   *
+   * For example, to list all flags operating on articles:
+   *
+   * @code
+   *   $this->flagService->getUsersFlags($account, 'node', 'article');
+   * @endcode
+   *
+   * @param \Drupal\Core\Session\AccountInterface $account
+   *   The user account to filter flags according to access.
+   * @param string $entity_type
+   *   (optional) The entity type ID for which to list flags. If omitted,
+   *   flags for all entity types are returned.
+   * @param string $bundle
+   *   (optional) The bundle name of the given entity type for which to list
+   *   flags. If omitted, flags for all bundles are returned.
+   *
+   * @return \Drupal\flag\FlagInterface[]
+   *   An array of flag entities, keyed by the entity IDs.
+   */
+  public function getUsersFlags(AccountInterface $account, $entity_type = NULL, $bundle = NULL);
 
   /**
    * Get a single flagging for given a flag and  entity.
@@ -56,27 +79,21 @@ interface FlagServiceInterface {
    * @param \Drupal\Core\Session\AccountInterface $account
    *   (optional) The account of the flagging user. If omitted, the flagging for
    *   the current user will be returned.
+   * @param string $session_id
+   *   (optional) The session ID. If omitted and the current user is anonymous
+   *    the current session id will be used to uniquely identify the anonymous
+   *    user.
    *
    * @return \Drupal\flag\FlaggingInterface|null
    *   The flagging or NULL if the flagging is not found.
    *
+   * @throws \LogicException
+   *   Thrown when $account is anonymous but no associated session ID is
+   *   specified.
+   *
    * @see \Drupal\flag\FlagServiceInterface::getFlaggings()
    */
-  public function getFlagging(FlagInterface $flag, EntityInterface $entity, AccountInterface $account = NULL);
-
-  /**
-   * Get all flaggings for the given flag, and optionally, user.
-   *
-   * @param \Drupal\flag\FlagInterface $flag
-   *   The flag entity.
-   * @param \Drupal\Core\Session\AccountInterface $account
-   *   (optional) The account of the flagging user. If NULL, flaggings for any
-   *   user will be returned.
-   *
-   * @return array
-   *   An array of flaggings.
-   */
-  public function getFlagFlaggings(FlagInterface $flag, AccountInterface $account = NULL);
+  public function getFlagging(FlagInterface $flag, EntityInterface $entity, AccountInterface $account = NULL, $session_id = NULL);
 
   /**
    * Get flaggings for the given entity, flag, and optionally, user.
@@ -87,7 +104,7 @@ interface FlagServiceInterface {
    * @code
    *   $flag = \Drupal::service('flag')->getFlagById('bookmark');
    *   $node = Node::load($node_id);
-   *   $flaggings = \Drupal::service('flag')->getFlaggings($flag, $node);
+   *   $flaggings = \Drupal::service('flag')->getEntityFlaggings($flag, $node);
    *
    *   foreach ($flaggings as $flagging) {
    *     // Do something with each flagging.
@@ -101,11 +118,18 @@ interface FlagServiceInterface {
    * @param \Drupal\Core\Session\AccountInterface $account
    *   (optional) The account of the flagging user. If NULL, flaggings for any
    *   user will be returned.
+   * @param string $session_id
+   *   (optional) The session ID. This must be supplied if $account is the
+   *   anonymous user.
    *
    * @return array
    *   An array of flaggings.
+   *
+   * @throws \LogicException
+   *   An exception is thrown if the given $account is anonymous, but no
+   *   $session_id is given.
    */
-  public function getEntityFlaggings(FlagInterface $flag, EntityInterface $entity, AccountInterface $account = NULL);
+  public function getEntityFlaggings(FlagInterface $flag, EntityInterface $entity, AccountInterface $account = NULL, $session_id = NULL);
 
   /**
    * Get all flaggings for the given entity, and optionally, user.
@@ -115,11 +139,18 @@ interface FlagServiceInterface {
    * @param \Drupal\Core\Session\AccountInterface $account
    *   (optional) The account of the flagging user. If NULL, flaggings for any
    *   user will be returned.
+   * @param string $session_id
+   *   (optional) The session ID. This must be supplied if $account is the
+   *   anonymous user.
    *
    * @return array
    *   An array of flaggings.
+   *
+   * @throws \LogicException
+   *   An exception is thrown if the given $account is anonymous, but no
+   *   $session_id is given.
    */
-  public function getAllEntityFlaggings(EntityInterface $entity, AccountInterface $account = NULL);
+  public function getAllEntityFlaggings(EntityInterface $entity, AccountInterface $account = NULL, $session_id = NULL);
 
   /**
    * Load the flag entity given the ID.
@@ -196,6 +227,10 @@ interface FlagServiceInterface {
    * @param \Drupal\Core\Session\AccountInterface $account
    *   (optional) The account of the user flagging the entity. If not given,
    *   the current user is used.
+   * @param string $session_id
+   *   (optional) The session ID. If $account is NULL and the current user is
+   *   anonymous, then this can also be omitted to use the current session.
+   *   to identify an anonymous user.
    *
    * @return \Drupal\flag\FlagInterface|null
    *   The flagging.
@@ -206,8 +241,9 @@ interface FlagServiceInterface {
    *   - The flag applies to a different entity type from the given entity.
    *   - The flag does not apply to the entity's bundle.
    *   - The entity is already flagged with this flag by the user.
+   *   - The user is anonymous but not uniquely identified by session_id.
    */
-  public function flag(FlagInterface $flag, EntityInterface $entity, AccountInterface $account = NULL);
+  public function flag(FlagInterface $flag, EntityInterface $entity, AccountInterface $account = NULL, $session_id = NULL);
 
   /**
    * Unflags the given entity for the given flag.
@@ -226,6 +262,11 @@ interface FlagServiceInterface {
    * @param AccountInterface $account
    *   (optional) The account of the user that created the flagging. Defaults
    *   to the current user.
+   * @param string $session_id
+   *   (optional) If $account is anonymous then the $session_id MUST be
+   *   used to identify a user uniquely. If $account and $session_id are NULL
+   *   and the current user is anonymous then the current session_id will be
+   *   used.
    *
    * @throws \LogicException
    *   An exception is thrown if the given flag, entity, and account are not
@@ -233,8 +274,9 @@ interface FlagServiceInterface {
    *   - The flag applies to a different entity type from the given entity.
    *   - The flag does not apply to the entity's bundle.
    *   - The entity is not currently flagged with this flag by the user.
+   *   - The user is anonymous but not uniquely identified by session_id.
    */
-  public function unflag(FlagInterface $flag, EntityInterface $entity, AccountInterface $account = NULL);
+  public function unflag(FlagInterface $flag, EntityInterface $entity, AccountInterface $account = NULL, $session_id = NULL);
 
   /**
    * Remove all flaggings from a flag.
@@ -257,8 +299,15 @@ interface FlagServiceInterface {
    *
    * @param \Drupal\Core\Session\AccountInterface $account
    *   The user object.
+   * @param string $session_id
+   *   (optional) The session ID. This must be specified if $account is the
+   *   anonymous user.
+   *
+   * @throws \LogicException
+   *   Thrown when $account is anonymous but no associated session ID is
+   *   specified.
    */
-  public function unflagAllByUser(AccountInterface $account);
+  public function unflagAllByUser(AccountInterface $account, $session_id = NULL);
 
   /**
    * Shared helper for user account cancellation or deletion.
@@ -271,5 +320,34 @@ interface FlagServiceInterface {
    *   The account of the user being cancelled or deleted.
    */
   public function userFlagRemoval(UserInterface $account);
+
+  /**
+   * Set up values for the flagger user account and session.
+   *
+   * This is a helper method for functions that allow the flagger account to be
+   * omitted to mean the current user.
+   *
+   * If you always want the current user, you can use this as follows:
+   *
+   * @code
+   *   $account = $session_id = NULL;
+   *   \Drupal::service('flag')->populateFlaggerDefaults($account, $session_id);
+   * @endcode
+   *
+   * @param \Drupal\Core\Session\AccountInterface $account
+   *   A user account, or a variable set to NULL (rather than the constant NULL)
+   *   to get the current user assigned to it.
+   * @param string $session_id
+   *   A session ID, or a variable set to NULL to get the session ID assigned to
+   *   it in the case that the user also unspecified and anonymous. If $account
+   *   is not NULL and is the anonymous user, then this must be specified, and
+   *   in this case, it is the caller's responsibility to ensure that the
+   *   session is properly started.
+   *
+   * @throws \LogicException
+   *   Throws an exception is $account is specified and is the anonymous user,
+   *   but $session_id is NULL.
+   */
+  public function populateFlaggerDefaults(AccountInterface &$account = NULL, &$session_id = NULL);
 
 }

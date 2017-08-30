@@ -63,7 +63,8 @@ function site_install_drush_command() {
       'drush site-install --db-url=sqlite://sites/example.com/files/.ht.sqlite' => 'Install using SQLite (D7+ only).',
       'drush site-install --account-name=joe --account-pass=mom' => 'Re-install with specified uid1 credentials.',
       'drush site-install standard install_configure_form.site_default_country=FR my_profile_form.my_settings.key=value' => 'Pass additional arguments to the profile (D7 example shown here - for D6, omit the form id).',
-      "drush site-install standard install_configure_form.update_status_module='array(FALSE,FALSE)'" => 'Disable email notification during install and later. If your server has no smtp, this gets rid of an error during install.',
+      "drush site-install standard install_configure_form.update_status_module='array(FALSE,FALSE)'" => 'Disable email notification during install and later (D7). If your server has no mail transfer agent, this gets rid of an error during install.',
+      'drush site-install standard install_configure_form.enable_update_status_module=NULL install_configure_form.enable_update_status_emails=NULL' => 'Disable email notification during install and later (D8). If your server has no mail transfer agent, this gets rid of an error during install.',
     ),
     'bootstrap' => DRUSH_BOOTSTRAP_DRUPAL_ROOT,
     'aliases' => array('si'),
@@ -107,7 +108,12 @@ function drush_core_site_install_validate() {
     if (!is_dir($config)) {
       return drush_set_error('config_import_target', 'The config source is not a directory.');
     }
-  }
+    $configFiles = glob("$config/*.yml");
+    if (empty($configFiles)) {
+      drush_log(dt('Configuration import directory !config does not contain any configuration; will skip import.', array('!config' => $config)), LogLevel::WARNING);
+      drush_set_option('config-dir', '');
+    }
+   }
 }
 
 /**
@@ -193,7 +199,7 @@ function drush_core_pre_site_install($profile = NULL) {
   // Write an empty sites.php if we are on D8 and using multi-site.
   if ($sitesfile_write) {
     if (!drush_op('copy', 'sites/example.sites.php', $sitesfile) && !drush_get_context('DRUSH_SIMULATE')) {
-      return drush_set_error(dt('Failed to copy sites/sites.php to @sitesfile', array('@sitesfile' => $sitesfile)));
+      return drush_set_error(dt('Failed to copy sites/example.sites.php to @sitesfile', array('@sitesfile' => $sitesfile)));
     }
   }
 

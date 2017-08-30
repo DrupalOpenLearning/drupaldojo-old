@@ -60,12 +60,12 @@ class EntityFieldRenderer extends ViewsEntityFieldRenderer {
    * @see EntityFieldRenderer::getRenderableFieldIds()
    */
   public function compatibleWithField(FieldHandlerInterface $field) {
-    if ($field instanceof SearchApiEntityField && $field->relationship == $this->relationship) {
-      // If there is no relationship set, we also need to compare the
-      // datasource ID.
-      if ($field->relationship || $field->getDatasourceId() == $this->datasourceId) {
-        return TRUE;
-      }
+    if ($field instanceof SearchApiEntityField
+        && $field->options['field_rendering']
+        && $field->relationship == $this->relationship
+        && !empty($field->definition['entity_type'])
+        && $field->definition['entity_type'] === $this->getEntityTypeId()) {
+      return TRUE;
     }
 
     return FALSE;

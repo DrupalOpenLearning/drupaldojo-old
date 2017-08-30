@@ -2,12 +2,15 @@
 
   'use strict';
 
+  Drupal.FieldGroup = Drupal.FieldGroup || {};
+  Drupal.FieldGroup.Effects = Drupal.FieldGroup.Effects || {};
+
   /**
    * Implements Drupal.FieldGroup.processHook().
    */
   Drupal.FieldGroup.Effects.processAccordion = {
-    execute: function (context, settings, type) {
-      $('div.field-group-accordion-wrapper', context).once('fieldgroup-effects', function () {
+    execute: function (context, settings, group_info) {
+      $('div.field-group-accordion-wrapper', context).once('fieldgroup-effects').each(function () {
         var wrapper = $(this);
 
         // Get the index to set active.
@@ -32,20 +35,21 @@
           }
         });
 
-        if (type === 'form') {
+        if (group_info.context === 'form') {
 
           var $firstErrorItem = false;
 
           // Add required fields mark to any element containing required fields
           wrapper.find('div.field-group-accordion-item').each(function (i) {
 
-            if ($(this).is('.required-fields') && $(this).find('.form-required').length > 0) {
-              $('h3.ui-accordion-header a').eq(i).append(' ').append($('.form-required').eq(0).clone());
+            var $this = $(this);
+            if ($this.is('.required-fields') && ($this.find('[required]').length > 0 || $this.find('.form-required').length > 0)) {
+              $('h3.ui-accordion-header a').eq(i).addClass('form-required');
             }
-            if ($('.error', $(this)).length) {
+            if ($('.error', $this).length) {
               // Save first error item, for focussing it.
               if (!$firstErrorItem) {
-                $firstErrorItem = $(this).parent().accordion('activate', i);
+                $firstErrorItem = $this.parent().accordion('activate', i);
               }
               $('h3.ui-accordion-header').eq(i).addClass('error');
             }

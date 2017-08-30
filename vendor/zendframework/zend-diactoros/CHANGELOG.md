@@ -2,6 +2,241 @@
 
 All notable changes to this project will be documented in this file, in reverse chronological order by release.
 
+## 1.5.0 - 2017-08-22
+
+### Added
+
+- [#205](https://github.com/zendframework/zend-diactoros/pull/205) adds support
+  for PHP 7.2.
+
+- [#250](https://github.com/zendframework/zend-diactoros/pull/250) adds a new
+  API to `JsonResponse` to avoid the need for decoding the response body in
+  order to make changes to the underlying content. New methods include:
+  - `getPayload()`: retrieve the unencoded payload.
+  - `withPayload($data)`: create a new instance with the given data.
+  - `getEncodingOptions()`: retrieve the flags to use when encoding the payload
+    to JSON.
+  - `withEncodingOptions(int $encodingOptions)`: create a new instance that uses
+    the provided flags when encoding the payload to JSON.
+
+### Changed
+
+- [#249](https://github.com/zendframework/zend-diactoros/pull/249) changes the
+  behavior of the various `Uri::with*()` methods slightly: if the value
+  represents no change, these methods will return the same instance instead of a
+  new one.
+
+- [#248](https://github.com/zendframework/zend-diactoros/pull/248) changes the
+  behavior of `Uri::getUserInfo()` slightly: it now (correctly) returns the
+  percent-encoded values for the user and/or password, per RFC 3986 Section
+  3.2.1. `withUserInfo()` will percent-encode values, using a mechanism that
+  prevents double-encoding.
+
+- [#243](https://github.com/zendframework/zend-diactoros/pull/243) changes the
+  exception messages thrown by `UploadedFile::getStream()` and `moveTo()` when
+  an upload error exists to include details about the upload error.
+
+- [#233](https://github.com/zendframework/zend-diactoros/pull/233) adds a new
+  argument to `SapiStreamEmitter::emit`, `$maxBufferLevel` **between** the
+  `$response` and `$maxBufferLength` arguments. This was done because the
+  `Server::listen()` method passes only the response and `$maxBufferLevel` to
+  emitters; previously, this often meant that streams were being chunked 2 bytes
+  at a time versus the expected default of 8kb.
+
+  If you were calling the `SapiStreamEmitter::emit()` method manually
+  previously, you will need to update your code.
+
+### Deprecated
+
+- Nothing.
+
+### Removed
+
+- [#205](https://github.com/zendframework/zend-diactoros/pull/205) and
+  [#243](https://github.com/zendframework/zend-diactoros/pull/243) **remove
+  support for PHP versions prior to 5.6 as well as HHVM**.
+
+### Fixed
+
+- [#248](https://github.com/zendframework/zend-diactoros/pull/248) fixes how the
+  `Uri` class provides user-info within the URI authority; the value is now
+  correctly percent-encoded , per RFC 3986 Section 3.2.1.
+
+## 1.4.1 - 2017-08-17
+
+### Added
+
+- Nothing.
+
+### Deprecated
+
+- Nothing.
+
+### Removed
+
+- [#260](https://github.com/zendframework/zend-diactoros/pull/260) removes
+  support for HHVM, as tests have failed against it for some time.
+
+### Fixed
+
+- [#247](https://github.com/zendframework/zend-diactoros/pull/247) fixes the
+  `Stream` and `RelativeStream` `__toString()` method implementations to check
+  if the stream `isSeekable()` before attempting to `rewind()` it, ensuring that
+  the method does not raise exceptions (PHP does not allow exceptions in that
+  method). In particular, this fixes an issue when using AWS S3 streams.
+
+- [#252](https://github.com/zendframework/zend-diactoros/pull/252) provides a
+  fix to the `SapiEmitterTrait` to ensure that any `Set-Cookie` headers in the
+  response instance do not override those set by PHP when a session is created
+  and/or regenerated.
+
+- [#257](https://github.com/zendframework/zend-diactoros/pull/257) provides a
+  fix for the `PhpInputStream::read()` method to ensure string content that
+  evaluates as empty (including `0`) is still cached.
+
+- [#258](https://github.com/zendframework/zend-diactoros/pull/258) updates the
+  `Uri::filterPath()` method to allow parens within a URI path, per [RFC 3986
+  section 3.3](https://tools.ietf.org/html/rfc3986#section-3.3) (parens are
+  within the character set "sub-delims").
+
+## 1.4.0 - 2017-04-06
+
+### Added
+
+- [#219](https://github.com/zendframework/zend-diactoros/pull/219) adds two new
+  classes, `Zend\Diactoros\Request\ArraySerializer` and
+  `Zend\Diactoros\Response\ArraySerializer`. Each exposes the static methods
+  `toArray()` and `fromArray()`, allowing de/serialization of messages from and
+  to arrays.
+
+- [#236](https://github.com/zendframework/zend-diactoros/pull/236) adds two new
+  constants to the `Response` class: `MIN_STATUS_CODE_VALUE` and
+  `MAX_STATUS_CODE_VALUE`.
+
+### Changes
+
+- [#240](https://github.com/zendframework/zend-diactoros/pull/240) changes the
+  behavior of `ServerRequestFactory::fromGlobals()` when no `$cookies` argument
+  is present. Previously, it would use `$_COOKIES`; now, if a `Cookie` header is
+  present, it will parse and use that to populate the instance instead.
+
+  This change allows utilizing cookies that contain period characters (`.`) in
+  their names (PHP's built-in cookie handling renames these to replace `.` with
+  `_`, which can lead to synchronization issues with clients).
+
+- [#235](https://github.com/zendframework/zend-diactoros/pull/235) changes the
+  behavior of `Uri::__toString()` to better follow proscribed behavior in PSR-7.
+  In particular, prior to this release, if a scheme was missing but an authority
+  was present, the class was incorrectly returning a value that did not include
+  a `//` prefix. As of this release, it now does this correctly.
+
+### Deprecated
+
+- Nothing.
+
+### Removed
+
+- Nothing.
+
+### Fixed
+
+- Nothing.
+
+## 1.3.11 - 2017-04-06
+
+### Added
+
+- Nothing.
+
+### Changes
+
+- [#241](https://github.com/zendframework/zend-diactoros/pull/241) changes the
+  constraint by which the package provides `psr/http-message-implementation` to
+  simply `1.0` instead of `~1.0.0`, to follow how other implementations provide
+  PSR-7.
+
+### Deprecated
+
+- Nothing.
+
+### Removed
+
+- Nothing.
+
+### Fixed
+
+- [#161](https://github.com/zendframework/zend-diactoros/pull/161) adds
+  additional validations to header names and values to ensure no malformed values
+  are provided.
+
+- [#234](https://github.com/zendframework/zend-diactoros/pull/234) fixes a
+  number of reason phrases in the `Response` instance, and adds automation from
+  the canonical IANA sources to ensure any new phrases added are correct.
+
+## 1.3.10 - 2017-01-23
+
+### Added
+
+- Nothing.
+
+### Deprecated
+
+- Nothing.
+
+### Removed
+
+- Nothing.
+
+### Fixed
+
+- [#226](https://github.com/zendframework/zend-diactoros/pull/226) fixed an
+  issue with the `SapiStreamEmitter` causing the response body to be cast
+  to `(string)` and also be read as a readable stream, potentially producing
+  double output.
+
+## 1.3.9 - 2017-01-17
+
+### Added
+
+- Nothing.
+
+### Deprecated
+
+- Nothing.
+
+### Removed
+
+- Nothing.
+
+### Fixed
+
+- [#223](https://github.com/zendframework/zend-diactoros/issues/223)
+  [#224](https://github.com/zendframework/zend-diactoros/pull/224) fixed an issue
+  with the `SapiStreamEmitter` consuming too much memory when producing output
+  for readable bodies.
+
+## 1.3.8 - 2017-01-05
+
+### Added
+
+- Nothing.
+
+### Deprecated
+
+- Nothing.
+
+### Removed
+
+- Nothing.
+
+### Fixed
+
+- [#222](https://github.com/zendframework/zend-diactoros/pull/222) fixes the
+  `SapiStreamEmitter`'s handling of the `Content-Range` header to properly only
+  emit a range of bytes if the header value is in the form `bytes {first-last}/length`.
+  This allows using other range units, such as `items`, without incorrectly
+  emitting truncated content.
+
 ## 1.3.7 - 2016-10-11
 
 ### Added

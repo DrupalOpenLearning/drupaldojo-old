@@ -1,10 +1,5 @@
 <?php
 
-/**
- * @file
- * Contains \Drupal\devel\Tests\DevelMenuLinksTest.
- */
-
 namespace Drupal\devel\Tests;
 
 use Drupal\Core\Url;
@@ -109,44 +104,6 @@ class DevelMenuLinksTest extends WebTestBase {
     $this->clickLink(t('Run cron'));
     $this->assertText(t('Cron ran successfully.'));
     $this->assertUrl($url);
-  }
-
-  /**
-   * Tests menu item link.
-   */
-  public function testMenuItemLink() {
-    // Ensures that devel menu item works properly.
-    $url = $this->develUser->toUrl();
-    $path = '/' . $url->getInternalPath();
-
-    $this->drupalGet($url);
-    $this->clickLink(t('Menu Item'));
-    $this->assertResponse(200);
-    $this->assertText('Menu item');
-    $this->assertUrl('devel/menu/item', ['query' => ['path' => $path]]);
-
-    // Ensures that devel menu item works properly even when dynamic cache is
-    // enabled.
-    $url = Url::fromRoute('devel.simple_page');
-    $path = '/' . $url->getInternalPath();
-
-    $this->drupalGet($url);
-    $this->clickLink(t('Menu Item'));
-    $this->assertResponse(200);
-    $this->assertText('Menu item');
-    $this->assertUrl('devel/menu/item', ['query' => ['path' => $path]]);
-
-    // Ensures that if no 'path' query string is passed devel menu item does
-    // not return errors.
-    $this->drupalGet('devel/menu/item');
-    $this->assertResponse(200);
-    $this->assertText('Menu item');
-
-    // Ensures that devel menu item is accessible ony to users with the
-    // adequate permissions.
-    $this->drupalLogout();
-    $this->drupalGet('devel/menu/item');
-    $this->assertResponse(403);
   }
 
 }

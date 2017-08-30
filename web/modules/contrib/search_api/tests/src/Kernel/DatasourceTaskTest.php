@@ -19,14 +19,14 @@ class DatasourceTaskTest extends KernelTestBase {
   /**
    * {@inheritdoc}
    */
-  public static $modules = array(
+  public static $modules = [
     'search_api',
     'search_api_test',
     'language',
     'user',
     'system',
     'entity_test',
-  );
+  ];
 
   /**
    * The test entity type used in the test.
@@ -67,32 +67,32 @@ class DatasourceTaskTest extends KernelTestBase {
 
     // Define the bundles for our test entity type. (Should happen before we
     // install its entity schema.)
-    $bundles = array(
-      'article' => array(
+    $bundles = [
+      'article' => [
         'label' => 'Article',
-      ),
-      'item' => array(
+      ],
+      'item' => [
         'label' => 'Item',
-      ),
-    );
+      ],
+    ];
     \Drupal::state()->set($this->testEntityTypeId . '.bundles', $bundles);
 
-    $this->installSchema('search_api', array('search_api_item'));
-    $this->installSchema('system', array('sequences'));
+    $this->installSchema('search_api', ['search_api_item']);
+    $this->installSchema('system', ['sequences']);
     $this->installEntitySchema('entity_test_mulrev_changed');
     $this->installEntitySchema('search_api_task');
 
     $this->taskManager = $this->container->get('search_api.task_manager');
 
     // Create some languages.
-    $this->installConfig(array('language'));
+    $this->installConfig(['language']);
     for ($i = 0; $i < 3; ++$i) {
       /** @var \Drupal\language\ConfigurableLanguageInterface $language */
-      $language = ConfigurableLanguage::create(array(
+      $language = ConfigurableLanguage::create([
         'id' => 'l' . $i,
         'label' => 'language - ' . $i,
         'weight' => $i,
-      ));
+      ]);
       $language->save();
     }
 
@@ -102,34 +102,28 @@ class DatasourceTaskTest extends KernelTestBase {
       ->save();
 
     // Create a test server.
-    $this->server = Server::create(array(
+    $this->server = Server::create([
       'name' => 'Test Server',
       'id' => 'test_server',
       'status' => 1,
       'backend' => 'search_api_test',
-    ));
+    ]);
     $this->server->save();
 
     // Create a test index.
-    $this->index = Index::create(array(
+    $this->index = Index::create([
       'name' => 'Test Index',
       'id' => 'test_index',
       'status' => 1,
-      'datasource_settings' => array(
-        'entity:' . $this->testEntityTypeId => array(
-          'plugin_id' => 'entity:' . $this->testEntityTypeId,
-          'settings' => array(),
-        ),
-      ),
-      'tracker_settings' => array(
-        'default' => array(
-          'plugin_id' => 'default',
-          'settings' => array(),
-        ),
-      ),
+      'datasource_settings' => [
+        'entity:' . $this->testEntityTypeId => [],
+      ],
+      'tracker_settings' => [
+        'default' => [],
+      ],
       'server' => $this->server->id(),
-      'options' => array('index_directly' => FALSE),
-    ));
+      'options' => ['index_directly' => FALSE],
+    ]);
     $this->index->save();
 
     $this->taskManager->deleteTasks();
@@ -143,25 +137,25 @@ class DatasourceTaskTest extends KernelTestBase {
     // available.
     /** @var \Drupal\entity_test\Entity\EntityTestMulRevChanged $entity_1 */
     $uid = $this->container->get('current_user')->id();
-    $entity_1 = EntityTestMulRevChanged::create(array(
+    $entity_1 = EntityTestMulRevChanged::create([
       'id' => 1,
       'name' => 'test 1',
       'user_id' => $uid,
       'type' => 'item',
       'langcode' => 'l0',
-    ));
+    ]);
     $entity_1->save();
     $entity_1->addTranslation('l1')->save();
     $entity_1->addTranslation('l2')->save();
 
     /** @var \Drupal\entity_test\Entity\EntityTestMulRevChanged $entity_2 */
-    $entity_2 = EntityTestMulRevChanged::create(array(
+    $entity_2 = EntityTestMulRevChanged::create([
       'id' => 2,
       'name' => 'test 2',
       'user_id' => $uid,
       'type' => 'article',
       'langcode' => 'l1',
-    ));
+    ]);
     $entity_2->save();
     $entity_2->addTranslation('l0')->save();
     $entity_2->addTranslation('l2')->save();
@@ -181,27 +175,27 @@ class DatasourceTaskTest extends KernelTestBase {
     $this->assertEquals(6, $tracker->getTotalItemsCount());
     $this->assertEquals(6, $tracker->getRemainingItemsCount());
 
-    $configuration = array(
-      'bundles' => array(
+    $configuration = [
+      'bundles' => [
         'default' => TRUE,
-        'selected' => array(
+        'selected' => [
           'item',
-        ),
-      ),
-      'languages' => array(
+        ],
+      ],
+      'languages' => [
         'default' => FALSE,
-        'selected' => array(
+        'selected' => [
           'l0',
           'l2',
-        ),
-      ),
-    );
+        ],
+      ],
+    ];
     $datasource->setConfiguration($configuration);
     $index->save();
 
     $this->runBatch();
 
-    $expected = $get_ids(array('2:l0', '2:l2'));
+    $expected = $get_ids(['2:l0', '2:l2']);
     $this->assertEquals(count($expected), $tracker->getTotalItemsCount());
     $remaining = $tracker->getRemainingItems();
     sort($remaining);
@@ -209,13 +203,13 @@ class DatasourceTaskTest extends KernelTestBase {
 
     $configuration['bundles']['default'] = FALSE;
     $configuration['bundles']['selected'][] = 'article';
-    $configuration['languages']['selected'] = array('l0');
+    $configuration['languages']['selected'] = ['l0'];
     $datasource->setConfiguration($configuration);
     $index->save();
 
     $this->runBatch();
 
-    $expected = $get_ids(array('1:l0', '2:l0'));
+    $expected = $get_ids(['1:l0', '2:l0']);
     $this->assertEquals(count($expected), $tracker->getTotalItemsCount());
     $remaining = $tracker->getRemainingItems();
     sort($remaining);
@@ -227,19 +221,19 @@ class DatasourceTaskTest extends KernelTestBase {
 
     $this->runBatch();
 
-    $expected = $get_ids(array('1:l0', '1:l1', '2:l0', '2:l1'));
+    $expected = $get_ids(['1:l0', '1:l1', '2:l0', '2:l1']);
     $this->assertEquals(count($expected), $tracker->getTotalItemsCount());
     $remaining = $tracker->getRemainingItems();
     sort($remaining);
     $this->assertEquals($expected, $remaining);
 
-    $configuration['bundles']['selected'] = array('article');
+    $configuration['bundles']['selected'] = ['article'];
     $datasource->setConfiguration($configuration);
     $index->save();
 
     $this->runBatch();
 
-    $expected = $get_ids(array('2:l0', '2:l1'));
+    $expected = $get_ids(['2:l0', '2:l1']);
     $this->assertEquals(count($expected), $tracker->getTotalItemsCount());
     $remaining = $tracker->getRemainingItems();
     sort($remaining);

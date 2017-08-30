@@ -1,10 +1,5 @@
 <?php
 
-/**
- * @file
- * Contains \Drupal\field_group\Annotation\FieldGroupFormatter.
- */
-
 namespace Drupal\field_group\Annotation;
 
 use Drupal\Component\Annotation\Plugin;

@@ -1,0 +1,5 @@
+readme.settings:
+  title: 'README'
+  description: 'Administer README settings.'
+  parent: system.admin_config_development
+  route_name: readme.settings

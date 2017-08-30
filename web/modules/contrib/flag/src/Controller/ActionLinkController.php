@@ -139,7 +139,7 @@ class ActionLinkController extends ControllerBase implements ContainerInjectionI
       $link_type = $flag->getLinkTypePlugin();
 
       // Generate the link render array.
-      $link = $link_type->getLink($flag, $entity);
+      $link = $link_type->getAsFlagLink($flag, $entity);
 
       // Generate a CSS selector to use in a JQuery Replace command.
       $selector = '.flag-' . $flag->id() . '-' . $entity->id();
@@ -158,4 +158,5 @@ class ActionLinkController extends ControllerBase implements ContainerInjectionI
     }
 
   }
+
 }

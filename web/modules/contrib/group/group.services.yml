@@ -25,6 +25,14 @@ services:
     arguments: ['@entity.manager']
     tags:
       - { name: 'access_check', applies_to: '_group_content_create_any_access' }
+  access_check.group_content.create_entity:
+    class: 'Drupal\group\Access\GroupContentCreateEntityAccessCheck'
+    tags:
+      - { name: 'access_check', applies_to: '_group_content_create_entity_access' }
+  access_check.group_content.create_any_entity:
+    class: 'Drupal\group\Access\GroupContentCreateAnyEntityAccessCheck'
+    tags:
+      - { name: 'access_check', applies_to: '_group_content_create_any_entity_access' }
 
   cache_context.group:
     class: 'Drupal\group\Cache\Context\GroupCacheContext'
@@ -88,6 +96,10 @@ services:
     class: 'Drupal\group\Breadcrumb\GroupContentTypeBreadcrumbBuilder'
     tags:
       - { name: 'breadcrumb_builder', priority: 100 }
+
+  group_role.synchronizer:
+    class: 'Drupal\group\GroupRoleSynchronizer'
+    arguments: ['@entity_type.manager']
 
   plugin.manager.group_content_enabler:
     class: 'Drupal\group\Plugin\GroupContentEnablerManager'

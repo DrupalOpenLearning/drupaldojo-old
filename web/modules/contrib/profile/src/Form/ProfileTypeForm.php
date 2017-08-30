@@ -8,7 +8,6 @@ use Drupal\Core\Form\FormStateInterface;
 use Drupal\field_ui\FieldUI;
 use Drupal\user\Entity\Role;
 
-
 /**
  * Form controller for profile type forms.
  */
@@ -19,6 +18,7 @@ class ProfileTypeForm extends BundleEntityFormBase {
    */
   public function form(array $form, FormStateInterface $form_state) {
     $form = parent::form($form, $form_state);
+    /** @var \Drupal\profile\Entity\ProfileTypeInterface $type */
     $type = $this->entity;
 
     if ($this->operation == 'add') {
@@ -71,6 +71,12 @@ class ProfileTypeForm extends BundleEntityFormBase {
       }
     }
 
+    $form['use_revisions'] = [
+      '#type' => 'checkbox',
+      '#title' => $this->t('Create a new revision when a profile is modified'),
+      '#default_value' => $type->shouldCreateNewRevision(),
+    ];
+
     return $this->protectBundleIdElement($form);
   }
 
@@ -83,8 +89,8 @@ class ProfileTypeForm extends BundleEntityFormBase {
       $this->getEntity()->isNew()
     ) {
       $actions['save_continue'] = $actions['submit'];
-      $actions['save_continue']['#value'] = t('Save and manage fields');
-      $actions['save_continue']['#submit'][] = [$this, 'redirectToFieldUI'];
+      $actions['save_continue']['#value'] = $this->t('Save and manage fields');
+      $actions['save_continue']['#submit'][] = [$this, 'redirectToFieldUi'];
     }
     return $actions;
   }
@@ -97,10 +103,10 @@ class ProfileTypeForm extends BundleEntityFormBase {
     $status = $type->save();
 
     if ($status == SAVED_UPDATED) {
-      drupal_set_message(t('%label profile type has been updated.', ['%label' => $type->label()]));
+      drupal_set_message($this->t('%label profile type has been updated.', ['%label' => $type->label()]));
     }
     else {
-      drupal_set_message(t('%label profile type has been created.', ['%label' => $type->label()]));
+      drupal_set_message($this->t('%label profile type has been created.', ['%label' => $type->label()]));
     }
     $form_state->setRedirect('entity.profile_type.collection');
   }
@@ -108,7 +114,7 @@ class ProfileTypeForm extends BundleEntityFormBase {
   /**
    * Form submission handler to redirect to Manage fields page of Field UI.
    */
-  public function redirectToFieldUI(array $form, FormStateInterface $form_state) {
+  public function redirectToFieldUi(array $form, FormStateInterface $form_state) {
     if ($form_state->getTriggeringElement()['#parents'][0] === 'save_continue' && $route_info = FieldUI::getOverviewRouteInfo('profile', $this->entity->id())) {
       $form_state->setRedirectUrl($route_info);
     }

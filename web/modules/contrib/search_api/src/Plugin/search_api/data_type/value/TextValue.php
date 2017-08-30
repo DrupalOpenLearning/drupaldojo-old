@@ -33,7 +33,7 @@ class TextValue implements TextValueInterface {
    *
    * @var array
    */
-  protected $properties = array();
+  protected $properties = [];
 
   /**
    * Constructs a TextValue object.

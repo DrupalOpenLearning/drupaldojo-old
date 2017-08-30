@@ -2,10 +2,11 @@
 
 namespace Drupal\group\Entity\Form;
 
-use Drupal\group\Entity\GroupRole;
 use Drupal\Core\Entity\EntityForm;
 use Drupal\Core\Entity\EntityTypeInterface;
 use Drupal\Core\Form\FormStateInterface;
+use Drupal\Core\Routing\RouteMatchInterface;
+use Drupal\group\Entity\GroupRole;
 
 /**
  * Form controller for group role forms.
@@ -28,10 +29,10 @@ class GroupRoleForm extends EntityForm {
         ],
       ];
     }
-    
+
     return parent::buildForm($form, $form_state);
   }
-  
+
   /**
    * {@inheritdoc}
    */
@@ -41,13 +42,6 @@ class GroupRoleForm extends EntityForm {
     /** @var \Drupal\group\Entity\GroupRoleInterface $group_role */
     $group_role = $this->entity;
     $group_role_id = '';
-
-    if ($this->operation == 'add') {
-      $form['#title'] = $this->t('Add group role');
-    }
-    else {
-      $form['#title'] = $this->t('Edit %label group role', ['%label' => $group_role->label()]);
-    }
 
     $form['label'] = [
       '#title' => t('Name'),
@@ -85,7 +79,7 @@ class GroupRoleForm extends EntityForm {
       '#type' => 'value',
       '#value' => $group_role->getWeight(),
     ];
-    
+
     return $form;
   }
 
@@ -149,6 +143,23 @@ class GroupRoleForm extends EntityForm {
     /** @var \Drupal\group\Entity\GroupRoleInterface $group_role */
     $group_role = $this->entity;
     return (boolean) GroupRole::load($group_role->getGroupTypeId() . '-' .$id);
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function getEntityFromRouteMatch(RouteMatchInterface $route_match, $entity_type_id) {
+    if ($route_match->getRawParameter($entity_type_id) !== NULL) {
+      return $route_match->getParameter($entity_type_id);
+    }
+
+    // If we are on the create form, we can't extract an entity from the route,
+    // so we need to create one based on the route parameters.
+    $values = [];
+    if ($route_match->getRawParameter('group_type') !== NULL) {
+      $values['group_type'] = $route_match->getRawParameter('group_type');
+    }
+    return $this->entityTypeManager->getStorage($entity_type_id)->create($values);
   }
 
 }

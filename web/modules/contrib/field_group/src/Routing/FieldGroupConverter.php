@@ -1,10 +1,5 @@
 <?php
 
-/**
- * @file
- * Contains \Drupal\field_group\Routing\Paramconverter.
- */
-
 namespace Drupal\field_group\Routing;
 
 use Drupal\Core\ParamConverter\ParamConverterInterface;

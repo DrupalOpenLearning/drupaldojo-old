@@ -178,6 +178,21 @@ interface FeaturesManagerInterface {
   public function setPackage(Package $package);
 
   /**
+   * Load a specific package.
+   *
+   * Similar to getPackage but can also load modules that are not Features.
+   *
+   * @param string $module_name
+   *   Full machine name of module.
+   * @param bool $any
+   *   If TRUE then check for any module, not just a Features module.
+   *
+   * @return \Drupal\features\Package
+   *   Package data.
+   */
+  public function loadPackage($module_name, $any = FALSE);
+
+  /**
    * Filters the supplied package list by the given namespace.
    *
    * @param \Drupal\features\Package[] $packages
@@ -605,5 +620,28 @@ interface FeaturesManagerInterface {
    * @return array
    */
   public function getFeaturesInfo(Extension $extension);
+
+  /**
+   * Creates configuration in a collection based on the provided list.
+   *
+   * @param array $config_to_create
+   *   An array of configuration data to create, keyed by name.
+   * @return array of config imported
+   *   'new': list of new config created keyed by name.
+   *   'updated': list of updated config keyed by name.
+   */
+  public function createConfiguration(array $config_to_create);
+
+  /**
+   * @param array $modules
+   *   An array of module names to import (revert)
+   * @param bool $any
+   *   Set to TRUE to import config from non-Features modules
+   * @return array of config imported
+   *   keyed by name of module, then:
+   *     'new': list of new config created keyed by name.
+   *     'updated': list of updated config keyed by name.
+   */
+  public function import($modules, $any = FALSE);
 
 }

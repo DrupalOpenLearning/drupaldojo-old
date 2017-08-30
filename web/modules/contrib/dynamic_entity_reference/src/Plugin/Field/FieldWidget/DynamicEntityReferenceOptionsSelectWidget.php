@@ -20,4 +20,16 @@ class DynamicEntityReferenceOptionsSelectWidget extends OptionsSelectWidget {
 
   use DynamicEntityReferenceOptionsTrait;
 
+  /**
+   * {@inheritdoc}
+   */
+  public function supportsGroups() {
+    $settings = $this->getFieldSettings();
+    $entity_type_id = current($settings['entity_type_ids']);
+
+    // We only support groups when there is more than 1 target_bundle
+    // available.
+    return !empty($settings[$entity_type_id]['handler_settings']['target_bundles']) && count($settings[$entity_type_id]['handler_settings']['target_bundles']) > 1;
+  }
+
 }

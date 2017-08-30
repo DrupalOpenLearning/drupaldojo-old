@@ -10,8 +10,8 @@ dependencies:
   - views
   - system (>=8.1.0)
 
-# Information added by Drupal.org packaging script on 2016-08-22
-version: '8.x-1.0-alpha5'
+# Information added by Drupal.org packaging script on 2017-06-12
+version: '8.x-1.0-beta1'
 core: '8.x'
 project: 'profile'
-datestamp: 1471874016
+datestamp: 1497287652

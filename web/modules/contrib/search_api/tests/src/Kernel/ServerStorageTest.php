@@ -21,12 +21,12 @@ class ServerStorageTest extends KernelTestBase {
    *
    * @var string[]
    */
-  public static $modules = array(
+  public static $modules = [
     'search_api',
     'search_api_test',
     'user',
     'system',
-  );
+  ];
 
   /**
    * The search server storage.
@@ -66,18 +66,18 @@ class ServerStorageTest extends KernelTestBase {
    *   The newly created search server.
    */
   public function serverCreate() {
-    $server_data = array(
+    $server_data = [
       'id' => 'test_server',
       'name' => 'Test server',
       'backend' => 'search_api_test',
-    );
+    ];
     $server = $this->storage->create($server_data);
 
     $this->assertTrue($server instanceof ServerInterface, 'The newly created entity is a Search API Server.');
     $server->save();
 
     $key = 'search_api_test.methods_called.' . $server->id();
-    $methods_called = \Drupal::state()->get($key, array());
+    $methods_called = \Drupal::state()->get($key, []);
     $this->assertNotContains('preUpdate', $methods_called, 'Backend::preUpdate() not called for initial save.');
     $this->assertNotContains('postUpdate', $methods_called, 'Backend::postUpdate() not called for initial save.');
 
@@ -123,7 +123,7 @@ class ServerStorageTest extends KernelTestBase {
    *   The server used for this test.
    */
   public function serverDelete(ServerInterface $server) {
-    $this->storage->delete(array($server));
+    $this->storage->delete([$server]);
     $loaded_server = $this->storage->load($server->id());
     $this->assertNull($loaded_server);
   }

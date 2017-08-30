@@ -4,4 +4,4 @@ search_api_db.settings:
   mapping:
     autocomplete_max_occurrences:
       type: float
-      label: 'Maximum occurences of a term until autocomplete suggestions ignores it'
+      label: 'Maximum occurrences of a term until autocomplete suggestions ignores it'

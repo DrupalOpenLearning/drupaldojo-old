@@ -1,10 +1,5 @@
 <?php
 
-/**
- * @file
- * Contains \Drupal\field_group\Tests\FieldGroupTestTrait.
- */
-
 namespace Drupal\field_group\Tests;
 
 use Drupal\Component\Utility\Unicode;

@@ -23,6 +23,36 @@ views.row.search_api:
           type: string
           label: View mode for the specific bundle
 
+views.cache.search_api_time:
+  type: views_cache
+  label: 'Time-based caching (Search API)'
+  mapping:
+    options:
+      type: mapping
+      label: 'Cache options'
+      mapping:
+        results_lifespan:
+          type: integer
+          label: 'The length of time raw query results should be cached.'
+        results_lifespan_custom:
+          type: integer
+          label: 'Length of time in seconds raw query results should be cached.'
+        output_lifespan:
+          type: integer
+          label: 'The length of time rendered HTML output should be cached.'
+        output_lifespan_custom:
+          type: integer
+          label: 'Length of time in seconds rendered HTML output should be cached.'
+
+views.cache.search_api_tag:
+  type: views_cache
+  label: 'Tag-based caching (Search API)'
+  mapping:
+    options:
+      type: mapping
+      label: 'Cache options'
+
+
 views.argument.search_api:
   type: views.argument.numeric
   label: 'Search API'
@@ -157,10 +187,6 @@ views.filter.search_api_datasource:
   type: views.filter.search_api_options
   label: 'Search API datasource'
 
-views.filter_value.search_api_date:
-  type: views.filter_value.date
-  label: 'Search API date'
-
 views.filter.search_api_fulltext:
   type: views_filter
   label: 'Search API fulltext search'
@@ -209,7 +235,8 @@ views.filter_value.search_api_datasource:
   type: string
 
 views.filter_value.search_api_date:
-  type: string
+  type: views.filter_value.date
+  label: 'Search API date'
 
 views.filter_value.search_api_fulltext:
   type: string
@@ -235,3 +262,10 @@ views.filter_value.search_api_text:
 views.filter_value.search_api_user:
   type: string
 
+views.relationship.search_api:
+  type: views_relationship
+  label: 'Search API'
+  mapping:
+    skip_access:
+      type: boolean
+      label: Do not execute access checks for entities referenced via this relationship.

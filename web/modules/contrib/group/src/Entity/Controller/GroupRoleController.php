@@ -2,41 +2,32 @@
 
 namespace Drupal\group\Entity\Controller;
 
-use Drupal\group\Entity\GroupRole;
-use Drupal\group\Entity\GroupTypeInterface;
-use Drupal\Core\Controller\ControllerBase;
+use Drupal\Core\Entity\Controller\EntityController;
+use Drupal\Core\Entity\EntityInterface;
+use Drupal\Core\Routing\RouteMatchInterface;
 
 /**
  * Returns responses for GroupRole routes.
  */
-class GroupRoleController extends ControllerBase {
+class GroupRoleController extends EntityController  {
 
   /**
-   * Provides the group role submission form.
-   *
-   * @param \Drupal\group\Entity\GroupTypeInterface $group_type
-   *   The group type to add the group role to.
-   *
-   * @return array
-   *   A group role submission form.
+   * {@inheritdoc}
    */
-  public function add(GroupTypeInterface $group_type) {
-    $group_role = GroupRole::create(['group_type' => $group_type->id()]);
-    $form = $this->entityFormBuilder()->getForm($group_role, 'add');
-    return $form;
-  }
-
-  /**
-   * The _title_callback for the entity.group_role.add_form route.
-   *
-   * @param \Drupal\group\Entity\GroupTypeInterface $group_type
-   *   The group type to base the title on.
-   *
-   * @return string
-   *   The page title.
-   */
-  public function addPageTitle(GroupTypeInterface $group_type) {
-    return $this->t('Create group role for @name', ['@name' => $group_type->label()]);
+  protected function doGetEntity(RouteMatchInterface $route_match, EntityInterface $_entity = NULL) {
+    if ($_entity) {
+      $entity = $_entity;
+    }
+    // The parent function will only grab the first entity from the route. In
+    // this case, that would incorrectly be the group type. We need to hard-code
+    // the group_role parameter until https://www.drupal.org/node/2827739 lands.
+    // @todo Keep an eye on https://www.drupal.org/node/2827739.
+    elseif ($route_match->getRawParameter('group_role') !== NULL) {
+      $entity = $route_match->getParameter('group_role');
+    }
+    if (isset($entity)) {
+      return $this->entityRepository->getTranslationFromContext($entity);
+    }
   }
 
 }

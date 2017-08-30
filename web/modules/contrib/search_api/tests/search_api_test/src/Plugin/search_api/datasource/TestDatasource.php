@@ -29,7 +29,7 @@ class TestDatasource extends DatasourcePluginBase {
    * {@inheritdoc}
    */
   public function loadMultiple(array $ids) {
-    return $this->getReturnValue(__FUNCTION__, array());
+    return $this->getReturnValue(__FUNCTION__, []);
   }
 
   /**
@@ -45,7 +45,7 @@ class TestDatasource extends DatasourcePluginBase {
   public function onDependencyRemoval(array $dependencies) {
     $remove = $this->getReturnValue(__FUNCTION__, FALSE);
     if ($remove) {
-      $this->configuration = array();
+      $this->configuration = [];
     }
     return $remove;
   }

@@ -21,7 +21,7 @@ class IgnoreCharacterTest extends UnitTestCase {
    */
   protected function setUp() {
     parent::setUp();
-    $this->processor = new IgnoreCharacters(array('ignorable' => ''), 'ignore_character', array());
+    $this->processor = new IgnoreCharacters(['ignorable' => ''], 'ignore_character', []);
   }
 
   /**
@@ -37,8 +37,8 @@ class IgnoreCharacterTest extends UnitTestCase {
    * @dataProvider ignoreCharacterSetsDataProvider
    */
   public function testIgnoreCharacterSets($passed_value, $expected_value, array $character_classes) {
-    $this->processor->setConfiguration(array('strip' => array('character_sets' => $character_classes)));
-    $this->invokeMethod('process', array(&$passed_value, 'text'));
+    $this->processor->setConfiguration(['strip' => ['character_sets' => $character_classes]]);
+    $this->invokeMethod('process', [&$passed_value, 'text']);
     $this->assertEquals($expected_value, $passed_value);
   }
 
@@ -46,61 +46,61 @@ class IgnoreCharacterTest extends UnitTestCase {
    * Data provider for testValueConfiguration().
    */
   public function ignoreCharacterSetsDataProvider() {
-    return array(
-      array('word_s', 'words', array('Pc' => 'Pc')),
-      array('word⁔s', 'words', array('Pc' => 'Pc')),
+    return [
+      ['word_s', 'words', ['Pc' => 'Pc']],
+      ['word⁔s', 'words', ['Pc' => 'Pc']],
 
-      array('word〜s', 'words', array('Pd' => 'Pd')),
-      array('w–ord⸗s', 'words', array('Pd' => 'Pd')),
+      ['word〜s', 'words', ['Pd' => 'Pd']],
+      ['w–ord⸗s', 'words', ['Pd' => 'Pd']],
 
-      array('word⌉s', 'words', array('Pe' => 'Pe')),
-      array('word⦊s〕', 'words', array('Pe' => 'Pe')),
+      ['word⌉s', 'words', ['Pe' => 'Pe']],
+      ['word⦊s〕', 'words', ['Pe' => 'Pe']],
 
-      array('word»s', 'words', array('Pf' => 'Pf')),
-      array('word⸍s', 'words', array('Pf' => 'Pf')),
+      ['word»s', 'words', ['Pf' => 'Pf']],
+      ['word⸍s', 'words', ['Pf' => 'Pf']],
 
-      array('word⸂s', 'words', array('Pi' => 'Pi')),
-      array('w«ord⸉s', 'words', array('Pi' => 'Pi')),
+      ['word⸂s', 'words', ['Pi' => 'Pi']],
+      ['w«ord⸉s', 'words', ['Pi' => 'Pi']],
 
-      array('words%', 'words', array('Po' => 'Po')),
-      array('wo*rd/s', 'words', array('Po' => 'Po')),
+      ['words%', 'words', ['Po' => 'Po']],
+      ['wo*rd/s', 'words', ['Po' => 'Po']],
 
-      array('word༺s', 'words', array('Ps' => 'Ps')),
-      array('w❮ord⌈s', 'words', array('Ps' => 'Ps')),
+      ['word༺s', 'words', ['Ps' => 'Ps']],
+      ['w❮ord⌈s', 'words', ['Ps' => 'Ps']],
 
-      array('word៛s', 'words', array('Sc' => 'Sc')),
-      array('wo₥rd₦s', 'words', array('Sc' => 'Sc')),
+      ['word៛s', 'words', ['Sc' => 'Sc']],
+      ['wo₥rd₦s', 'words', ['Sc' => 'Sc']],
 
-      array('w˓ords', 'words', array('Sk' => 'Sk')),
-      array('wo˘rd˳s', 'words', array('Sk' => 'Sk')),
+      ['w˓ords', 'words', ['Sk' => 'Sk']],
+      ['wo˘rd˳s', 'words', ['Sk' => 'Sk']],
 
-      array('word×s', 'words', array('Sm' => 'Sm')),
-      array('wo±rd؈s', 'words', array('Sm' => 'Sm')),
+      ['word×s', 'words', ['Sm' => 'Sm']],
+      ['wo±rd؈s', 'words', ['Sm' => 'Sm']],
 
-      array('wo᧧rds', 'words', array('So' => 'So')),
-      array('w᧶ord᧲s', 'words', array('So' => 'So')),
+      ['wo᧧rds', 'words', ['So' => 'So']],
+      ['w᧶ord᧲s', 'words', ['So' => 'So']],
 
-      array("wor\x0Ads", 'words', array('Cc' => 'Cc')),
-      array("wo\x0Crds", 'words', array('Cc' => 'Cc')),
+      ["wor\x0Ads", 'words', ['Cc' => 'Cc']],
+      ["wo\x0Crds", 'words', ['Cc' => 'Cc']],
 
-      array('word۝s', 'words', array('Cf' => 'Cf')),
-      array('wo᠎rd؁s', 'words', array('Cf' => 'Cf')),
+      ['word۝s', 'words', ['Cf' => 'Cf']],
+      ['wo᠎rd؁s', 'words', ['Cf' => 'Cf']],
 
-      array('words', 'words', array('Co' => 'Co')),
-      array('wo󿿽rds', 'words', array('Co' => 'Co')),
+      ['words', 'words', ['Co' => 'Co']],
+      ['wo󿿽rds', 'words', ['Co' => 'Co']],
 
-      array('wordॊs', 'words', array('Mc' => 'Mc')),
-      array('worौdংs', 'words', array('Mc' => 'Mc')),
+      ['wordॊs', 'words', ['Mc' => 'Mc']],
+      ['worौdংs', 'words', ['Mc' => 'Mc']],
 
-      array('wo⃞rds', 'words', array('Me' => 'Me')),
-      array('wor⃤⃟ds', 'words', array('Me' => 'Me')),
+      ['wo⃞rds', 'words', ['Me' => 'Me']],
+      ['wor⃤⃟ds', 'words', ['Me' => 'Me']],
 
-      array('woྰrds', 'words', array('Mn' => 'Mn')),
-      array('worྵdྶs', 'words', array('Mn' => 'Mn')),
+      ['woྰrds', 'words', ['Mn' => 'Mn']],
+      ['worྵdྶs', 'words', ['Mn' => 'Mn']],
 
-      array('woྰrds', 'words', array('Mn' => 'Mn', 'Pd' => 'Pd', 'Pe' => 'Pe')),
-      array('worྵdྶs', 'words', array('Mn' => 'Mn', 'Pd' => 'Pd', 'Pe' => 'Pe')),
-    );
+      ['woྰrds', 'words', ['Mn' => 'Mn', 'Pd' => 'Pd', 'Pe' => 'Pe']],
+      ['worྵdྶs', 'words', ['Mn' => 'Mn', 'Pd' => 'Pd', 'Pe' => 'Pe']],
+    ];
   }
 
   /**
@@ -116,8 +116,8 @@ class IgnoreCharacterTest extends UnitTestCase {
    * @dataProvider ignorableCharactersDataProvider
    */
   public function testIgnorableCharacters($passed_value, $expected_value, $ignorable) {
-    $this->processor->setConfiguration(array('ignorable' => $ignorable, 'strip' => array('character_sets' => array())));
-    $this->invokeMethod('process', array(&$passed_value, 'text'));
+    $this->processor->setConfiguration(['ignorable' => $ignorable, 'strip' => ['character_sets' => []]]);
+    $this->invokeMethod('process', [&$passed_value, 'text']);
     $this->assertEquals($expected_value, $passed_value);
   }
 
@@ -128,12 +128,12 @@ class IgnoreCharacterTest extends UnitTestCase {
    *   Sets of arguments for testIgnorableCharacters().
    */
   public function ignorableCharactersDataProvider() {
-    return array(
-      array('abcde', 'ace', '[bd]'),
-      array(array('abcde', 'abcdef'), array('ace', 'ace'), '[bdf]'),
-      array("ab.c'de", "a.'de", '[b-c]'),
-      array('foo 13$%& (bar)[93]', 'foo $%& (bar)[]', '\d'),
-    );
+    return [
+      ['abcde', 'ace', '[bd]'],
+      [['abcde', 'abcdef'], ['ace', 'ace'], '[bdf]'],
+      ["ab.c'de", "a.'de", '[b-c]'],
+      ['foo 13$%& (bar)[93]', 'foo $%& (bar)[]', '\d'],
+    ];
   }
 
 }

@@ -2,54 +2,18 @@
 
 namespace Drupal\Tests\group\Kernel;
 
-use Drupal\KernelTests\Core\Entity\EntityKernelTestBase;
-
 /**
  * Tests the creation of group type entities.
  *
+ * @coversDefaultClass \Drupal\group\Entity\GroupType
  * @group group
  */
-class GroupTypeCreateTest extends EntityKernelTestBase {
-
-  /**
-   * Modules to enable.
-   *
-   * @var array
-   */
-  public static $modules = ['group'];
-
-  /**
-   * The entity type manager service.
-   *
-   * @var \Drupal\Core\Entity\EntityTypeManagerInterface
-   */
-  protected $entityTypeManager;
-
-  /**
-   * The content enabler plugin manager.
-   *
-   * @var \Drupal\group\Plugin\GroupContentEnablerManagerInterface
-   */
-  protected $pluginManager;
-
-  /**
-   * {@inheritdoc}
-   */
-  protected function setUp() {
-    parent::setUp();
-
-    $this->entityTypeManager = $this->container->get('entity_type.manager');
-    $this->pluginManager = $this->container->get('plugin.manager.group_content_enabler');
-
-    $this->installConfig(['group']);
-    $this->installEntitySchema('group');
-    $this->installEntitySchema('group_type');
-    $this->installEntitySchema('group_content');
-    $this->installEntitySchema('group_content_type');
-  }
+class GroupTypeCreateTest extends GroupKernelTestBase {
 
   /**
    * Tests special behavior during group type creation.
+   *
+   * @covers ::postSave
    */
   public function testCreate() {
     // Check that the group type was created and saved properly.

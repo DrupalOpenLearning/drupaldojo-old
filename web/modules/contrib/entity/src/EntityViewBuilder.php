@@ -1,10 +1,5 @@
 <?php
 
-/**
- * @file
- * Contains \Drupal\entity\EntityViewBuilder.
- */
-
 namespace Drupal\entity;
 
 use Drupal\Core\Entity\ContentEntityInterface;

@@ -135,7 +135,9 @@ abstract class GroupContentToEntityBase extends RelationshipPluginBase {
     }
 
     // We can't run an IN-query on an empty array. So if there are no group
-    // content types yet, we need to improvise.
+    // content types yet, we need to make sure the JOIN does not return any GCT
+    // that does not serve the entity type that was configured for this handler
+    // instance.
     $group_content_type_ids = $this->getGroupContentTypeIds();
     if (empty($group_content_type_ids)) {
       $group_content_type_ids = ['***'];

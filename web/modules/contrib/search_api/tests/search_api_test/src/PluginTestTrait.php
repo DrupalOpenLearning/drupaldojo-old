@@ -41,6 +41,21 @@ trait PluginTestTrait {
   }
 
   /**
+   * Overrides a method for a certain plugin.
+   *
+   * @param string $plugin_type
+   *   The "short" plugin type.
+   * @param string $method
+   *   The name of the method to override.
+   * @param callable|null $override
+   *   The new code of the method, or NULL to use the default.
+   */
+  protected function setMethodOverride($plugin_type, $method, callable $override = NULL) {
+    $key = "search_api_test.$plugin_type.method.$method";
+    \Drupal::state()->set($key, $override);
+  }
+
+  /**
    * Retrieves the methods called on a given plugin.
    *
    * @param string $plugin_type
@@ -53,7 +68,7 @@ trait PluginTestTrait {
    */
   protected function getCalledMethods($plugin_type, $reset = TRUE) {
     $key = "search_api_test.$plugin_type.methods_called";
-    $methods = \Drupal::state()->get($key, array());
+    $methods = \Drupal::state()->get($key, []);
     if ($reset) {
       \Drupal::state()->delete($key);
     }

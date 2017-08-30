@@ -5,7 +5,7 @@ namespace Drupal\features_ui\Form;
 use Drupal\features\FeaturesManagerInterface;
 use Drupal\features\FeaturesAssignerInterface;
 use Drupal\Core\Entity\ContentEntityTypeInterface;
-use Drupal\Core\Entity\EntityManagerInterface;
+use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Form\FormBase;
 use Drupal\Core\Form\FormStateInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
@@ -30,11 +30,11 @@ abstract class AssignmentFormBase extends FormBase {
   protected $assigner;
 
   /**
-   * The entity manager.
+   * The entity type manager.
    *
-   * @var \Drupal\Core\Entity\EntityManagerInterface
+   * @var \Drupal\Core\Entity\EntityTypeManagerInterface
    */
-  protected $entityManager;
+  protected $entityTypeManager;
 
   /**
    * The current bundle.
@@ -50,13 +50,13 @@ abstract class AssignmentFormBase extends FormBase {
    *   The features manager.
    * @param \Drupal\features\FeaturesAssignerInterface $assigner
    *   The assigner.
-   * @param \Drupal\Core\Entity\EntityManagerInterface $entity_manager
-   *   The entity manager.
+   * @param \Drupal\Core\Entity\EntityTypeManagerInterface $entity_type_manager
+   *   The entity type manager.
    */
-  public function __construct(FeaturesManagerInterface $features_manager, FeaturesAssignerInterface $assigner, EntityManagerInterface $entity_manager) {
+  public function __construct(FeaturesManagerInterface $features_manager, FeaturesAssignerInterface $assigner, EntityTypeManagerInterface $entity_type_manager) {
     $this->featuresManager = $features_manager;
     $this->assigner = $assigner;
-    $this->entityManager = $entity_manager;
+    $this->entityTypeManager = $entity_type_manager;
   }
 
   /**
@@ -66,7 +66,7 @@ abstract class AssignmentFormBase extends FormBase {
     return new static(
       $container->get('features.manager'),
       $container->get('features_assigner'),
-      $container->get('entity.manager')
+      $container->get('entity_type.manager')
     );
   }
 
@@ -96,7 +96,7 @@ abstract class AssignmentFormBase extends FormBase {
    * Adds content entity types checkboxes.
    */
   protected function setContentTypeSelect(&$form, $defaults, $type, $exclude_has_config_bundles = TRUE) {
-    $entity_types = $this->entityManager->getDefinitions();
+    $entity_types = $this->entityTypeManager->getDefinitions();
 
     $has_config_bundle = array();
     foreach ($entity_types as $definition) {

@@ -3,8 +3,11 @@
 namespace Drupal\Tests\search_api\Unit\Plugin\Processor;
 
 use Drupal\Core\Entity\Plugin\DataType\EntityAdapter;
+use Drupal\search_api\Datasource\DatasourceInterface;
 use Drupal\search_api\Plugin\search_api\processor\RoleFilter;
 use Drupal\search_api\Utility\Utility;
+use Drupal\Tests\search_api\Unit\TestNodeInterface;
+use Drupal\Tests\search_api\Unit\TestUserInterface;
 use Drupal\Tests\UnitTestCase;
 
 /**
@@ -30,7 +33,7 @@ class RoleFilterTest extends UnitTestCase {
    *
    * @var \Drupal\search_api\Item\ItemInterface[]
    */
-  protected $items = array();
+  protected $items = [];
 
   /**
    * Creates a new processor object for use in the tests.
@@ -40,48 +43,49 @@ class RoleFilterTest extends UnitTestCase {
 
     $this->setUpMockContainer();
 
-    $this->processor = new RoleFilter(array(), 'role_filter', array());
+    $this->processor = new RoleFilter([], 'role_filter', []);
 
     /** @var \Drupal\search_api\IndexInterface $index */
     $index = $this->getMock('Drupal\search_api\IndexInterface');
 
-    $node_datasource = $this->getMock('Drupal\search_api\Datasource\DatasourceInterface');
+    $node_datasource = $this->getMock(DatasourceInterface::class);
     $node_datasource->expects($this->any())
       ->method('getEntityTypeId')
       ->will($this->returnValue('node'));
     /** @var \Drupal\search_api\Datasource\DatasourceInterface $node_datasource */
-    $user_datasource = $this->getMock('Drupal\search_api\Datasource\DatasourceInterface');
+    $user_datasource = $this->getMock(DatasourceInterface::class);
     $user_datasource->expects($this->any())
       ->method('getEntityTypeId')
       ->will($this->returnValue('user'));
     /** @var \Drupal\search_api\Datasource\DatasourceInterface $user_datasource */
 
-    $item = Utility::createItem($index, Utility::createCombinedId('entity:node', '1:en'), $node_datasource);
-    $node = $this->getMockBuilder('Drupal\Tests\search_api\TestNodeInterface')
+    $fields_helper = \Drupal::getContainer()->get('search_api.fields_helper');
+    $item = $fields_helper->createItem($index, Utility::createCombinedId('entity:node', '1:en'), $node_datasource);
+    $node = $this->getMockBuilder(TestNodeInterface::class)
       ->disableOriginalConstructor()
       ->getMock();
     /** @var \Drupal\node\NodeInterface $node */
     $item->setOriginalObject(EntityAdapter::createFromEntity($node));
     $this->items[$item->getId()] = $item;
 
-    $item = Utility::createItem($index, Utility::createCombinedId('entity:user', '1:en'), $user_datasource);
-    $account1 = $this->getMockBuilder('Drupal\Tests\search_api\TestUserInterface')
+    $item = $fields_helper->createItem($index, Utility::createCombinedId('entity:user', '1:en'), $user_datasource);
+    $account1 = $this->getMockBuilder(TestUserInterface::class)
       ->disableOriginalConstructor()
       ->getMock();
     $account1->expects($this->any())
       ->method('getRoles')
-      ->will($this->returnValue(array('authenticated' => 'authenticated', 'editor' => 'editor')));
+      ->will($this->returnValue(['authenticated' => 'authenticated', 'editor' => 'editor']));
     /** @var \Drupal\user\UserInterface $account1 */
     $item->setOriginalObject(EntityAdapter::createFromEntity($account1));
     $this->items[$item->getId()] = $item;
 
-    $item = Utility::createItem($index, Utility::createCombinedId('entity:user', '2:en'), $user_datasource);
-    $account2 = $this->getMockBuilder('Drupal\Tests\search_api\TestUserInterface')
+    $item = $fields_helper->createItem($index, Utility::createCombinedId('entity:user', '2:en'), $user_datasource);
+    $account2 = $this->getMockBuilder(TestUserInterface::class)
       ->disableOriginalConstructor()
       ->getMock();
     $account2->expects($this->any())
       ->method('getRoles')
-      ->will($this->returnValue(array('authenticated' => 'authenticated')));
+      ->will($this->returnValue(['authenticated' => 'authenticated']));
     /** @var \Drupal\user\UserInterface $account2 */
     $item->setOriginalObject(EntityAdapter::createFromEntity($account2));
     $this->items[$item->getId()] = $item;
@@ -91,7 +95,7 @@ class RoleFilterTest extends UnitTestCase {
    * Tests preprocessing search items with an inclusive filter.
    */
   public function testFilterInclusive() {
-    $configuration['roles'] = array('authenticated' => 'authenticated');
+    $configuration['roles'] = ['authenticated' => 'authenticated'];
     $configuration['default'] = 0;
     $this->processor->setConfiguration($configuration);
 
@@ -106,7 +110,7 @@ class RoleFilterTest extends UnitTestCase {
    * Tests preprocessing search items with an exclusive filter.
    */
   public function testFilterExclusive() {
-    $configuration['roles'] = array('editor' => 'editor');
+    $configuration['roles'] = ['editor' => 'editor'];
     $configuration['default'] = 1;
     $this->processor->setConfiguration($configuration);
 

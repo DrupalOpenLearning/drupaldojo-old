@@ -2,10 +2,18 @@
 
 namespace Drupal\flag\Plugin\Flag;
 
+use Drupal\Core\Access\AccessResult;
+use Drupal\Core\Entity\EntityTypeManagerInterface;
+use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Extension\ModuleHandlerInterface;
-use Drupal\flag\FlagType\FlagTypeBase;
 use Drupal\Core\Form\FormStateInterface;
+use Drupal\Core\Session\AccountInterface;
 use Drupal\Core\StringTranslation\StringTranslationTrait;
+use Drupal\flag\FlagType\FlagTypeBase;
+use Drupal\flag\FlagInterface;
+use Drupal\user\EntityOwnerInterface;
+use Symfony\Component\DependencyInjection\ContainerInterface;
+
 
 /**
  * Provides a flag type for all entity types.
@@ -23,6 +31,13 @@ class EntityFlagType extends FlagTypeBase {
   use StringTranslationTrait;
 
   /**
+   * The entity manager.
+   *
+   * @var \Drupal\Core\Entity\EntityTypeManagerInterface
+   */
+  protected $entityTypeManager;
+
+  /**
    * The entity type defined in plugin definition.
    *
    * @var string
@@ -32,9 +47,23 @@ class EntityFlagType extends FlagTypeBase {
   /**
    * {@inheritdoc}
    */
-  public function __construct(array $configuration, $plugin_id, array $plugin_definition, ModuleHandlerInterface $module_handler) {
+  public function __construct(array $configuration, $plugin_id, array $plugin_definition, ModuleHandlerInterface $module_handler, EntityTypeManagerInterface $entity_type_manager) {
     $this->entityType = $plugin_definition['entity_type'];
+    $this->entityTypeManager = $entity_type_manager;
     parent::__construct($configuration, $plugin_id, $plugin_definition, $module_handler);
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public static function create(ContainerInterface $container, array $configuration, $plugin_id, $plugin_definition) {
+    return new static(
+      $configuration,
+      $plugin_id,
+      $plugin_definition,
+      $container->get('module_handler'),
+      $container->get('entity_type.manager')
+    );
   }
 
   /**
@@ -54,6 +83,8 @@ class EntityFlagType extends FlagTypeBase {
       // @see hook_field_attach_form().
       'show_on_form' => FALSE,
       'show_contextual_link' => FALSE,
+      // Additional permissions to expose.
+      'extra_permissions' => [],
     ];
     return $options;
   }
@@ -62,7 +93,6 @@ class EntityFlagType extends FlagTypeBase {
    * {@inheritdoc}
    */
   public function buildConfigurationForm(array $form, FormStateInterface $form_state) {
-
 
     $form['display']['show_as_field'] = [
       '#type' => 'checkbox',
@@ -132,6 +162,14 @@ class EntityFlagType extends FlagTypeBase {
       '#weight' => 15,
     ];
 
+    $form['access']['extra_permissions'] = [
+      '#type' => 'checkboxes',
+      '#title' => $this->t('Expose additional permissions'),
+      '#options' => $this->getExtraPermissionsOptions(),
+      '#default_value' => $this->configuration['extra_permissions'],
+      '#description' => $this->t("Provides permissions with finer levels of access for this flag."),
+    ];
+
     return $form;
   }
 
@@ -144,6 +182,7 @@ class EntityFlagType extends FlagTypeBase {
     $this->configuration['show_as_field'] = $form_state->getValue('show_as_field');
     $this->configuration['show_on_form'] = $form_state->getValue('show_on_form');
     $this->configuration['show_contextual_link'] = $form_state->getValue('show_contextual_link');
+    $this->configuration['extra_permissions'] = $form_state->getValue('extra_permissions');
   }
 
   /**
@@ -184,6 +223,19 @@ class EntityFlagType extends FlagTypeBase {
   }
 
   /**
+   * Determines if the given form operation is add or edit.
+   *
+   * @param string $operation
+   *   The form operation.
+   *
+   * @return bool
+   *   Returns TRUE if the operation is an add edit operation.
+   */
+  public function isAddEditForm($operation) {
+    return in_array($operation, ['default', 'edit']);
+  }
+
+  /**
    * Returns the show on contextual link setting.
    *
    * @return bool
@@ -192,4 +244,113 @@ class EntityFlagType extends FlagTypeBase {
   public function showContextualLink() {
     return $this->configuration['show_contextual_link'];
   }
+
+  /**
+   * {@inheritdoc}
+   */
+  protected function getExtraPermissionsOptions() {
+    $options = parent::getExtraPermissionsOptions();
+    if ($this->isFlaggableOwnable()) {
+      $options['owner'] = $this->t("Permissions based on ownership of the flaggable item. For example, only allow users to flag items they own.");
+    }
+    return $options;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function actionPermissions(FlagInterface $flag) {
+    $permissions = parent::actionPermissions($flag);
+
+    // Define additional permissions.
+    if ($this->hasExtraPermission('owner')) {
+      $permissions += $this->getExtraPermissionsOwner($flag);
+    }
+
+    return $permissions;
+  }
+
+  /**
+   * Defines permissions for the 'owner' set of additional action permissions.
+   *
+   * @param \Drupal\flag\FlagInterface $flag
+   *   The flag object.
+   *
+   * @return array
+   *   An array of permissions.
+   */
+  protected function getExtraPermissionsOwner(FlagInterface $flag) {
+    $permissions['flag ' . $flag->id() . ' own items'] = [
+      'title' => $this->t('Flag %flag_title own items', [
+        '%flag_title' => $flag->label(),
+      ]),
+    ];
+
+    $permissions['unflag ' . $flag->id() . ' own items'] = [
+      'title' => $this->t('Unflag %flag_title own items', [
+        '%flag_title' => $flag->label(),
+      ]),
+    ];
+
+    $permissions['flag ' . $flag->id() . ' other items'] = [
+      'title' => $this->t("Flag %flag_title others' items", [
+        '%flag_title' => $flag->label(),
+      ]),
+    ];
+
+    $permissions['unflag ' . $flag->id() . ' other items'] = [
+      'title' => $this->t("Unflag %flag_title others' items", [
+        '%flag_title' => $flag->label(),
+      ]),
+    ];
+
+    return $permissions;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function actionAccess($action, FlagInterface $flag, AccountInterface $account, EntityInterface $flaggable = NULL) {
+    $access = parent::actionAccess($action, $flag, $account, $flaggable);
+
+    if (($flaggable instanceOf EntityOwnerInterface) && ($this->hasExtraPermission('owner'))) {
+      // Own items.
+      $permission = $action . ' ' . $flag->id() . ' own items';
+      $own_permission_access = AccessResult::allowedIfHasPermission($account, $permission)
+        ->addCacheContexts(['user']);
+      $account_match_access = AccessResult::allowedIf($account->id() == $flaggable->getOwnerId());
+      $own_access = $own_permission_access->andIf($account_match_access);
+      $access = $access->orIf($own_access);
+
+      // Others' items.
+      $permission = $action . ' ' . $flag->id() . ' other items';
+      $others_permission_access = AccessResult::allowedIfHasPermission($account, $permission)
+        ->addCacheContexts(['user']);
+      $account_mismatch_access = AccessResult::allowedIf($account->id() != $flaggable->getOwnerId());
+      $others_access = $others_permission_access->andIf($account_mismatch_access);
+      $access = $access->orIf($others_access);
+    }
+
+    return $access;
+  }
+
+  /**
+   * Determines if the flaggable associated with the flag supports ownership.
+   *
+   * @return boolean
+   *   TRUE if the flaggable supports ownership.
+   */
+  protected function isFlaggableOwnable() {
+    $entity_type_id = $this->entityType;
+    // Get the entity type from the entity type manager.
+    $entity_type = $this->entityTypeManager->getDefinition($entity_type_id);
+
+    // Only if the flaggable entities can be owned.
+    if ($entity_type->isSubclassOf(EntityOwnerInterface::class)) {
+      return TRUE;
+    }
+
+    return FALSE;
+  }
+
 }

@@ -5,6 +5,8 @@ use Drupal\flag\Entity\Flag;
 use Drupal\Tests\flag\Kernel\FlagKernelTestBase;
 use Drupal\node\Entity\Node;
 use Drupal\node\Entity\NodeType;
+use Drupal\user\Entity\Role;
+use Drupal\user\Entity\User;
 
 /**
  * Tests the Flag counts API.
@@ -21,11 +23,25 @@ class FlagCountsTest extends FlagKernelTestBase {
   protected $flag;
 
   /**
+   * The other flag.
+   *
+   * @var \Drupal\flag\FlagInterface
+   */
+  protected $otherFlag;
+
+  /**
    * The node.
    *
    * @var \Drupal\node\Entity\Node
    */
   protected $node;
+
+  /**
+   * The other node.
+   *
+   * @var \Drupal\node\Entity\Node
+   */
+  protected $otherNode;
 
   /**
    * The flag count service.
@@ -42,6 +58,20 @@ class FlagCountsTest extends FlagKernelTestBase {
   protected $adminUser;
 
   /**
+   * User object.
+   *
+   * @var \Drupal\user\Entity\User|false
+   */
+  protected $otherAdminUser;
+
+  /**
+   * Anonymous user object.
+   *
+   * @var \Drupal\user\Entity\User|false
+   */
+  protected $anonymousUser;
+
+  /**
    * {@inheritdoc}
    */
   protected function setUp() {
@@ -49,12 +79,16 @@ class FlagCountsTest extends FlagKernelTestBase {
 
     $this->installSchema('user', 'users_data');
 
+    // Create the anonymous role.
+    $this->installConfig(['user']);
+
     $this->flagCountService = \Drupal::service('flag.count');
 
-    // Create a flag.
+    // Create a non-global flag.
     $this->flag = Flag::create([
       'id' => strtolower($this->randomMachineName()),
       'label' => $this->randomString(),
+      'global' => FALSE,
       'entity_type' => 'node',
       'bundles' => ['article'],
       'flag_type' => 'entity:node',
@@ -64,45 +98,121 @@ class FlagCountsTest extends FlagKernelTestBase {
     ]);
     $this->flag->save();
 
-    // Create a user who may flag.
+    // Create another flag whose flaggings won't show in counts for the flag.
+    $this->otherFlag = Flag::create([
+      'id' => strtolower($this->randomMachineName()),
+      'label' => $this->randomString(),
+      'global' => FALSE,
+      'entity_type' => 'node',
+      'bundles' => ['article'],
+      'flag_type' => 'entity:node',
+      'link_type' => 'reload',
+      'flagTypeConfig' => [],
+      'linkTypeConfig' => [],
+    ]);
+    $this->otherFlag->save();
+
+    // Create admin user who may flag everything.
     $this->adminUser = $this->createUser([
       'administer flags',
     ]);
 
+    // Create another admin user who won't show in counts for the user.
+    $this->otherAdminUser = $this->createUser([
+      'administer flags',
+    ]);
+
+    // Grant the anonymous role permission to flag.
+    /* @var \Drupal\user\RoleInterface $anonymous_role */
+    $anonymous_role = Role::load(Role::ANONYMOUS_ID);
+    $anonymous_role->grantPermission('flag ' . $this->flag->id());
+    $anonymous_role->grantPermission('unflag ' . $this->flag->id());
+    $anonymous_role->save();
+
+    // Get the anonymous user.
+    $this->anonymousUser = User::getAnonymousUser();
+
     $article = NodeType::create(['type' => 'article']);
     $article->save();
 
-    // Create a node to flag.
+    // Create nodes to flag.
     $this->node = Node::create([
       'type' => 'article',
       'title' => $this->randomMachineName(8),
     ]);
     $this->node->save();
+
+    $this->otherNode = Node::create([
+      'type' => 'article',
+      'title' => $this->randomMachineName(8),
+    ]);
+    $this->otherNode->save();
   }
 
   /**
    * Tests that counts are kept in sync and can be retrieved.
    */
   public function testFlagCounts() {
-    // Flag the node.
+    // Flag the node with the flag we're counting and the other flag.
     $this->flagService->flag($this->flag, $this->node, $this->adminUser);
+    $this->flagService->flag($this->flag, $this->node, $this->otherAdminUser);
+    $this->flagService->flag($this->otherFlag, $this->node, $this->adminUser);
+
+    // Flag the other node with both flags.
+    $this->flagService->flag($this->flag, $this->otherNode, $this->adminUser);
+    $this->flagService->flag($this->otherFlag, $this->otherNode, $this->adminUser);
 
     // Check each of the count API functions.
+    // Get the count of flaggings for the flag. The other flag also has
+    // flaggings, which should not be included in the count.
     $flag_get_entity_flag_counts = $this->flagCountService->getFlagFlaggingCount($this->flag);
-    $this->assertEqual($flag_get_entity_flag_counts, 1, "getFlagFlaggingCount() returns the expected count.");
+    $this->assertEqual($flag_get_entity_flag_counts, 3, "getFlagFlaggingCount() returns the expected count.");
 
-    $flag_get_user_flag_counts = $this->flagCountService->getUserFlagFlaggingCount($this->flag, $this->adminUser);
-    $this->assertEqual($flag_get_user_flag_counts, 1, "getUserFlagFlaggingCount() returns the expected count.");
-
+    // Get the counts of all flaggings on the entity. The other node is also
+    // flagged, but should not be included in the count.
     $flag_get_counts = $this->flagCountService->getEntityFlagCounts($this->node);
-    $this->assertEqual($flag_get_counts[$this->flag->id()], 1, "getEntityFlagCounts() returns the expected count.");
+    $this->assertEqual($flag_get_counts[$this->flag->id()], 2, "getEntityFlagCounts() returns the expected count.");
+    $this->assertEqual($flag_get_counts[$this->otherFlag->id()], 1, "getEntityFlagCounts() returns the expected count.");
 
+    // Get the number of entities for the flag. Two users have flagged one node
+    // with the flag, but that should count only once.
     $flag_get_flag_counts = $this->flagCountService->getFlagEntityCount($this->flag);
-    $this->assertEqual($flag_get_flag_counts, 1, "getFlagEntityCount() returns the expected count.");
+    $this->assertEqual($flag_get_flag_counts, 2, "getFlagEntityCount() returns the expected count.");
 
+    // Unflag everything with the main flag.
     $this->flagService->unflagAllByFlag($this->flag);
     $flag_get_flag_counts = $this->flagCountService->getFlagEntityCount($this->flag);
     $this->assertEqual($flag_get_flag_counts, 0, "getFlagEntityCount() on reset flag returns the expected count.");
+  }
+
+  /**
+   * Tests the differing counting rules between global and non-global flags.
+   *
+   * Global flags count all users as if they were are single user.
+   * Non-global flags uniquely identify anonymous users by session_id.
+   */
+  public function testAnonymousFlagCount() {
+    // Consider two distinct anonymous users.
+    $anon1_session_id = 'Unknown user 1';
+    $anon2_session_id = 'Unknown user 2';
+
+    // Both users flag the node - using a non-global flag.
+    $this->flagService->flag($this->flag, $this->node, $this->anonymousUser, $anon1_session_id);
+    $this->flagService->flag($this->flag, $this->node, $this->anonymousUser, $anon2_session_id);
+
+    // For non-global flags anonymous users can uniquely identifed by session_id.
+    $anon1_count = $this->flagCountService->getUserFlagFlaggingCount($this->flag, $this->anonymousUser, $anon1_session_id);
+    $this->assertEqual($anon1_count, 1, "getUserFlagFlaggingCount() counts only the first user.");
+    $anon2_count = $this->flagCountService->getUserFlagFlaggingCount($this->flag, $this->anonymousUser, $anon2_session_id);
+    $this->assertEqual($anon2_count, 1, "getUserFlagFlaggingCount() counts only the second user.");
+
+    // Switch to a global flag, the accounting rules.
+    $this->flag->setGlobal(TRUE);
+    $this->flag->save();
+
+    // Despite being a global flag, queries about specific anonymous users can still be made.
+    $rejected_count = $this->flagCountService->getUserFlagFlaggingCount($this->flag, $this->anonymousUser, $anon1_session_id);
+    $this->assertEqual($rejected_count, 1, "getUserFlagFlaggingCount() ignores the session id.");
   }
 
   /**
@@ -124,8 +234,8 @@ class FlagCountsTest extends FlagKernelTestBase {
     $article2->save();
 
     // Flag both.
-    $this->flagService->flag($this->flag, $article1);
-    $this->flagService->flag($this->flag, $article2);
+    $this->flagService->flag($this->flag, $article1, $this->adminUser);
+    $this->flagService->flag($this->flag, $article2, $this->adminUser);
 
     // Confirm the counts have been incremented.
     $article1_count_before = $this->flagCountService->getEntityFlagCounts($article1);
@@ -134,14 +244,14 @@ class FlagCountsTest extends FlagKernelTestBase {
     $this->assertEqual(count($article2_count_before[$this->flag->id()]), 1, 'The article2 has been flagged.');
 
     // Confirm the flagging have been created.
-    $flaggings_before = $this->flagService->getFlagFlaggings($this->flag);
+    $flaggings_before = $this->getFlagFlaggings($this->flag);
     $this->assertEqual(count($flaggings_before), 2, 'There are two flaggings associated with the flag');
 
     // Delete the flag.
     $this->flag->delete();
 
     // The list of all flaggings MUST now be empty.
-    $flaggings_after = $this->flagService->getFlagFlaggings($this->flag);
+    $flaggings_after = $this->getFlagFlaggings($this->flag);
     $this->assertEmpty($flaggings_after, 'The flaggings were removed, when the flag was deleted');
 
     // The flag id is now stale, so instead of searching for the flag in the
@@ -171,8 +281,8 @@ class FlagCountsTest extends FlagKernelTestBase {
     $article2->save();
 
     // Flag both.
-    $this->flagService->flag($this->flag, $article1);
-    $this->flagService->flag($this->flag, $article2);
+    $this->flagService->flag($this->flag, $article1, $this->adminUser);
+    $this->flagService->flag($this->flag, $article2, $this->adminUser);
 
     // Confirm the counts have been incremented.
     $article1_count_before = $this->flagCountService->getEntityFlagCounts($article1);
@@ -181,7 +291,7 @@ class FlagCountsTest extends FlagKernelTestBase {
     $this->assertEqual(count($article2_count_before[$this->flag->id()]), 1, 'The article2 has been flagged.');
 
     // Confirm the flagging have been created.
-    $flaggings_before = $this->flagService->getFlagFlaggings($this->flag);
+    $flaggings_before = $this->getFlagFlaggings($this->flag);
     $this->assertEqual(count($flaggings_before), 2, 'There are two flaggings associated with the flag');
 
     // Delete the entities.
@@ -189,7 +299,7 @@ class FlagCountsTest extends FlagKernelTestBase {
     $article2->delete();
 
     // The list of all flaggings MUST now be empty.
-    $flaggings_after = $this->flagService->getFlagFlaggings($this->flag);
+    $flaggings_after = $this->getFlagFlaggings($this->flag);
     $this->assert(empty($flaggings_after), 'The flaggings were removed, when the flag was deleted');
 
     // Confirm the counts have been removed.
@@ -234,10 +344,10 @@ class FlagCountsTest extends FlagKernelTestBase {
 
     $auth_user->delete();
 
-    $flaggings_after = $this->flagService->getFlagFlaggings($user_flag);
+    $flaggings_after = $this->getFlagFlaggings($user_flag);
     $this->assertEmpty($flaggings_after, 'The user flaggings were removed when the user was deleted.');
 
-    $flaggings_after = $this->flagService->getFlagFlaggings($this->flag);
+    $flaggings_after = $this->getFlagFlaggings($this->flag);
     $this->assert(empty($flaggings_after), 'The node flaggings were removed when the user was deleted');
   }
 

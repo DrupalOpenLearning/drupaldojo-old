@@ -29,6 +29,10 @@ class FeaturesCreateUITest extends WebTestBase {
    * Tests creating a feature via UI and download it.
    */
   public function testCreateFeaturesUI() {
+    list($major, $minor, ) = explode('.', \Drupal::VERSION);
+    // In D8.3 the module category was removed from the module name field.
+    $name_prefix = (intval($major) == 8 && intval($minor) > 2) ? 'modules[' : 'modules[Other][';
+
     $feature_name = 'test_feature2';
     $admin_user = $this->createUser(['administer site configuration', 'export configuration', 'administer modules']);
     $this->drupalLogin($admin_user);
@@ -111,7 +115,7 @@ class FeaturesCreateUITest extends WebTestBase {
 
     $this->drupalGet('admin/modules');
     $edit = [
-      'modules[Other][' . $feature_name . '][enable]' => TRUE,
+      $name_prefix . $feature_name . '][enable]' => TRUE,
     ];
     $this->drupalPostForm(NULL, $edit, $this->t('Install'));
 
@@ -143,12 +147,13 @@ class FeaturesCreateUITest extends WebTestBase {
     $this->assertTrue(strpos($tr->children()[6]->asXml(), 'Changed') !== FALSE);
 
     $this->clickLink($this->t('Changed'));
+    $this->drupalGet('admin/config/development/features/diff/' . $feature_name);
     $this->assertRaw('<td class="diff-context diff-deletedline">anonymous : Anonymous <span class="diffchange">giraffe</span></td>');
     $this->assertRaw('<td class="diff-context diff-addedline">anonymous : Anonymous</td>');
 
     $this->drupalGet('admin/modules');
     $edit = [
-      'modules[Other][' . $feature_name . '][enable]' => TRUE,
+      $name_prefix . $feature_name . '][enable]' => TRUE,
     ];
     $this->drupalPostForm(NULL, $edit, $this->t('Install'));
     $this->drupalGet('admin/config/development/features');

@@ -76,7 +76,7 @@ class ProfileController extends ControllerBase implements ContainerInjectionInte
   }
 
   /**
-   * The _title_callback for the entity.profile.add_form route.
+   * The _title_callback for the add profile form route.
    *
    * @param \Drupal\profile\Entity\ProfileTypeInterface $profile_type
    *   The current profile type.
@@ -106,8 +106,9 @@ class ProfileController extends ControllerBase implements ContainerInjectionInte
     /** @var \Drupal\profile\Entity\ProfileType $profile_type */
 
     /** @var \Drupal\profile\Entity\ProfileInterface|bool $active_profile */
-    $active_profile = $this->entityTypeManager()->getStorage('profile')
-                           ->loadByUser($user, $profile_type->id());
+    $active_profile = $this->entityTypeManager()
+      ->getStorage('profile')
+      ->loadByUser($user, $profile_type->id());
 
     // If the profile type does not support multiple, only display an add form
     // if there are no entities, or an edit for the current.
@@ -132,8 +133,8 @@ class ProfileController extends ControllerBase implements ContainerInjectionInte
 
       $build['add_profile'] = Link::createFromRoute(
         $this->t('Add new @type', ['@type' => $profile_type->label()]),
-        "entity.profile.type.{$profile_type->id()}.user_profile_form.add",
-        ['user' => \Drupal::currentUser()->id(), 'profile_type' => $profile_type->id()])
+        'entity.profile.type.user_profile_form.add',
+        ['user' => $this->currentUser()->id(), 'profile_type' => $profile_type->id()])
         ->toRenderable();
 
       // Render the active profiles.
@@ -164,13 +165,14 @@ class ProfileController extends ControllerBase implements ContainerInjectionInte
    *   A redirect back to the currency listing.
    */
   public function setDefault(RouteMatchInterface $routeMatch) {
+    /** @var \Drupal\profile\Entity\ProfileInterface $profile */
     $profile = $routeMatch->getParameter('profile');
     $profile->setDefault(TRUE);
     $profile->save();
 
     drupal_set_message($this->t('The %label profile has been marked as default.', ['%label' => $profile->label()]));
 
-    $url = $profile->urlInfo('collection');
+    $url = $profile->toUrl('collection');
     return $this->redirect($url->getRouteName(), $url->getRouteParameters(), $url->getOptions());
   }
 

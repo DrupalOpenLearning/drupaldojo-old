@@ -11,13 +11,14 @@
 
 namespace Symfony\Component\VarDumper\Tests;
 
+use PHPUnit\Framework\TestCase;
 use Symfony\Component\VarDumper\Cloner\VarCloner;
 use Symfony\Component\VarDumper\Dumper\HtmlDumper;
 
 /**
  * @author Nicolas Grekas <p@tchwork.com>
  */
-class HtmlDumperTest extends \PHPUnit_Framework_TestCase
+class HtmlDumperTest extends TestCase
 {
     public function testGet()
     {
@@ -48,7 +49,7 @@ class HtmlDumperTest extends \PHPUnit_Framework_TestCase
         $closure54 = '';
         $r = defined('HHVM_VERSION') ? '' : '<a class=sf-dump-ref>#%d</a>';
 
-        if (PHP_VERSION_ID >= 50400) {
+        if (\PHP_VERSION_ID >= 50400) {
             $closure54 = <<<EOTXT
 
     <span class=sf-dump-meta>class</span>: "<span class=sf-dump-str title="48 characters">Symfony\Component\VarDumper\Tests\HtmlDumperTest</span>"
@@ -132,7 +133,7 @@ EOTXT
         $out = stream_get_contents($out, -1, 0);
 
         $this->assertStringMatchesFormat(
-            <<<EOTXT
+            <<<'EOTXT'
 <foo></foo><bar>b"<span class=sf-dump-str title="7 binary or non-UTF-8 characters">&#1057;&#1083;&#1086;&#1074;&#1072;&#1088;&#1100;</span>"
 </bar>
 

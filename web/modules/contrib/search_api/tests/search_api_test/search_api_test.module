@@ -12,7 +12,7 @@ use Drupal\node\NodeInterface;
  * Implement hook_node_grants().
  */
 function search_api_test_node_grants(AccountInterface $account, $op) {
-  $grants['search_api_test'] = array($account->id());
+  $grants['search_api_test'] = [$account->id()];
   return $grants;
 }
 
@@ -20,14 +20,14 @@ function search_api_test_node_grants(AccountInterface $account, $op) {
  * Implement hook_node_access_records().
  */
 function search_api_test_node_access_records(NodeInterface $node) {
-  $grants[] = array(
+  $grants[] = [
     'realm' => 'search_api_test',
     'gid' => $node->getOwnerId(),
     'grant_view' => 1,
     'grant_update' => 0,
     'grant_delete' => 0,
     'langcode' => $node->language()->getId(),
-  );
+  ];
 
   return $grants;
 }

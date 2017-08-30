@@ -5,6 +5,7 @@
  * Defines theme functions for the Search API module.
  */
 
+use Drupal\Component\Render\FormattableMarkup;
 use Drupal\Component\Utility\Html;
 use Drupal\Core\Render\Element;
 use Drupal\Core\Url;
@@ -26,24 +27,23 @@ use Drupal\search_api\Utility\Utility;
  */
 function theme_search_api_admin_fields_table($variables) {
   $form = $variables['element'];
-  $rows = array();
+  $rows = [];
   if (!empty($form['fields'])) {
     foreach (Element::children($form['fields']) as $name) {
-      $row = array();
+      $row = [];
       foreach (Element::children($form['fields'][$name]) as $field) {
         if ($cell = render($form['fields'][$name][$field])) {
           $row[] = $cell;
         }
       }
-      if (empty($form['fields'][$name]['description']['#value'])) {
-        $rows[] = Utility::deepCopy($row);
+      $row = [
+        'data' => $row,
+        'data-field-row-id' => $name,
+      ];
+      if (!empty($form['fields'][$name]['description']['#value'])) {
+        $row['title'] = strip_tags($form['fields'][$name]['description']['#value']);
       }
-      else {
-        $rows[] = array(
-          'data' => $row,
-          'title' => strip_tags($form['fields'][$name]['description']['#value']),
-        );
-      }
+      $rows[] = $row;
     }
   }
 
@@ -56,11 +56,12 @@ function theme_search_api_admin_fields_table($variables) {
     }
   }
 
-  $build = array(
+  $build = [
     '#theme' => 'table',
     '#header' => $form['#header'],
     '#rows' => $rows,
-  );
+    '#empty' => t('No fields have been added for this datasource.'),
+  ];
 
   $output .= render($build);
   $output .= render($note);
@@ -89,18 +90,18 @@ function theme_search_api_admin_fields_table($variables) {
 function theme_search_api_admin_data_type_table(array $variables) {
   $data_types = $variables['data_types'];
   $fallback_mapping = $variables['fallback_mapping'];
-  $header = array(
+  $header = [
     t('Data Type'),
     t('Description'),
     t('Supported'),
-  );
+  ];
   // Only show the column with fallback types if there is actually an
   // unsupported type listed.
   if ($fallback_mapping) {
     $header[] = t('Fallback data type');
   }
 
-  $rows = array();
+  $rows = [];
   $yes = t('Yes');
   $yes_img = 'core/misc/icons/73b355/check.svg';
   $no = t('No');
@@ -108,20 +109,20 @@ function theme_search_api_admin_data_type_table(array $variables) {
   foreach ($data_types as $data_type_id => $data_type) {
     $has_fallback = isset($fallback_mapping[$data_type_id]);
     $supported_label = $has_fallback ? $no : $yes;
-    $supported_icon = array(
+    $supported_icon = [
       '#theme' => 'image',
       '#uri' => $has_fallback ? $no_img : $yes_img,
       '#width' => 18,
       '#height' => 18,
       '#alt' => $supported_label,
       '#title' => $supported_label,
-    );
+    ];
 
-    $row = array(
+    $row = [
       $data_type['label'],
       $data_type['description'],
-      array('data' => $supported_icon),
-    );
+      ['data' => $supported_icon],
+    ];
 
     if ($fallback_mapping) {
       $row[] = $has_fallback ? $data_types[$data_type['fallback']]['label'] : '';
@@ -130,11 +131,11 @@ function theme_search_api_admin_data_type_table(array $variables) {
     $rows[] = $row;
   }
 
-  $build = array(
+  $build = [
     '#theme' => 'table',
     '#header' => $header,
     '#rows' => $rows,
-  );
+  ];
 
   return render($build);
 }
@@ -157,9 +158,12 @@ function theme_search_api_admin_data_type_table(array $variables) {
 function theme_search_api_form_item_list(array $variables) {
   $element = $variables['element'];
 
-  $build = array(
+  $build = [
     '#theme' => 'item_list',
-  );
+  ];
+  if (!empty($element['#title'])) {
+    $build['#title'] = $element['#title'];
+  }
   foreach (Element::children($element) as $key) {
     $build['#items'][$key] = $element[$key];
   }
@@ -193,34 +197,35 @@ function theme_search_api_server($variables) {
 
   // Initialize the $rows variable which will hold the different parts of server
   // information.
-  $rows = array();
+  $rows = [];
   // Create a row template with references so we don't have to deal with the
   // complicated structure for each individual row.
-  $row = array(
-    'data' => array(
-      array('header' => TRUE),
+  $row = [
+    'data' => [
+      ['header' => TRUE],
       '',
-    ),
-    'class' => array(''),
-  );
+    ],
+    'class' => [''],
+  ];
   // Get the individual parts of the row by reference.
   $label = &$row['data'][0]['data'];
   $info = &$row['data'][1];
-  $class = &$row['class'][0];
+  $classes = &$row['class'];
 
   // Check if the server is enabled.
   if ($server->status()) {
-    $class = 'ok';
-    $info = t('enabled (<a href=":url">disable</a>)', array(':url' => $server->toUrl('disable')->toString()));
+    $classes[] = 'ok';
+    $info = t('enabled (<a href=":url">disable</a>)', [':url' => $server->toUrl('disable')->toString()]);
   }
   else {
-    $class = 'warning';
-    $info = t('disabled (<a href=":url">enable</a>)', array(':url' => $server->toUrl('enable')->toString()));
+    $classes[] = 'warning';
+    $info = t('disabled (<a href=":url">enable</a>)', [':url' => $server->toUrl('enable')->toString()]);
   }
   // Append the row and reset variables.
   $label = t('Status');
+  $classes[] = 'search-api-server-summary--status';
   $rows[] = Utility::deepCopy($row);
-  $class = '';
+  $classes = [];
 
   // Check if the backend used by the server is valid and get its label.
   if ($server->hasValidBackend()) {
@@ -228,33 +233,36 @@ function theme_search_api_server($variables) {
     $info = Html::escape($backend->label());
   }
   else {
-    $class = 'error';
-    $info = t('Invalid or missing backend plugin: %backend_id', array('%backend_id' => $server->getBackendId()));
+    $classes[] = 'error';
+    $info = t('Invalid or missing backend plugin: %backend_id', ['%backend_id' => $server->getBackendId()]);
   }
 
   // Append the row and reset variables.
   $label = t('Backend class');
+  $classes[] = 'search-api-server-summary--backend';
   $rows[] = Utility::deepCopy($row);
-  $class = '';
+  $classes = [];
 
   // Build the indexes links container.
-  $indexes = array(
+  $indexes = [
     '#theme' => 'links',
-    '#attributes' => array('class' => array('inline')),
-    '#links' => array(),
-  );
+    '#attributes' => ['class' => ['inline']],
+    '#links' => [],
+  ];
   // Add links for all indexes attached to this server.
   foreach ($server->getIndexes() as $index) {
-    $indexes['#links'][] = array(
+    $indexes['#links'][] = [
       'title' => $index->label(),
       'url' => $index->toUrl('canonical'),
-    );
+    ];
   }
   // Check if the indexes variable contains links.
   if ($indexes['#links']) {
     $label = t('Search indexes');
     $info = render($indexes);
+    $classes[] = 'search-api-server-summary--indexes';
     $rows[] = Utility::deepCopy($row);
+    $classes = [];
   }
 
   // Add backend-specific additional information.
@@ -262,20 +270,23 @@ function theme_search_api_server($variables) {
     // Convert the extra information and append the information to the row.
     $label = $information['label'];
     $info = $information['info'];
-    $class = (empty($information['status']) ? '' : $information['status']);
+    if (!empty($information['status'])) {
+      $classes[] = $information['status'];
+    }
     $rows[] = Utility::deepCopy($row);
+    $classes = [];
   }
 
   // Append the server info table to the output.
-  $server_info_table = array(
+  $server_info_table = [
     '#theme' => 'table',
     '#rows' => $rows,
-    '#attributes' => array(
-      'class' => array(
+    '#attributes' => [
+      'class' => [
         'search-api-server-summary',
-      ),
-    ),
-  );
+      ],
+    ],
+  ];
   $output .= render($server_info_table);
 
   return $output;
@@ -302,7 +313,6 @@ function search_api_preprocess_search_api_index(array &$variables) {
     }
   }
 }
-
 
 /**
  * Returns HTML for a search index.
@@ -335,53 +345,67 @@ function theme_search_api_index(array $variables) {
 
   // Initialize the $rows variable which will hold the different parts of server
   // information.
-  $rows = array();
+  $rows = [];
   // Create a row template with references so we don't have to deal with the
   // complicated structure for each individual row.
-  $row = array(
-    'data' => array(
-      array('header' => TRUE),
+  $row = [
+    'data' => [
+      ['header' => TRUE],
       '',
-    ),
-    'class' => array(''),
-  );
+    ],
+    'class' => [],
+  ];
   // Get the individual parts of the row by reference.
   $label = &$row['data'][0]['data'];
   $info = &$row['data'][1];
-  $class = &$row['class'][0];
+  $classes = &$row['class'];
 
   // Check if the index is enabled.
   if ($index->status()) {
-    $class = 'ok';
-    $info = t('enabled (<a href=":url">disable</a>)', array(':url' => $index->toUrl('disable')->toString()));
+    $classes[] = 'ok';
+    $info = t('enabled (<a href=":url">disable</a>)', [':url' => $index->toUrl('disable')->toString()]);
   }
   // Check if a server is available and enabled.
   elseif ($server && $server->status()) {
-    $class = 'warning';
-    $info = t('disabled (<a href=":url">enable</a>)', array(':url' => $index->toUrl('enable')->toString()));
+    $classes[] = 'warning';
+    $info = t('disabled (<a href=":url">enable</a>)', [':url' => $index->toUrl('enable')->toString()]);
   }
   else {
-    $class = 'warning';
+    $classes[] = 'warning';
     $info = t('disabled');
   }
   // Append the row and reset variables.
   $label = t('Status');
+  $classes[] = 'search-api-index-summary--status';
   $rows[] = Utility::deepCopy($row);
-  $class = '';
+  $classes = [];
 
   foreach ($index->getDatasourceIds() as $datasource_id) {
     // Check if the datasource is valid.
     if ($index->isValidDatasource($datasource_id)) {
       $info = $index->getDatasource($datasource_id)->label();
+      if ($tracker) {
+        $args = [
+          '@indexed' => $tracker->getIndexedItemsCount($datasource_id),
+          '@total' => $tracker->getTotalItemsCount($datasource_id),
+        ];
+        $indexed = t('@indexed/@total indexed', $args);
+        $args = [
+          '@datasource' => $info,
+          '@indexed' => $indexed,
+        ];
+        $info = new FormattableMarkup('@datasource <small>(@indexed)</small>', $args);
+      }
     }
     else {
-      $class = 'error';
-      $info = t('Invalid or missing datasource plugin: %datasource_id', array('%datasource_id' => $datasource_id));
+      $classes[] = 'error';
+      $info = t('Invalid or missing datasource plugin: %datasource_id', ['%datasource_id' => $datasource_id]);
     }
     // Append the row and reset variables.
-    $label = t('Data source');
+    $label = t('Datasource');
+    $classes[] = 'search-api-index-summary--datasource';
     $rows[] = Utility::deepCopy($row);
-    $class = '';
+    $classes = [];
   }
 
   // Check if the tracker is valid.
@@ -389,84 +413,88 @@ function theme_search_api_index(array $variables) {
     $info = $tracker->label();
   }
   else {
-    $class = 'error';
-    $info = t('Invalid or missing tracker plugin: %tracker_id', array('%tracker_id' => $index->getTrackerId()));
+    $classes[] = 'error';
+    $info = t('Invalid or missing tracker plugin: %tracker_id', ['%tracker_id' => $index->getTrackerId()]);
   }
   // Append the row and reset variables.
   $label = t('Tracker');
+  $classes[] = 'search-api-index-summary--tracker';
   $rows[] = Utility::deepCopy($row);
-  $class = '';
+  $classes = [];
 
   // Check if a server is available.
+  $classes[] = 'search-api-index-summary--server';
   if ($server) {
     $label = t('Server');
     $info = $server->toLink(NULL, 'canonical')->toString();
     $rows[] = Utility::deepCopy($row);
   }
   elseif ($index->getServerId()) {
-    $class = 'error';
+    $classes[] = 'error';
     $label = t('Server');
-    $info = t('Unknown server set for index: %server_id', array('%server_id' => $index->getServerId()));
+    $info = t('Unknown server set for index: %server_id', ['%server_id' => $index->getServerId()]);
     $rows[] = Utility::deepCopy($row);
-    $class = '';
   }
+  $classes = [];
 
   // Check if the index is enabled.
   if ($index->status()) {
     $label = t('Server index status');
     if (isset($variables['server_count'])) {
-      $vars = array(':url' => Url::fromUri('https://drupal.org/node/2009804#server-index-status')->toString());
+      $vars = [':url' => Url::fromUri('https://drupal.org/node/2009804#server-index-status')->toString()];
       // Build the server index status info.
       $info = \Drupal::translation()->formatPlural($variables['server_count'], 'There is 1 item indexed on the server for this index. (<a href=":url">More information</a>)', 'There are @count items indexed on the server for this index. (<a href=":url">More information</a>)', $vars);
     }
     else {
-      $args = array('@message' => $variables['server_count_error']);
+      $args = ['@message' => $variables['server_count_error']];
       $info = t('Error while checking server index status: @message', $args);
-      $class = 'error';
+      $classes[] = 'error';
     }
+    $classes[] = 'search-api-index-summary--server-index-status';
     $rows[] = Utility::deepCopy($row);
+    $classes = [];
 
     $cron_limit = $index->getOption('cron_limit', \Drupal::config('search_api.settings')->get('default_cron_limit'));
     // Check if the cron limit is higher than zero.
     if ($cron_limit > 0) {
-      $class = 'ok';
+      $classes[] = 'ok';
       $info = \Drupal::translation()->formatPlural($cron_limit, 'During cron runs, 1 item will be indexed per batch.', 'During cron runs, @count items will be indexed per batch.');
     }
     else {
-      $class = 'warning';
+      $classes[] = 'warning';
       $info = t('No items will be indexed during cron runs.');
     }
     // Append the row and reset variables.
     $label = t('Cron batch size');
+    $classes[] = 'search-api-index-summary--cron-batch-size';
     $rows[] = Utility::deepCopy($row);
-    $class = '';
+    $classes = [];
 
     // Add the indexing progress bar.
     if ($tracker) {
       $indexed_count = $tracker->getIndexedItemsCount();
       $total_count = $tracker->getTotalItemsCount();
-      $percent = ($total_count !== 0) ? (100 * $indexed_count / $total_count) : 0;
 
-      $index_progress = array(
+      $index_progress = [
         '#theme' => 'progress_bar',
-        '#percent' => $percent,
-        '#message' => t('@indexed/@total indexed', array('@indexed' => $indexed_count, '@total' => $total_count)),
-      );
+        '#percent' => $total_count ? (int) (100 * $indexed_count / $total_count) : 100,
+        '#message' => t('@indexed/@total indexed', ['@indexed' => $indexed_count, '@total' => $total_count]),
+      ];
       $output .= '<h3>' . t('Index status') . '</h3>';
       $output .= '<div class="search-api-index-status">' . render($index_progress) . '</div>';
     }
   }
 
   // Append the index info table to the output.
-  $index_info_table = array(
+  $index_info_table = [
     '#theme' => 'table',
     '#rows' => $rows,
-    '#attributes' => array(
-      'class' => array(
+    '#attributes' => [
+      'class' => [
         'search-api-index-summary',
-      ),
-    ),
-  );
+      ],
+    ],
+  ];
   $output .= render($index_info_table);
 
   return $output;

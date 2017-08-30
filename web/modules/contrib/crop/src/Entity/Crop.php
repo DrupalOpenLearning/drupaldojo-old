@@ -1,10 +1,5 @@
 <?php
 
-/**
- * @file
- * Contains \Drupal\crop\Entity\ImageCrop.
- */
-
 namespace Drupal\crop\Entity;
 
 use Drupal\Core\Entity\ContentEntityBase;
@@ -160,7 +155,7 @@ class Crop extends ContentEntityBase implements CropInterface {
 
     // Try to set URI if not yet defined.
     if (empty($this->uri->value) && !empty($this->entity_type->value) && !empty($this->entity_id->value)) {
-      $entity = \Drupal::entityManager()->getStorage($this->entity_type->value)->load($this->entity_id->value);
+      $entity = \Drupal::entityTypeManager()->getStorage($this->entity_type->value)->load($this->entity_id->value);
       if ($uri = $this->provider()->uri($entity)) {
         $this->set('uri', $uri);
       }
@@ -185,9 +180,20 @@ class Crop extends ContentEntityBase implements CropInterface {
   /**
    * {@inheritdoc}
    */
-  public function save() {
-    parent::save();
-    image_path_flush($this->uri->value);
+  public function postSave(EntityStorageInterface $storage, $update = TRUE) {
+    parent::postSave($storage, $update);
+
+    // If you are manually generating your image derivatives instead of waiting
+    // for them to be generated on the fly, because you are using a cloud
+    // storage service (like S3), then you may not want your image derivatives
+    // to be flushed. If they are you could end up serving 404s during the time
+    // between the crop entity being saved and the image derivative being
+    // manually generated and pushed to your cloud storage service. In that
+    // case, set this configuration variable to false.
+    $flush_derivative_images = \Drupal::config('crop.settings')->get('flush_derivative_images');
+    if ($flush_derivative_images) {
+      image_path_flush($this->uri->value);
+    }
   }
 
   /**

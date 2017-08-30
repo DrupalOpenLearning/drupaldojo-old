@@ -61,12 +61,22 @@ function drush_init_core_init() {
     drush_log(dt("Copied example Drush configuration file to !path", array('!path' => $drush_config_file)), LogLevel::OK);
   }
 
+  // If Drush is not in the $PATH, then figure out which
+  // path to add so that Drush can be found globally.
+  $add_path = drush_get_option('add-path', NULL);
+  if ((!drush_which("drush") || $add_path) && ($add_path !== FALSE)) {
+    $drush_path = drush_find_path_to_drush($home);
+    $drush_path = preg_replace("%^" . preg_quote($home) . "/%", '$HOME/', $drush_path);
+
+    $bashrc_additions["%$drush_path%"] = "\n# Path to Drush, added by 'drush init'.\nexport PATH=\"\$PATH:$drush_path\"\n\n";
+  }
+
   // If there is no ~/.drush/drush.bashrc file, then copy
   // the example bashrc file there
   if (!is_file($drush_bashrc)) {
     copy($example_bashrc, $drush_bashrc);
     $pattern = basename($drush_bashrc);
-    $bashrc_additions["%$pattern%"] = "# Include Drush bash customizations.\n". drush_bash_addition($drush_bashrc);
+    $bashrc_additions["%$pattern%"] = "\n# Include Drush bash customizations.". drush_bash_addition($drush_bashrc);
     drush_log(dt("Copied example Drush bash configuration file to !path", array('!path' => $drush_bashrc)), LogLevel::OK);
   }
 
@@ -74,7 +84,7 @@ function drush_init_core_init() {
   if (!is_file($drush_complete)) {
     copy($example_complete, $drush_complete);
     $pattern = basename($drush_complete);
-    $bashrc_additions["%$pattern%"] = "# Include Drush completion.\n". drush_bash_addition($drush_complete);
+    $bashrc_additions["%$pattern%"] = "\n# Include Drush completion.\n". drush_bash_addition($drush_complete);
     drush_log(dt("Copied Drush completion file to !path", array('!path' => $drush_complete)), LogLevel::OK);
   }
 
@@ -83,23 +93,13 @@ function drush_init_core_init() {
   if (!is_file($drush_prompt)) {
     copy($example_prompt, $drush_prompt);
     $pattern = basename($drush_prompt);
-    $bashrc_additions["%$pattern%"] = "# Include Drush prompt customizations.\n". drush_bash_addition($drush_prompt);
+    $bashrc_additions["%$pattern%"] = "\n# Include Drush prompt customizations.\n". drush_bash_addition($drush_prompt);
     drush_log(dt("Copied example Drush prompt file to !path", array('!path' => $drush_prompt)), LogLevel::OK);
   }
 
   // Decide whether we want to add our Bash commands to
   // ~/.bashrc or ~/.bash_profile
   $bashrc = drush_init_find_bashrc($home);
-
-  // If Drush is not in the $PATH, then figure out which
-  // path to add so that Drush can be found globally.
-  $add_path = drush_get_option('add-path', NULL);
-  if ((!drush_which("drush") || $add_path) && ($add_path !== FALSE)) {
-    $drush_path = drush_find_path_to_drush($home);
-    $drush_path = preg_replace("%^" . preg_quote($home) . "/%", '$HOME/', $drush_path);
-
-    $bashrc_additions["%$drush_path%"] = "# Path to Drush, added by 'drush init'.\nexport PATH=\"\$PATH:$drush_path\"\n\n";
-  }
 
   // Modify the user's bashrc file, adding our customizations.
   $bashrc_contents = "";
@@ -164,6 +164,7 @@ function drush_find_path_to_drush($home) {
 
 function drush_bash_addition($file) {
   return <<<EOD
+
 if [ -f "$file" ] ; then
   source $file
 fi

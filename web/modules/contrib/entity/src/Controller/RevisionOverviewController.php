@@ -1,10 +1,5 @@
 <?php
 
-/**
- * @file
- * Contains \Drupal\entity\Controller\RevisionOverviewController.
- */
-
 namespace Drupal\entity\Controller;
 
 use Drupal\Component\Utility\Xss;
@@ -72,10 +67,10 @@ class RevisionOverviewController extends ControllerBase {
    * {@inheritdoc}
    */
   protected function buildRevertRevisionLink(EntityInterface $entity_revision) {
-    if ($entity_revision->hasLinkTemplate('revision-revert')) {
+    if ($entity_revision->hasLinkTemplate('revision-revert-form')) {
       return [
         'title' => t('Revert'),
-        'url' => $entity_revision->toUrl('revision-revert'),
+        'url' => $entity_revision->toUrl('revision-revert-form'),
       ];
     }
   }
@@ -84,10 +79,10 @@ class RevisionOverviewController extends ControllerBase {
    * {@inheritdoc}
    */
   protected function buildDeleteRevisionLink(EntityInterface $entity_revision) {
-    if ($entity_revision->hasLinkTemplate('revision-delete')) {
+    if ($entity_revision->hasLinkTemplate('revision-delete-form')) {
       return [
         'title' => t('Delete'),
-        'url' => $entity_revision->toUrl('revision-delete'),
+        'url' => $entity_revision->toUrl('revision-delete-form'),
       ];
     }
   }

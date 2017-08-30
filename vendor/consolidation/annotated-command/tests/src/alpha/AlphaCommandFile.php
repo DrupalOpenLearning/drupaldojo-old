@@ -7,6 +7,8 @@ use Consolidation\OutputFormatters\StructuredData\AssociativeList;
 use Consolidation\AnnotatedCommand\AnnotationData;
 use Symfony\Component\Console\Input\InputOption;
 use Consolidation\AnnotatedCommand\CommandData;
+use Consolidation\AnnotatedCommand\Events\CustomEventAwareInterface;
+use Consolidation\AnnotatedCommand\Events\CustomEventAwareTrait;
 
 /**
  * Test file used in the testCommandDiscovery() test.
@@ -15,8 +17,10 @@ use Consolidation\AnnotatedCommand\CommandData;
  * 'src' directory, and 'alpha' is one of the search directories available
  * for searching.
  */
-class AlphaCommandFile
+class AlphaCommandFile implements CustomEventAwareInterface
 {
+    use CustomEventAwareTrait;
+
     /**
      * @command always:fail
      */
@@ -72,17 +76,22 @@ class AlphaCommandFile
      * Test command with formatters
      *
      * @command example:table
+     * @param $unused An unused argument
      * @field-labels
      *   first: I
      *   second: II
      *   third: III
-     * @usage example:table --format=yaml
-     * @usage example:table --format=csv
+     * @usage example:table --format=yml
+     *   Show the example table in yml format.
      * @usage example:table --fields=first,third
-     * @usage example:table --fields=III,II
+     *   Show only the first and third fields in the table.
+     * @usage example:table --fields=II,III
+     *   Note that either the field ID or the visible field label may be used.
+     * @aliases extab
+     * @topics docs-tables
      * @return \Consolidation\OutputFormatters\StructuredData\RowsOfFields
      */
-    public function exampleTable($options = ['format' => 'table', 'fields' => ''])
+    public function exampleTable($unused = '', $options = ['format' => 'table', 'fields' => ''])
     {
         $outputData = [
             [ 'first' => 'One',  'second' => 'Two',  'third' => 'Three' ],
@@ -91,6 +100,27 @@ class AlphaCommandFile
             [ 'first' => 'Uno',  'second' => 'Dos',  'third' => 'Tres'  ],
         ];
         return new RowsOfFields($outputData);
+    }
+
+    /**
+     * Test word wrapping
+     *
+     * @command example:wrap
+     * @field-labels
+     *   first: First
+     *   second: Second
+     *
+     * @return \Consolidation\OutputFormatters\StructuredData\RowsOfFields
+     */
+    public function exampleWrap()
+    {
+        $data = [
+            [
+                'first' => 'This is a really long cell that contains a lot of data. When it is rendered, it should be wrapped across multiple lines.',
+                'second' => 'This is the second column of the same table. It is also very long, and should be wrapped across multiple lines, just like the first column.',
+            ]
+        ];
+        return new RowsOfFields($data);
     }
 
     /**
@@ -218,5 +248,40 @@ class AlphaCommandFile
     public function getLost()
     {
         return 'very lost';
+    }
+
+    /**
+     * This command uses a custom event 'my-event' to collect data.  Note that
+     * the event handlers will not be found unless the hook manager is
+     * injected into this command handler object via `setHookManager()`
+     * (defined in CustomEventAwareTrait).
+     *
+     * @command use:event
+     */
+    public function useEvent()
+    {
+        $myEventHandlers = $this->getCustomEventHandlers('my-event');
+        $result = [];
+        foreach ($myEventHandlers as $handler) {
+            $result[] = $handler();
+        }
+        sort($result);
+        return implode(',', $result);
+    }
+
+    /**
+     * @hook on-event my-event
+     */
+    public function hookOne()
+    {
+        return 'one';
+    }
+
+    /**
+     * @hook on-event my-event
+     */
+    public function hookTwo()
+    {
+        return 'two';
     }
 }

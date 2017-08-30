@@ -1,12 +1,13 @@
 <?php
 
-namespace Drupal\Console\Utils;
+namespace Drupal\Console\Core\Utils;
 
 use Symfony\Component\Yaml\Parser;
 
 /**
  * Class RequirementChecker
- * @package Drupal\Console\Utils
+ *
+ * @package Drupal\Console\Core\Utils
  */
 class RequirementChecker
 {
@@ -43,6 +44,9 @@ class RequirementChecker
         $this->parser = new Parser();
     }
 
+    /**
+     *
+     */
     private function checkPHPVersion()
     {
         $requiredPHP = $this->requirements['requirements']['php']['required'];
@@ -53,6 +57,9 @@ class RequirementChecker
         $this->checkResult['php']['valid'] = $this->valid;
     }
 
+    /**
+     * checkRequiredExtensions
+     */
     private function checkRequiredExtensions()
     {
         $this->checkResult['extensions']['required']['missing'] = [];
@@ -64,6 +71,9 @@ class RequirementChecker
         }
     }
 
+    /**
+     * checkRecommendedExtensions
+     */
     private function checkRecommendedExtensions()
     {
         $this->checkResult['extensions']['recommended']['missing'] = [];
@@ -74,6 +84,9 @@ class RequirementChecker
         }
     }
 
+    /**
+     * checkRequiredConfigurations
+     */
     private function checkRequiredConfigurations()
     {
         $this->checkResult['configurations']['required']['overwritten']  = [];

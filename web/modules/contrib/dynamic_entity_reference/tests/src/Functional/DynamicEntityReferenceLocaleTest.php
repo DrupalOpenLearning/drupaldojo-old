@@ -26,7 +26,7 @@ class DynamicEntityReferenceLocaleTest extends DynamicEntityReferenceTest {
     $file = new \stdClass();
     $file->uri = \Drupal::service('file_system')->realpath(drupal_get_path('module', 'dynamic_entity_reference') . '/tests/test.de.po');
     $file->langcode = 'de';
-    Gettext::fileToDatabase($file, array());
+    Gettext::fileToDatabase($file, []);
 
     ConfigurableLanguage::createFromLangcode('de')->save();
     $this->config('system.site')->set('default_langcode', 'de')->save();

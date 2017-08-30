@@ -39,10 +39,9 @@ sqlite:
 
 env:
   matrix:
-#    - DRUPAL_VERSION='8.1.x'
-    - DRUPAL_VERSION='8.2.x' DB='mysql' SIMPLETEST_DB="$DB://root:@127.0.0.1/drupal" DB_USER='root'
-    - DRUPAL_VERSION='8.2.x' DB='pgsql' SIMPLETEST_DB="$DB://postgres:@127.0.0.1/drupal" DB_USER='postgres'
-    - DRUPAL_VERSION='8.2.x' DB='sqlite' SIMPLETEST_DB="$DB://root:@127.0.0.1/drupal" DB_USER='root'
+    - DRUPAL_VERSION='8.3.x' DB='mysql' SIMPLETEST_DB="$DB://root:@127.0.0.1/drupal" DB_USER='root'
+    - DRUPAL_VERSION='8.3.x' DB='pgsql' SIMPLETEST_DB="$DB://postgres:@127.0.0.1/drupal" DB_USER='postgres'
+    - DRUPAL_VERSION='8.3.x' DB='sqlite' SIMPLETEST_DB="$DB://root:@127.0.0.1/drupal" DB_USER='root'
   global:
     - SIMPLETEST_BASE_URL=http://127.0.0.1:8888
     - MODULE_NAME='dynamic_entity_reference'

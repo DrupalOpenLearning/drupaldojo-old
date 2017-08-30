@@ -42,7 +42,7 @@ class DataTypeHelper implements DataTypeHelperInterface {
    *
    * @see getDataTypeFallbackMapping()
    */
-  protected $dataTypeFallbackMapping = array();
+  protected $dataTypeFallbackMapping = [];
 
   /**
    * Constructs a DataTypeHelper object.
@@ -60,7 +60,7 @@ class DataTypeHelper implements DataTypeHelperInterface {
   /**
    * {@inheritdoc}
    */
-  public function isTextType($type, array $textTypes = array('text')) {
+  public function isTextType($type, array $textTypes = ['text']) {
     if (in_array($type, $textTypes)) {
       return TRUE;
     }
@@ -78,43 +78,44 @@ class DataTypeHelper implements DataTypeHelperInterface {
     // Check the cache first.
     if (!isset($this->fieldTypeMapping)) {
       // It's easier to write and understand this array in the form of
-      // $searchApiFieldType => array($dataTypes) and flip it below.
-      $defaultMapping = array(
-        'text' => array(
+      // $searchApiFieldType => [$dataTypes] and flip it below.
+      $defaultMapping = [
+        'text' => [
           'field_item:string_long.string',
           'field_item:text_long.string',
           'field_item:text_with_summary.string',
-          'text',
-        ),
-        'string' => array(
+          'search_api_html',
+          'search_api_text',
+        ],
+        'string' => [
           'string',
           'email',
           'uri',
           'filter_format',
           'duration_iso8601',
           'field_item:path',
-        ),
-        'integer' => array(
+        ],
+        'integer' => [
           'integer',
           'timespan',
-        ),
-        'decimal' => array(
+        ],
+        'decimal' => [
           'decimal',
           'float',
-        ),
-        'date' => array(
+        ],
+        'date' => [
           'date',
           'datetime_iso8601',
           'timestamp',
-        ),
-        'boolean' => array(
+        ],
+        'boolean' => [
           'boolean',
-        ),
+        ],
         // Types we know about but want/have to ignore.
-        NULL => array(
+        NULL => [
           'language',
-        ),
-      );
+        ],
+      ];
 
       foreach ($defaultMapping as $searchApiType => $dataTypes) {
         foreach ($dataTypes as $dataType) {
@@ -147,7 +148,7 @@ class DataTypeHelper implements DataTypeHelperInterface {
         // If the server isn't available, just ignore it here and return all
         // custom types.
       }
-      $this->dataTypeFallbackMapping[$indexId] = array();
+      $this->dataTypeFallbackMapping[$indexId] = [];
       $dataTypes = $this->dataTypeManager->getInstances();
       foreach ($dataTypes as $typeId => $dataType) {
         // We know for sure that we do not need to fall back for the default

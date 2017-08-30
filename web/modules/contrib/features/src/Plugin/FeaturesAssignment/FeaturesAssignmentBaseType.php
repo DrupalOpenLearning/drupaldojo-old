@@ -49,12 +49,11 @@ class FeaturesAssignmentBaseType extends FeaturesAssignmentMethodBase {
           catch (\Exception $exception) {
             \Drupal::logger('features')->error($exception->getMessage());
           }
-          $this->featuresManager->assignConfigDependents([$item_name]);
         }
       }
     }
 
-    $entity_types = $this->entityManager->getDefinitions();
+    $entity_types = $this->entityTypeManager->getDefinitions();
 
     $content_base_types = $settings['types']['content'];
     foreach ($content_base_types as $entity_type_id) {

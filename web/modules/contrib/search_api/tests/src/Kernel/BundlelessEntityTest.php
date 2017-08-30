@@ -25,11 +25,11 @@ class BundlelessEntityTest extends KernelTestBase {
   /**
    * {@inheritdoc}
    */
-  public static $modules = array(
+  public static $modules = [
     'search_api',
     'user',
     'system',
-  );
+  ];
 
   /**
    * The search index used for testing.
@@ -45,26 +45,20 @@ class BundlelessEntityTest extends KernelTestBase {
     parent::setUp();
 
     $this->installEntitySchema('search_api_task');
-    $this->installConfig(array('user'));
+    $this->installConfig(['user']);
 
     // Create a test index.
-    $this->index = Index::create(array(
+    $this->index = Index::create([
       'name' => 'Test Index',
       'id' => 'test_index',
       'status' => FALSE,
-      'datasource_settings' => array(
-        'entity:' . $this->testEntityTypeId => array(
-          'plugin_id' => 'entity:' . $this->testEntityTypeId,
-          'settings' => array(),
-        ),
-      ),
-      'tracker_settings' => array(
-        'default' => array(
-          'plugin_id' => 'default',
-          'settings' => array(),
-        ),
-      ),
-    ));
+      'datasource_settings' => [
+        'entity:' . $this->testEntityTypeId => [],
+      ],
+      'tracker_settings' => [
+        'default' => [],
+      ],
+    ]);
     $this->index->save();
   }
 
@@ -75,17 +69,17 @@ class BundlelessEntityTest extends KernelTestBase {
     $datasource = $this->index->getDatasource('entity:' . $this->testEntityTypeId);
 
     $bundles = $datasource->getBundles();
-    $expected = array(
+    $expected = [
       'user' => 'User',
-    );
+    ];
     $this->assertEquals($expected, $bundles);
 
     $view_modes = $datasource->getViewModes('user');
-    $expected = array(
+    $expected = [
       'compact' => 'Compact',
       'default' => 'Default',
       'full' => 'User account',
-    );
+    ];
     ksort($view_modes);
     $this->assertEquals($expected, $view_modes);
 

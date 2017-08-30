@@ -89,14 +89,12 @@ class FlagCountManager implements FlagCountManagerInterface, EventSubscriberInte
     // We check to see if the flag count is already in the cache,
     // if it's not, run the query.
     if (!isset($this->flagCounts[$flag_id][$entity_type])) {
-      $result = $this->connection->select('flagging', 'f')
-        ->fields('f', ['flag_id'])
+      $query = $this->connection->select('flagging', 'f')
         ->condition('flag_id', $flag_id)
-        ->condition('entity_type', $entity_type)
-        ->countQuery()
-        ->execute()
-        ->fetchField();
-      $this->flagCounts[$flag_id][$entity_type] = $result;
+        ->condition('entity_type', $entity_type);
+      // Using an expression is faster than using countQuery().
+      $query->addExpression('COUNT(*)');
+      $this->flagCounts[$flag_id][$entity_type] = $query->execute()->fetchField();
     }
 
     return $this->flagCounts[$flag_id][$entity_type];
@@ -109,12 +107,10 @@ class FlagCountManager implements FlagCountManagerInterface, EventSubscriberInte
     $flag_id = $flag->id();
 
     if (!isset($this->flagEntityCounts[$flag_id])) {
-      $this->flagEntityCounts[$flag_id] = $this->connection->select('flag_counts', 'fc')
-        ->fields('fc', array('flag_id'))
-        ->condition('flag_id', $flag_id)
-        ->countQuery()
-        ->execute()
-        ->fetchField();
+      $query = $this->connection->select('flag_counts', 'fc')
+        ->condition('flag_id', $flag_id);
+      $query->addExpression('COUNT(*)');
+      $this->flagEntityCounts[$flag_id] = $query->execute()->fetchField();
     }
 
     return $this->flagEntityCounts[$flag_id];
@@ -123,24 +119,51 @@ class FlagCountManager implements FlagCountManagerInterface, EventSubscriberInte
   /**
    * {@inheritdoc}
    */
-  public function getUserFlagFlaggingCount(FlagInterface $flag, AccountInterface $user) {
+  public function getUserFlagFlaggingCount(FlagInterface $flag, AccountInterface $user, $session_id = NULL) {
     $flag_id = $flag->id();
     $uid = $user->id();
+    $get_by_session_id = $user->isAnonymous();
 
-    // We check to see if the flag count is already in the cache,
-    // if it's not, run the query.
-    if (!isset($this->userFlagCounts[$flag_id][$uid])) {
-      $result = $this->connection->select('flagging', 'f')
-        ->fields('f', ['flag_id'])
-        ->condition('flag_id', $flag_id)
-        ->condition('uid', $uid)
-        ->countQuery()
-        ->execute()
-        ->fetchField();
+    // Return the flag count if it is already in the cache.
+    if ($get_by_session_id) {
+      if (is_null($session_id)) {
+        throw new \LogicException('Anonymous users must be identifed by session_id');
+      }
+
+      // Return the flag count if it is already in the cache.
+      if (isset($this->userFlagCounts[$flag_id][$uid][$session_id])) {
+        return $this->userFlagCounts[$flag_id][$uid][$session_id];
+      }
+    }
+    elseif (isset($this->userFlagCounts[$flag_id][$uid])) {
+      return $this->userFlagCounts[$flag_id][$uid];
+    }
+
+    // Run the query.
+    $query = $this->connection->select('flagging', 'f')
+      ->condition('flag_id', $flag_id)
+      ->condition('uid', $uid);
+
+    if ($get_by_session_id) {
+      $query->condition('session_id', $session_id);
+    }
+
+    $query->addExpression('COUNT(*)');
+
+    $result = $query->execute()
+      ->fetchField();
+
+    // Cache the result.
+    if ($get_by_session_id) {
+      // Cached by flag, by uid and by session_id.
+      $this->userFlagCounts[$flag_id][$uid][$session_id] = $result;
+    }
+    else {
+      // Cached by flag, by uid.
       $this->userFlagCounts[$flag_id][$uid] = $result;
     }
 
-    return $this->userFlagCounts[$flag_id][$uid];
+    return $result;
   }
 
   /**
@@ -255,7 +278,7 @@ class FlagCountManager implements FlagCountManagerInterface, EventSubscriberInte
     $events[FlagEvents::ENTITY_FLAGGED][] = array('incrementFlagCounts', -100);
     $events[FlagEvents::ENTITY_UNFLAGGED][] = array(
       'decrementFlagCounts',
-      -100
+      -100,
     );
     return $events;
   }

@@ -14,7 +14,7 @@ abstract class ConfigurablePropertyBase extends ProcessorProperty implements Con
    * {@inheritdoc}
    */
   public function defaultConfiguration() {
-    return array();
+    return [];
   }
 
   /**

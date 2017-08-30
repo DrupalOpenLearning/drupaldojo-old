@@ -334,3 +334,93 @@ function group_update_8008() {
 
   return $message;
 }
+
+/**
+ * Add the 'creator_roles' property to all group types.
+ */
+function group_update_8009() {
+  $config_factory = \Drupal::configFactory();
+
+  foreach ($config_factory->listAll('group.type.') as $group_type_config_name) {
+    $group_type = $config_factory->getEditable($group_type_config_name);
+    $group_type->set('creator_roles', []);
+    $group_type->save(TRUE);
+  }
+}
+
+/**
+ * Change the path field to computed for group entities.
+ */
+function group_update_8010() {
+  $entity_definition_update_manager = \Drupal::entityDefinitionUpdateManager();
+  if ($entity_definition_update_manager->getEntityType('group')) {
+    // Computed field definitions are not tracked by the entity definition
+    // update manager, so remove them.
+    $storage_definition = $entity_definition_update_manager->getFieldStorageDefinition('path', 'group');
+    if ($storage_definition) {
+      $entity_definition_update_manager->uninstallFieldStorageDefinition($storage_definition);
+    }
+  }
+}
+
+/**
+ * Remove the the 'info_text' config option from all group content types.
+ */
+function group_update_8011() {
+  $config_factory = \Drupal::configFactory();
+
+  foreach ($config_factory->listAll('group.content_type.') as $group_content_type_config_name) {
+    $group_content_type = $config_factory->getEditable($group_content_type_config_name);
+    $group_content_type->clear('plugin_config.info_text');
+    $group_content_type->save(TRUE);
+  }
+}
+
+/**
+ * Change 'edit' into 'update' in permission names.
+ */
+function group_update_8012() {
+  $config_factory = \Drupal::configFactory();
+
+  foreach ($config_factory->listAll('group.role.') as $group_role_config_name) {
+    $group_role = $config_factory->getEditable($group_role_config_name);
+
+    // Replace 'edit any/own' with 'update any/own' in permission names.
+    $search = '%^edit (any|own) (\S+) (\S+)$%';
+    $replace = 'update $1 $2 $3';
+
+    $permissions = $group_role->get('permissions');
+    foreach ($permissions as &$permission) {
+      $permission = preg_replace($search, $replace, $permission);
+    }
+
+    $group_role->set('permissions', $permissions);
+    $group_role->save();
+  }
+}
+
+/**
+ * Add the 'creator_membership' property to all group types.
+ */
+function group_update_8013() {
+  $config_factory = \Drupal::configFactory();
+
+  foreach ($config_factory->listAll('group.type.') as $group_type_config_name) {
+    $group_type = $config_factory->getEditable($group_type_config_name);
+    $group_type->set('creator_membership', TRUE);
+    $group_type->save(TRUE);
+  }
+}
+
+/**
+ * Add the 'creator_wizard' property to all group types.
+ */
+function group_update_8014() {
+  $config_factory = \Drupal::configFactory();
+
+  foreach ($config_factory->listAll('group.type.') as $group_type_config_name) {
+    $group_type = $config_factory->getEditable($group_type_config_name);
+    $group_type->set('creator_wizard', TRUE);
+    $group_type->save(TRUE);
+  }
+}

@@ -1,10 +1,5 @@
 <?php
 
-/**
- * @file
- * Contains \Drupal\entity\Controller\RevisionControllerTrait.
- */
-
 namespace Drupal\entity\Controller;
 
 use Drupal\Core\Entity\ContentEntityInterface;
@@ -155,7 +150,13 @@ trait RevisionControllerTrait {
           }
         }
         else {
-          $row[] = $this->getOperationLinks($revision);
+          $links = $this->getOperationLinks($revision);
+          $row[] = [
+            'data' => [
+              '#type' => 'operations',
+              '#links' => $links,
+            ],
+          ];
         }
       }
 

@@ -20,7 +20,7 @@ interface DataTypeHelperInterface {
    * @return bool
    *   TRUE if $type is one of the specified types, FALSE otherwise.
    */
-  public function isTextType($type, array $textTypes = array('text'));
+  public function isTextType($type, array $textTypes = ['text']);
 
   /**
    * Retrieves the mapping for known data types to Search API's internal types.

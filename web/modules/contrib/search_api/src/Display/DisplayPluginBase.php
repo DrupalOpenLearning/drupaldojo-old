@@ -6,7 +6,6 @@ use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Path\CurrentPathStack;
 use Drupal\Core\Plugin\PluginBase;
 use Drupal\Core\Url;
-use Drupal\search_api\Entity\Index;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
 /**
@@ -24,6 +23,8 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
  *   id = "my_display",
  *   label = @Translation("My display"),
  *   description = @Translation("A few words about this search display"),
+ *   index = "search_index",
+ *   path = "/my/custom/search",
  * )
  * @endcode
  *
@@ -105,6 +106,7 @@ abstract class DisplayPluginBase extends PluginBase implements DisplayInterface 
     $this->entityTypeManager = $entity_type_manager;
     return $this;
   }
+
   /**
    * {@inheritdoc}
    */
@@ -135,7 +137,10 @@ abstract class DisplayPluginBase extends PluginBase implements DisplayInterface 
    * {@inheritdoc}
    */
   public function getUrl() {
-    return $this->getPath();
+    if ($path = $this->getPath()) {
+      return Url::fromUserInput($path);
+    }
+    return NULL;
   }
 
   /**
@@ -144,7 +149,7 @@ abstract class DisplayPluginBase extends PluginBase implements DisplayInterface 
   public function getPath() {
     $plugin_definition = $this->getPluginDefinition();
     if (!empty($plugin_definition['path'])) {
-      return Url::fromUserInput($plugin_definition['path']);
+      return $plugin_definition['path'];
     }
     return NULL;
   }
@@ -153,12 +158,28 @@ abstract class DisplayPluginBase extends PluginBase implements DisplayInterface 
    * {@inheritdoc}
    */
   public function isRenderedInCurrentRequest() {
-    $plugin_definition = $this->getPluginDefinition();
-    if (!empty($plugin_definition['path'])) {
+    if ($path = $this->getPath()) {
       $current_path = $this->getCurrentPath()->getPath();
-      return $current_path == $plugin_definition['path'];
+      return $current_path == $path;
     }
     return FALSE;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function calculateDependencies() {
+    $dependencies = [];
+
+    // By default, add dependencies to the module providing this display and to
+    // the index it is based on.
+    $definition = $this->getPluginDefinition();
+    $dependencies['module'][] = $definition['provider'];
+
+    $index = $this->getIndex();
+    $dependencies[$index->getConfigDependencyKey()][] = $index->getConfigDependencyName();
+
+    return $dependencies;
   }
 
 }

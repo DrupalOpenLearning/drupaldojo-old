@@ -1,10 +1,5 @@
 <?php
 
-/**
- * @file
- * Contains \Drupal\devel\DevelDumperBase.
- */
-
 namespace Drupal\devel;
 
 use Drupal\Core\Render\Markup;
@@ -19,6 +14,13 @@ use Drupal\Core\Plugin\PluginBase;
  * @see plugin_api
  */
 abstract class DevelDumperBase extends PluginBase implements DevelDumperInterface {
+
+  /**
+   * {@inheritdoc}
+   */
+  public function dump($input, $name = NULL) {
+    echo (string) $this->export($input, $name);
+  }
 
   /**
    * {@inheritdoc}

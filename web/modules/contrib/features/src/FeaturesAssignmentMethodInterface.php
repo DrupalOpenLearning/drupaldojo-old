@@ -4,7 +4,7 @@ namespace Drupal\features;
 
 use Drupal\Component\Plugin\PluginInspectionInterface;
 use Drupal\Core\Config\ConfigFactoryInterface;
-use Drupal\Core\Entity\EntityManagerInterface;
+use Drupal\Core\Entity\EntityTypeManagerInterface;
 
 /**
  * Interface for package assignment classes.
@@ -31,10 +31,10 @@ interface FeaturesAssignmentMethodInterface extends PluginInspectionInterface {
   /**
    * Injects the entity manager.
    *
-   * @param \Drupal\Core\Entity\EntityManagerInterface $entity_manager
-   *   The entity manager to be used to retrieve entity information.
+   * @param \Drupal\Core\Entity\EntityTypeManagerInterface $entity_type_manager
+   *   The entity type manager to be used to retrieve entity information.
    */
-  public function setEntityManager(EntityManagerInterface $entity_manager);
+  public function setEntityTypeManager(EntityTypeManagerInterface $entity_type_manager);
 
   /**
    * Injects the configuration factory.

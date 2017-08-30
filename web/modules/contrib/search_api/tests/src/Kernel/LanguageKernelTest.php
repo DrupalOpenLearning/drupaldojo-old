@@ -4,14 +4,12 @@ namespace Drupal\Tests\search_api\Kernel;
 
 use Drupal\Component\Render\FormattableMarkup;
 use Drupal\entity_test\Entity\EntityTestMulRevChanged;
-use Drupal\entity_test\Entity\EntityTestMul;
 use Drupal\field\Entity\FieldConfig;
 use Drupal\field\Entity\FieldStorageConfig;
 use Drupal\KernelTests\KernelTestBase;
 use Drupal\language\Entity\ConfigurableLanguage;
 use Drupal\search_api\Entity\Index;
 use Drupal\search_api\Entity\Server;
-use Drupal\search_api\Utility\Utility;
 
 /**
  * Tests translation handling of the content entity datasource.
@@ -46,7 +44,7 @@ class LanguageKernelTest extends KernelTestBase {
    *
    * @var string[]
    */
-  public static $modules = array(
+  public static $modules = [
     'search_api',
     'search_api_test',
     'language',
@@ -54,7 +52,7 @@ class LanguageKernelTest extends KernelTestBase {
     'user',
     'system',
     'entity_test',
-  );
+  ];
 
   /**
    * An array of langcodes.
@@ -72,42 +70,42 @@ class LanguageKernelTest extends KernelTestBase {
     // Enable translation for the entity_test module.
     \Drupal::state()->set('entity_test.translation', TRUE);
 
-    $this->installSchema('search_api', array('search_api_item'));
+    $this->installSchema('search_api', ['search_api_item']);
     $this->installEntitySchema('entity_test_mulrev_changed');
     $this->installEntitySchema('search_api_task');
     $this->installEntitySchema('field_storage_config');
     $this->installEntitySchema('field_config');
 
     // Create the default languages.
-    $this->installConfig(array('language'));
-    $this->langcodes = array();
+    $this->installConfig(['language']);
+    $this->langcodes = [];
     for ($i = 0; $i < 3; ++$i) {
       /** @var \Drupal\language\Entity\ConfigurableLanguage $language */
-      $language = ConfigurableLanguage::create(array(
+      $language = ConfigurableLanguage::create([
         'id' => 'l' . $i,
         'label' => 'language - ' . $i,
         'weight' => $i,
-      ));
+      ]);
       $this->langcodes[$i] = $language->getId();
       $language->save();
     }
 
     // Create an entity reference field on the test entity type.
-    FieldStorageConfig::create(array(
+    FieldStorageConfig::create([
       'field_name' => 'link',
       'entity_type' => 'entity_test_mulrev_changed',
       'type' => 'entity_reference',
       'cardinality' => 1,
-      'settings' => array(
+      'settings' => [
         'target_type' => 'entity_test_mulrev_changed',
-      ),
-    ))->save();
-    FieldConfig::create(array(
+      ],
+    ])->save();
+    FieldConfig::create([
       'field_name' => 'link',
       'entity_type' => 'entity_test_mulrev_changed',
       'bundle' => 'entity_test_mulrev_changed',
       'label' => 'Link',
-    ))->save();
+    ])->save();
 
     // Do not use a batch for tracking the initial items after creating an
     // index when running the tests via the GUI. Otherwise, it seems Drupal's
@@ -123,42 +121,36 @@ class LanguageKernelTest extends KernelTestBase {
       ->save();
 
     // Create a test server.
-    $this->server = Server::create(array(
+    $this->server = Server::create([
       'name' => 'Test Server',
       'id' => 'test_server',
       'status' => 1,
       'backend' => 'search_api_test',
-    ));
+    ]);
     $this->server->save();
 
     // Create a test index.
-    $this->index = Index::create(array(
+    $this->index = Index::create([
       'name' => 'Test Index',
       'id' => 'test_index',
       'status' => 1,
-      'datasource_settings' => array(
-        'entity:' . $this->testEntityTypeId => array(
-          'plugin_id' => 'entity:' . $this->testEntityTypeId,
-          'settings' => array(),
-        ),
-      ),
-      'tracker_settings' => array(
-        'default' => array(
-          'plugin_id' => 'default',
-          'settings' => array(),
-        ),
-      ),
-      'field_settings' => array(
-        'link' => array(
+      'datasource_settings' => [
+        'entity:' . $this->testEntityTypeId => [],
+      ],
+      'tracker_settings' => [
+        'default' => [],
+      ],
+      'field_settings' => [
+        'link' => [
           'label' => 'Link name',
           'type' => 'string',
           'datasource_id' => 'entity:entity_test_mulrev_changed',
           'property_path' => 'link:entity:name',
-        ),
-      ),
+        ],
+      ],
       'server' => $this->server->id(),
-      'options' => array('index_directly' => FALSE),
-    ));
+      'options' => ['index_directly' => FALSE],
+    ]);
     $this->index->save();
   }
 
@@ -169,34 +161,34 @@ class LanguageKernelTest extends KernelTestBase {
     // Test retrieving language and translations when no translations are
     // available.
     /** @var \Drupal\entity_test\Entity\EntityTestMulRevChanged $entity_1 */
-    $entity_1 = EntityTestMulRevChanged::create(array(
+    $entity_1 = EntityTestMulRevChanged::create([
       'id' => 1,
       'name' => 'test 1',
       'user_id' => $this->container->get('current_user')->id(),
-    ));
+    ]);
     $entity_1->save();
     $entity_1->set('link', $entity_1->id());
-    $this->assertEquals('en', $entity_1->language()->getId(), new FormattableMarkup('%entity_type: Entity language set to site default.', array('%entity_type' => $this->testEntityTypeId)));
-    $this->assertFalse($entity_1->getTranslationLanguages(FALSE), new FormattableMarkup('%entity_type: No translations are available', array('%entity_type' => $this->testEntityTypeId)));
+    $this->assertEquals('en', $entity_1->language()->getId(), new FormattableMarkup('%entity_type: Entity language set to site default.', ['%entity_type' => $this->testEntityTypeId]));
+    $this->assertFalse($entity_1->getTranslationLanguages(FALSE), new FormattableMarkup('%entity_type: No translations are available', ['%entity_type' => $this->testEntityTypeId]));
 
     /** @var \Drupal\entity_test\Entity\EntityTestMulRevChanged $entity_2 */
-    $entity_2 = EntityTestMulRevChanged::create(array(
+    $entity_2 = EntityTestMulRevChanged::create([
       'id' => 2,
       'name' => 'test 2',
       'user_id' => $this->container->get('current_user')->id(),
-    ));
+    ]);
     $entity_2->save();
-    $this->assertEquals('en', $entity_2->language()->getId(), new FormattableMarkup('%entity_type: Entity language set to site default.', array('%entity_type' => $this->testEntityTypeId)));
-    $this->assertFalse($entity_2->getTranslationLanguages(FALSE), new FormattableMarkup('%entity_type: No translations are available', array('%entity_type' => $this->testEntityTypeId)));
+    $this->assertEquals('en', $entity_2->language()->getId(), new FormattableMarkup('%entity_type: Entity language set to site default.', ['%entity_type' => $this->testEntityTypeId]));
+    $this->assertFalse($entity_2->getTranslationLanguages(FALSE), new FormattableMarkup('%entity_type: No translations are available', ['%entity_type' => $this->testEntityTypeId]));
 
     // Test that the datasource returns the correct item IDs.
     $datasource = $this->index->getDatasource('entity:' . $this->testEntityTypeId);
     $datasource_item_ids = $datasource->getItemIds();
     sort($datasource_item_ids);
-    $expected = array(
+    $expected = [
       '1:en',
       '2:en',
-    );
+    ];
     $this->assertEquals($expected, $datasource_item_ids, 'Datasource returns correct item ids.');
 
     // Test indexing the new entity.
@@ -209,16 +201,16 @@ class LanguageKernelTest extends KernelTestBase {
     $default_langcode = $this->langcodes[0];
     $entity_1->get('langcode')->setValue($default_langcode);
     $entity_1->save();
-    $this->assertEquals(\Drupal::languageManager()->getLanguage($this->langcodes[0]), $entity_1->language(), new FormattableMarkup('%entity_type: Entity language retrieved.', array('%entity_type' => $this->testEntityTypeId)));
-    $this->assertFalse($entity_1->getTranslationLanguages(FALSE), new FormattableMarkup('%entity_type: No translations are available', array('%entity_type' => $this->testEntityTypeId)));
+    $this->assertEquals(\Drupal::languageManager()->getLanguage($this->langcodes[0]), $entity_1->language(), new FormattableMarkup('%entity_type: Entity language retrieved.', ['%entity_type' => $this->testEntityTypeId]));
+    $this->assertFalse($entity_1->getTranslationLanguages(FALSE), new FormattableMarkup('%entity_type: No translations are available', ['%entity_type' => $this->testEntityTypeId]));
 
     // Test that the datasource returns the correct item IDs.
     $datasource_item_ids = $datasource->getItemIds();
     sort($datasource_item_ids);
-    $expected = array(
+    $expected = [
       '1:' . $this->langcodes[0],
       '2:en',
-    );
+    ];
     $this->assertEquals($expected, $datasource_item_ids, 'Datasource returns correct item ids.');
 
     // Test that the index needs to be updated.
@@ -236,38 +228,40 @@ class LanguageKernelTest extends KernelTestBase {
     $translation->set('name', 'test 1 - ' . $this->langcodes[2]);
     $translation->set('link', $entity_1->id());
     $translation->save();
-    $this->assertTrue($entity_1->getTranslationLanguages(FALSE), new FormattableMarkup('%entity_type: Translations are available', array('%entity_type' => $this->testEntityTypeId)));
+    $this->assertTrue($entity_1->getTranslationLanguages(FALSE), new FormattableMarkup('%entity_type: Translations are available', ['%entity_type' => $this->testEntityTypeId]));
 
     $datasource_item_ids = $datasource->getItemIds();
     sort($datasource_item_ids);
-    $expected = array(
+    $expected = [
       '1:' . $this->langcodes[0],
       '1:' . $this->langcodes[1],
       '1:' . $this->langcodes[2],
       '2:en',
-    );
+    ];
     $this->assertEquals($expected, $datasource_item_ids, 'Datasource returns correct item ids for a translated entity.');
 
     foreach ($datasource->loadMultiple($datasource_item_ids) as $id => $object) {
       // Test whether the item reports the correct language.
       list($entity_id, $langcode) = explode(':', $id, 2);
-      $item = Utility::createItemFromObject($this->index, $object, NULL, $datasource);
+      $item = \Drupal::getContainer()
+        ->get('search_api.fields_helper')
+        ->createItemFromObject($this->index, $object, NULL, $datasource);
       $this->assertEquals($langcode, $item->getLanguage(), "Item with ID '$id' has the correct language set.");
 
       // Test whether nested field extraction works correctly.
       if ($entity_id == 1) {
         $field = $item->getField('link');
         $translation_label = $entity_1->getTranslation($langcode)->label();
-        $this->assertEquals(array($translation_label), $field->getValues());
+        $this->assertEquals([$translation_label], $field->getValues());
       }
     }
 
     // Tests that a query with an empty array of languages will return an empty
     // result set, without going through the server. (Our test backend wouldn't
     // care about languages.)
-    $results = $this->index->query()->setLanguages(array())->execute();
+    $results = $this->index->query()->setLanguages([])->execute();
     $this->assertEquals(0, $results->getResultCount(), 'Query with empty languages list returned correct number of results.');
-    $this->assertEquals(array(), $results->getResultItems(), 'Query with empty languages list returned correct result.');
+    $this->assertEquals([], $results->getResultItems(), 'Query with empty languages list returned correct result.');
 
     // Test that the index needs to be updated.
     $this->assertEquals(1, $this->index->getTrackerInstance()->getIndexedItemsCount(), 'The updated items needs to be reindexed.');
@@ -280,11 +274,11 @@ class LanguageKernelTest extends KernelTestBase {
 
     $datasource_item_ids = $datasource->getItemIds();
     sort($datasource_item_ids);
-    $expected = array(
+    $expected = [
       '1:' . $this->langcodes[0],
       '1:' . $this->langcodes[1],
       '2:en',
-    );
+    ];
     $this->assertEquals($expected, $datasource_item_ids, 'Datasource returns correct item ids for a translated entity.');
 
     // Test reindexing.

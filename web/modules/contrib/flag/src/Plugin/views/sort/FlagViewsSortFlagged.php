@@ -44,4 +44,5 @@ class FlagViewsSortFlagged extends SortPluginBase {
 
     $this->query->addOrderBy(NULL, "$this->tableAlias.uid", $this->options['order']);
   }
+
 }

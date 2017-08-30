@@ -1,0 +1,6 @@
+{
+  "name": "drupal/readme",
+  "require": {
+    "michelf/php-markdown": "1.6.0"
+  }
+}

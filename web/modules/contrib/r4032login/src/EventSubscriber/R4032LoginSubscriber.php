@@ -1,10 +1,5 @@
 <?php
 
-/**
- * @file
- * Definition of Drupal\r4032login\EventSubscriber\R4032LoginSubscriber.
- */
-
 namespace Drupal\r4032login\EventSubscriber;
 
 use Drupal\Core\Config\ConfigFactoryInterface;
@@ -99,13 +94,19 @@ class R4032LoginSubscriber implements EventSubscriberInterface {
       $redirect = $config->get('redirect_authenticated_users_to');
       if ($redirect) {
         // Custom access denied page for logged in users.
-        $url = Url::fromUserInput($redirect, $options)->toString();
+        if ($redirect === '<front>') {
+          $url = \Drupal::urlGenerator()->generate('<front>');
+        }
+        else {
+          $url = Url::fromUserInput($redirect, $options)->toString();
+        }
+
         $response = new RedirectResponse($url, $code);
         $event->setResponse($response);
       }
       else {
         // Display the default access denied page.
-        throw new AccessDeniedHttpException();
+        return new AccessDeniedHttpException();
       }
     }
   }

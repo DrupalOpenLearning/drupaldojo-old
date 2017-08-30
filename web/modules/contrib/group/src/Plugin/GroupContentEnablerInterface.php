@@ -58,6 +58,14 @@ interface GroupContentEnablerInterface extends PluginInspectionInterface, Deriva
   public function getEntityBundle();
 
   /**
+   * Returns the pretty path key for use in path aliases.
+   *
+   * @return string
+   *   The plugin-provided pretty path key, defaults to 'content'.
+   */
+  public function getPrettyPathKey();
+
+  /**
    * Returns the amount of groups the same content can be added to.
    *
    * @return int
@@ -88,6 +96,16 @@ interface GroupContentEnablerInterface extends PluginInspectionInterface, Deriva
    *   The group type ID, if set in the plugin configuration.
    */
   public function getGroupTypeId();
+
+  /**
+   * Returns whether this plugin defines entity access.
+   *
+   * @return bool
+   *   Whether this plugin defines entity access.
+   *
+   * @see \Drupal\group\Annotation\GroupContentEnabler::$entity_access
+   */
+  public function definesEntityAccess();
 
   /**
    * Returns whether this plugin is always on.
@@ -188,6 +206,22 @@ interface GroupContentEnablerInterface extends PluginInspectionInterface, Deriva
   public function getPermissions();
 
   /**
+   * Performs access check for the create target entity operation.
+   *
+   * This method is supposed to be overwritten by extending classes that
+   * do their own custom access checking.
+   *
+   * @param \Drupal\group\Entity\GroupInterface $group
+   *   The group to check for target entity creation access.
+   * @param \Drupal\Core\Session\AccountInterface $account
+   *   The user for which to check access.
+   *
+   * @return \Drupal\Core\Access\AccessResultInterface
+   *   The access result.
+   */
+  public function createEntityAccess(GroupInterface $group, AccountInterface $account);
+
+  /**
    * Performs access check for the create operation.
    *
    * This method is supposed to be overwritten by extending classes that
@@ -223,10 +257,32 @@ interface GroupContentEnablerInterface extends PluginInspectionInterface, Deriva
   public function checkAccess(GroupContentInterface $group_content, $operation, AccountInterface $account);
 
   /**
+   * Returns the label for the entity reference field.
+   *
+   * This allows you to specify the label for the entity reference field
+   * pointing to the entity that is to become group content.
+   *
+   * @return string|null
+   *   The label for the entity reference field or NULL if none was set.
+   */
+  public function getEntityReferenceLabel();
+
+  /**
+   * Returns the description for the entity reference field.
+   *
+   * This allows you to specify the description for the entity reference field
+   * pointing to the entity that is to become group content.
+   *
+   * @return string|null
+   *   The description for the entity reference field or NULL if none was set.
+   */
+  public function getEntityReferenceDescription();
+
+  /**
    * Returns a list of entity reference field settings.
    *
    * This allows you to provide some handler settings for the entity reference
-   * field referencing the entity that is to become group content. You could
+   * field pointing to the entity that is to become group content. You could
    * even change the handler being used, all without having to alter the bundle
    * field settings yourself through an alter hook.
    *

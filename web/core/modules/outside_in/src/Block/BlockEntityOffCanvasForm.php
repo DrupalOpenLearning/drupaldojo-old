@@ -9,7 +9,7 @@ use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Plugin\PluginWithFormsInterface;
 
 /**
- * Provides form for block instance forms when used in the off-canvas tray.
+ * Provides form for block instance forms when used in the off-canvas dialog.
  *
  * This form removes advanced sections of regular block form such as the
  * visibility settings, machine ID and region.
@@ -44,7 +44,7 @@ class BlockEntityOffCanvasForm extends BlockForm {
     }
     $form['advanced_link'] = [
       '#type' => 'link',
-      '#title' => $this->t('Advanced options'),
+      '#title' => $this->t('Advanced block options'),
       '#url' => $this->entity->toUrl('edit-form', ['query' => $query]),
       '#weight' => 1000,
     ];
@@ -52,6 +52,18 @@ class BlockEntityOffCanvasForm extends BlockForm {
     // Remove the ID and region elements.
     unset($form['id'], $form['region'], $form['settings']['admin_label']);
 
+    if (isset($form['settings']['label_display']) && isset($form['settings']['label'])) {
+      // Only show the label input if the label will be shown on the page.
+      $form['settings']['label_display']['#weight'] = -100;
+      $form['settings']['label']['#states']['visible'] = [
+        ':input[name="settings[label_display]"]' => ['checked' => TRUE],
+      ];
+
+      // Relabel to "Block title" because on the front-end this may be confused
+      // with page title.
+      $form['settings']['label']['#title'] = $this->t("Block title");
+      $form['settings']['label_display']['#title'] = $this->t("Display block title");
+    }
     return $form;
   }
 
@@ -92,7 +104,7 @@ class BlockEntityOffCanvasForm extends BlockForm {
    */
   protected function getPluginForm(BlockPluginInterface $block) {
     if ($block instanceof PluginWithFormsInterface) {
-      return $this->pluginFormFactory->createInstance($block, 'offcanvas', 'configure');
+      return $this->pluginFormFactory->createInstance($block, 'off_canvas', 'configure');
     }
     return $block;
   }

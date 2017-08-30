@@ -126,7 +126,7 @@ function message_order_text_weight($a, $b) {
 function message_entity_extra_field_info() {
   $extra = [];
 
-  /** @var MessageTemplate[] $bundles */
+  /** @var \Drupal\message\Entity\MessageTemplate[] $bundles */
   $bundles = MessageTemplate::loadMultiple();
   foreach ($bundles as $bundle) {
 
@@ -151,13 +151,6 @@ function message_entity_extra_field_info() {
 }
 
 /**
- * Implements hook_config_translation_info_alter().
- */
-function message_config_translation_info_alter(&$info) {
-  $info['message_template']['class'] = '\Drupal\message\MessageConfigEntityMapper';
-}
-
-/**
  * Implements hook_theme().
  */
 function message_theme() {
@@ -179,7 +172,7 @@ function message_theme() {
  *   - message: The message object.
  *   - view_mode: View mode; e.g., 'full', 'teaser', etc.
  */
-function template_preprocess_message(&$variables) {
+function template_preprocess_message(array &$variables) {
   $variables['view_mode'] = $variables['elements']['#view_mode'];
 
   // Provide a distinct $teaser boolean.

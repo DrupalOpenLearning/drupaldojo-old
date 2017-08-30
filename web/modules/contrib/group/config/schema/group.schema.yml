@@ -21,18 +21,30 @@ group.type.*:
     description:
       type: 'text'
       label: 'Description'
+    creator_membership:
+      type: 'boolean'
+      label: 'The group creator receives a membership'
+    creator_wizard:
+      type: 'boolean'
+      label: 'The group creator must immediately complete their membership.'
+    creator_roles:
+      type: 'sequence'
+      label: 'Group creator roles'
+      sequence:
+        type: 'string'
+        label: 'Group role ID'
 
 group_content_enabler.config.group_cardinality:
   type: 'integer'
-  label: 'Group Cardinality'
+  label: 'Group cardinality'
 
 group_content_enabler.config.entity_cardinality:
   type: 'integer'
-  label: 'Entity Cardinality'
+  label: 'Entity cardinality'
 
-group_content_enabler.config.info_text:
-  type: 'text_format'
-  label: 'Information to show at the top of the group content form'
+group_content_enabler.config.use_creation_wizard:
+  type: 'boolean'
+  label: 'Use creation wizard'
 
 # Follows the pattern group.role.GROUP_TYPE_ID-GROUP_ROLE_ID.
 group.role.*:

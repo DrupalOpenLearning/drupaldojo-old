@@ -60,7 +60,7 @@ function template_preprocess_field_group_accordion_item(&$variables) {
     $variables['description'] = $element['#description'];
   }
 
-  $variables['collapsed'] = $element['#collapsed'];
+  $variables['open'] = $element['#open'];
   $variables['label_attributes'] = new \Drupal\Core\Template\Attribute();
   $variables['children'] = (!empty($element['#children'])) ? $element['#children'] : '';
 

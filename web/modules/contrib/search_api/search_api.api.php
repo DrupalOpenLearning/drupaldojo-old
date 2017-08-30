@@ -112,6 +112,35 @@ function hook_search_api_parse_mode_info_alter(array &$parse_mode_definitions) {
 }
 
 /**
+ * Alter the tracker info.
+ *
+ * @param array $tracker_info
+ *   The Search API tracker info array, keyed by tracker ID.
+ *
+ * @see \Drupal\search_api\Tracker\TrackerPluginBase
+ */
+function hook_search_api_tracker_info_alter(array &$tracker_info) {
+  if (isset($tracker_info['default'])) {
+    $tracker_info['default']['example_original_class'] = $tracker_info['default']['class'];
+    $tracker_info['default']['class'] = '\Drupal\my_module\Plugin\search_api\tracker\MyCustomImplementationTracker';
+  }
+}
+
+/**
+ * Alter the list of known search displays.
+ *
+ * @param array $displays
+ *   The Search API display info array, keyed by display ID.
+ *
+ * @see \Drupal\search_api\Display\DisplayPluginBase
+ */
+function hook_search_api_displays_alter(&$displays) {
+  if (isset($displays['some_key'])) {
+    $displays['some_key']['label'] = t('New label for existing Display');
+  }
+}
+
+/**
  * Alter the mapping of Drupal data types to Search API data types.
  *
  * @param array $mapping
@@ -119,7 +148,7 @@ function hook_search_api_parse_mode_info_alter(array &$parse_mode_definitions) {
  *   corresponding Search API data types. A value of FALSE means that fields of
  *   that type should be ignored by the Search API.
  *
- * @see \Drupal\search_api\Utility::getFieldTypeMapping()
+ * @see \Drupal\search_api\Utility\DataTypeHelperInterface::getFieldTypeMapping()
  */
 function hook_search_api_field_type_mapping_alter(array &$mapping) {
   $mapping['duration_iso8601'] = FALSE;
@@ -142,17 +171,17 @@ function hook_search_api_field_type_mapping_alter(array &$mapping) {
  *   of that type.
  */
 function hook_search_api_views_handler_mapping_alter(array &$mapping) {
-  $mapping['entity:my_entity_type'] = array(
-    'argument' => array(
+  $mapping['entity:my_entity_type'] = [
+    'argument' => [
       'id' => 'my_entity_type',
-    ),
-    'filter' => array(
+    ],
+    'filter' => [
       'id' => 'my_entity_type',
-    ),
-    'sort' => array(
+    ],
+    'sort' => [
       'id' => 'my_entity_type',
-    ),
-  );
+    ],
+  ];
   $mapping['date']['filter']['id'] = 'my_date_filter';
 }
 
@@ -178,13 +207,13 @@ function hook_search_api_views_handler_mapping_alter(array &$mapping) {
  *   found.
  */
 function hook_search_api_views_field_handler_mapping_alter(array &$mapping) {
-  $mapping['field_item:string_long'] = array(
+  $mapping['field_item:string_long'] = [
     'id' => 'example_field',
-  );
-  $mapping['example_property_type'] = array(
+  ];
+  $mapping['example_property_type'] = [
     'id' => 'example_field',
     'some_option' => 'foo',
-  );
+  ];
 }
 
 /**
@@ -208,10 +237,10 @@ function hook_search_api_index_items_alter(\Drupal\search_api\IndexInterface $in
       unset($items[$item_id]);
     }
   }
-  $arguments = array(
+  $arguments = [
     '%index' => $index->label(),
     '@ids' => implode(', ', array_keys($items)),
-  );
+  ];
   drupal_set_message(t('Indexing items on index %index with the following IDs: @ids', $arguments));
 }
 
@@ -312,11 +341,11 @@ function hook_search_api_results_TAG_alter(\Drupal\search_api\Query\ResultSetInt
  */
 function hook_search_api_index_reindex(\Drupal\search_api\IndexInterface $index, $clear = FALSE) {
   \Drupal\Core\Database\Database::getConnection()->insert('example_search_index_reindexed')
-    ->fields(array(
+    ->fields([
       'index' => $index->id(),
       'clear' => $clear,
-      'update_time' => REQUEST_TIME,
-    ))
+      'update_time' => \Drupal::time()->getRequestTime(),
+    ])
     ->execute();
 }
 

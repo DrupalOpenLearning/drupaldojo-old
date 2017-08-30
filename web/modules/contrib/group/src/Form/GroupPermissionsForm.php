@@ -237,6 +237,9 @@ abstract class GroupPermissionsForm extends FormBase {
     // @todo Do something like the global permissions page for 'member'.
     // $form['#attached']['library'][] = 'user/drupal.user.permissions';
 
+    // Add the CSS from the user module as it has styling for permission tables.
+    $form['#attached']['library'][] = 'user/drupal.user.admin';
+
     return $form;
   }
 

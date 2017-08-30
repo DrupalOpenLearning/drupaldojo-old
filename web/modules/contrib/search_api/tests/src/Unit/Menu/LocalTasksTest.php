@@ -22,7 +22,7 @@ class LocalTasksTest extends LocalTaskIntegrationTestBase {
     $module_path = str_replace('tests/src/Unit/Menu', '', $module_path);
     $module_path = trim($module_path, '/');
 
-    $this->directoryList = array('search_api' => $module_path);
+    $this->directoryList = ['search_api' => $module_path];
   }
 
   /**
@@ -34,12 +34,12 @@ class LocalTasksTest extends LocalTaskIntegrationTestBase {
    * @dataProvider getPageRoutesServer
    */
   public function testLocalTasksServer($route) {
-    $tasks = array(
-      0 => array(
+    $tasks = [
+      0 => [
         'entity.search_api_server.canonical',
         'entity.search_api_server.edit_form',
-      ),
-    );
+      ],
+    ];
     $this->assertLocalTasks($route, $tasks);
   }
 
@@ -51,10 +51,10 @@ class LocalTasksTest extends LocalTaskIntegrationTestBase {
    *   testLocalTasksServer() call.
    */
   public function getPageRoutesServer() {
-    return array(
-      array('entity.search_api_server.canonical'),
-      array('entity.search_api_server.edit_form'),
-    );
+    return [
+      ['entity.search_api_server.canonical'],
+      ['entity.search_api_server.edit_form'],
+    ];
   }
 
   /**
@@ -66,14 +66,14 @@ class LocalTasksTest extends LocalTaskIntegrationTestBase {
    * @dataProvider getPageRoutesIndex
    */
   public function testLocalTasksIndex($route) {
-    $tasks = array(
-      0 => array(
+    $tasks = [
+      0 => [
         'entity.search_api_index.canonical',
         'entity.search_api_index.edit_form',
         'entity.search_api_index.fields',
         'entity.search_api_index.processors',
-      ),
-    );
+      ],
+    ];
     $this->assertLocalTasks($route, $tasks);
   }
 
@@ -85,12 +85,12 @@ class LocalTasksTest extends LocalTaskIntegrationTestBase {
    *   testLocalTasksIndex() call.
    */
   public function getPageRoutesIndex() {
-    return array(
-      array('entity.search_api_index.canonical'),
-      array('entity.search_api_index.edit_form'),
-      array('entity.search_api_index.fields'),
-      array('entity.search_api_index.processors'),
-    );
+    return [
+      ['entity.search_api_index.canonical'],
+      ['entity.search_api_index.edit_form'],
+      ['entity.search_api_index.fields'],
+      ['entity.search_api_index.processors'],
+    ];
   }
 
 }

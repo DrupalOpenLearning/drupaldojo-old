@@ -3,6 +3,7 @@
 namespace Drupal\DrupalExtension\Context;
 
 use Behat\MinkExtension\Context\RawMinkContext;
+use Behat\Mink\Exception\DriverException;
 use Behat\Testwork\Hook\HookDispatcher;
 
 use Drupal\DrupalDriverManager;
@@ -56,7 +57,7 @@ class RawDrupalContext extends RawMinkContext implements DrupalAwareInterface {
    *
    * A value of FALSE denotes an anonymous user.
    *
-   * @var stdClass|bool
+   * @var \stdClass|bool
    */
   public $user = FALSE;
 
@@ -146,7 +147,23 @@ class RawDrupalContext extends RawMinkContext implements DrupalAwareInterface {
   }
 
   /**
+   * Returns a specific css selector.
+   *
+   * @param $name
+   *   string CSS selector name
+   */
+  public function getDrupalSelector($name) {
+    $text = $this->getDrupalParameter('selectors');
+    if (!isset($text[$name])) {
+      throw new \Exception(sprintf('No such selector configured: %s', $name));
+    }
+    return $text[$name];
+  }
+
+  /**
    * Get active Drupal Driver.
+   *
+   * @return \Drupal\Driver\DrupalDriver
    */
   public function getDriver($name = NULL) {
     return $this->getDrupal()->getDriver($name);
@@ -157,6 +174,34 @@ class RawDrupalContext extends RawMinkContext implements DrupalAwareInterface {
    */
   public function getRandom() {
     return $this->getDriver()->getRandom();
+  }
+
+  /**
+   * Massage node values to match the expectations on different Drupal versions.
+   *
+   * @beforeNodeCreate
+   */
+  public static function alterNodeParameters(BeforeNodeCreateScope $scope) {
+    $node = $scope->getEntity();
+
+    // Get the Drupal API version if available. This is not available when
+    // using e.g. the BlackBoxDriver or DrushDriver.
+    $api_version = NULL;
+    $driver = $scope->getContext()->getDrupal()->getDriver();
+    if ($driver instanceof \Drupal\Driver\DrupalDriver) {
+      $api_version = $scope->getContext()->getDrupal()->getDriver()->version;
+    }
+
+    // On Drupal 8 the timestamps should be in UNIX time.
+    switch ($api_version) {
+      case 8:
+        foreach (array('changed', 'created', 'revision_timestamp') as $field) {
+          if (!empty($node->$field) && !is_numeric($node->$field)) {
+            $node->$field = strtotime($node->$field);
+          }
+        }
+      break;
+    }
   }
 
   /**
@@ -185,6 +230,10 @@ class RawDrupalContext extends RawMinkContext implements DrupalAwareInterface {
       }
       $this->getDriver()->processBatch();
       $this->users = array();
+      $this->user = FALSE;
+      if ($this->loggedIn()) {
+        $this->logout();
+      }
     }
   }
 
@@ -241,7 +290,7 @@ class RawDrupalContext extends RawMinkContext implements DrupalAwareInterface {
    *
    * @param string $scope
    *   The entity scope to dispatch.
-   * @param stdClass $entity
+   * @param \stdClass $entity
    *   The entity.
    */
   protected function dispatchHooks($scopeType, \stdClass $entity) {
@@ -287,7 +336,7 @@ class RawDrupalContext extends RawMinkContext implements DrupalAwareInterface {
     $multicolumn_field = '';
     $multicolumn_fields = array();
 
-    foreach ($entity as $field => $field_value) {
+    foreach (clone $entity as $field => $field_value) {
       // Reset the multicolumn field if the field name does not contain a column.
       if (strpos($field, ':') === FALSE) {
         $multicolumn_field = '';
@@ -341,13 +390,22 @@ class RawDrupalContext extends RawMinkContext implements DrupalAwareInterface {
         // Replace regular fields inline in the entity after parsing.
         if (!$is_multicolumn) {
           $entity->$field_name = $values;
+          // Don't specify any value if the step author has left it blank.
+          if ($field_value === '') {
+            unset($entity->$field_name);
+          }
         }
       }
     }
 
     // Add the multicolumn fields to the entity.
     foreach ($multicolumn_fields as $field_name => $columns) {
-      $entity->$field_name = $columns;
+      // Don't specify any value if the step author has left it blank.
+      if (count(array_filter($columns, function ($var) {
+        return ($var !== '');
+      })) > 0) {
+        $entity->$field_name = $columns;
+      }
     }
   }
 
@@ -427,7 +485,12 @@ class RawDrupalContext extends RawMinkContext implements DrupalAwareInterface {
     $submit->click();
 
     if (!$this->loggedIn()) {
-      throw new \Exception(sprintf("Failed to log in as user '%s' with role '%s'", $this->user->name, $this->user->role));
+      if (isset($this->user->role)) {
+        throw new \Exception(sprintf("Unable to determine if logged in because 'log_out' link cannot be found for user '%s' with role '%s'", $this->user->name, $this->user->role));
+      }
+      else {
+        throw new \Exception(sprintf("Unable to determine if logged in because 'log_out' link cannot be found for user '%s'", $this->user->name));
+      }
     }
   }
 
@@ -445,13 +508,38 @@ class RawDrupalContext extends RawMinkContext implements DrupalAwareInterface {
    *   Returns TRUE if a user is logged in for this session.
    */
   public function loggedIn() {
-    $session = $this->getSession();
+    // If there is no session or no page yet, this is a brand new test session
+    // and the user is not logged in.
+    if (!$session = $this->getSession()) {
+      return FALSE;
+    }
+    if (!$page = $session->getPage()) {
+      return FALSE;
+    }
+
+    // Look for a css selector to determine if a user is logged in.
+    // Default is the logged-in class on the body tag.
+    // Which should work with almost any theme.
+    try {
+      if ($page->has('css', $this->getDrupalSelector('logged_in_selector'))) {
+        return TRUE;
+      }
+    } catch (DriverException $e) {
+      // This test may fail if the driver did not load any site yet.
+    }
+
+    // Some themes do not add that class to the body, so lets check if the
+    // login form is displayed on /user/login.
+    $session->visit($this->locatePath('/user/login'));
+    if (!$page->has('css', $this->getDrupalSelector('login_form_selector'))) {
+      return TRUE;
+    }
+
     $session->visit($this->locatePath('/'));
 
-    // If a logout link is found, we are logged in. While not perfect, this is
-    // how Drupal SimpleTests currently work as well.
-    $element = $session->getPage();
-    return $element->findLink($this->getDrupalText('log_out'));
+    // As a last resort, if a logout link is found, we are logged in. While not
+    // perfect, this is how Drupal SimpleTests currently work as well.
+    return $page->findLink($this->getDrupalText('log_out'));
   }
 
   /**

@@ -26,11 +26,11 @@ class IndexLoadItemsTest extends KernelTestBase {
   /**
    * {@inheritdoc}
    */
-  public static $modules = array(
+  public static $modules = [
     'search_api',
     'search_api_test',
     'user',
-  );
+  ];
 
   /**
    * {@inheritdoc}
@@ -40,24 +40,18 @@ class IndexLoadItemsTest extends KernelTestBase {
 
     $this->installEntitySchema('search_api_task');
 
-    $server = Server::create(array(
+    $server = Server::create([
       'id' => 'test',
       'backend' => 'search_api_test',
-    ));
-    $this->index = Index::create(array(
-      'tracker_settings' => array(
-        'search_api_test' => array(
-          'plugin_id' => 'search_api_test',
-          'settings' => array(),
-        ),
-      ),
-      'datasource_settings' => array(
-        'search_api_test' => array(
-          'plugin_id' => 'search_api_test',
-          'settings' => array(),
-        ),
-      ),
-    ));
+    ]);
+    $this->index = Index::create([
+      'tracker_settings' => [
+        'search_api_test' => [],
+      ],
+      'datasource_settings' => [
+        'search_api_test' => [],
+      ],
+    ]);
     $this->index->setServer($server);
   }
 
@@ -65,18 +59,16 @@ class IndexLoadItemsTest extends KernelTestBase {
    * Verifies that missing items are correctly detected and removed.
    */
   public function testMissingItems() {
-    $state = \Drupal::state();
-
-    $item_ids = array(
+    $item_ids = [
       'search_api_test/1',
       'search_api_test/2',
-    );
+    ];
     $items = $this->index->loadItemsMultiple($item_ids);
-    $this->assertEquals(array(), $items, 'No items loaded from test datasource.');
+    $this->assertEquals([], $items, 'No items loaded from test datasource.');
     $methods = $this->getCalledMethods('tracker');
     $this->assertContains('trackItemsDeleted', $methods, 'Unknown items deleted from tracker.');
     $args = $this->getMethodArguments('tracker', 'trackItemsDeleted');
-    $this->assertEquals(array($item_ids), $args, 'Correct items deleted from tracker.');
+    $this->assertEquals([$item_ids], $args, 'Correct items deleted from tracker.');
     $methods = $this->getCalledMethods('backend');
     $this->assertContains('deleteItems', $methods, 'Unknown items deleted from server.');
 
@@ -84,20 +76,20 @@ class IndexLoadItemsTest extends KernelTestBase {
     // "unknown/1"), the items should not be deleted from tracking and the
     // server.
     $expected_deletions = $item_ids;
-    $item_ids = array(
+    $item_ids = [
       'search_api_test/1',
       'search_api_test/2',
       'search_api_test/3',
       'unknown/1',
-    );
-    $this->setReturnValue('datasource', 'loadMultiple', array('3' => ''));
+    ];
+    $this->setReturnValue('datasource', 'loadMultiple', ['3' => '']);
     $items = $this->index->loadItemsMultiple($item_ids);
-    $expected_items = array('search_api_test/3' => '');
+    $expected_items = ['search_api_test/3' => ''];
     $this->assertEquals($expected_items, $items, 'Expected items loaded from test datasource.');
     $methods = $this->getCalledMethods('tracker');
     $this->assertContains('trackItemsDeleted', $methods, 'Unknown items deleted from tracker.');
     $args = $this->getMethodArguments('tracker', 'trackItemsDeleted');
-    $this->assertEquals(array($expected_deletions), $args, 'Correct items deleted from tracker.');
+    $this->assertEquals([$expected_deletions], $args, 'Correct items deleted from tracker.');
     $methods = $this->getCalledMethods('backend');
     $this->assertContains('deleteItems', $methods, 'Unknown items deleted from server.');
   }

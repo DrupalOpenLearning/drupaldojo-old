@@ -15,6 +15,15 @@ features.assignment:
   requirements:
     _permission: 'administer site configuration'
 
+features.assignment_alter:
+  path: '/admin/config/development/features/bundle/_alter/{bundle_name}'
+  defaults:
+    _form: '\Drupal\features_ui\Form\AssignmentAlterForm'
+    _title: 'Configure package configuration altering'
+    bundle_name: NULL
+  requirements:
+    _permission: 'administer site configuration'
+
 features.assignment_base:
   path: '/admin/config/development/features/bundle/_base/{bundle_name}'
   defaults:

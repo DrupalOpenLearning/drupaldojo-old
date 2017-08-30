@@ -21,7 +21,7 @@ class GroupNodeRouteProvider {
 
       $plugin_ids[] = $plugin_id;
       $permissions_add[] = "create $plugin_id content";
-      $permissions_create[] = "create $name node";
+      $permissions_create[] = "create $plugin_id entity";
     }
 
     // If there are no node types yet, we cannot have any plugin IDs and should
@@ -30,7 +30,6 @@ class GroupNodeRouteProvider {
       return $routes;
     }
 
-    // @todo Conditionally (see above) alter GroupContent info to use this path.
     $routes['entity.group_content.group_node_relate_page'] = new Route('group/{group}/node/add');
     $routes['entity.group_content.group_node_relate_page']
       ->setDefaults([
@@ -41,12 +40,12 @@ class GroupNodeRouteProvider {
       ->setRequirement('_group_installed_content', implode('+', $plugin_ids))
       ->setOption('_group_operation_route', TRUE);
 
-    // @todo Conditionally (see above) alter GroupContent info to use this path.
     $routes['entity.group_content.group_node_add_page'] = new Route('group/{group}/node/create');
     $routes['entity.group_content.group_node_add_page']
       ->setDefaults([
         '_title' => 'Create node',
-        '_controller' => '\Drupal\gnode\Controller\GroupNodeWizardController::addPage',
+        '_controller' => '\Drupal\gnode\Controller\GroupNodeController::addPage',
+        'create_mode' => TRUE,
       ])
       ->setRequirement('_group_permission', implode('+', $permissions_create))
       ->setRequirement('_group_installed_content', implode('+', $plugin_ids))

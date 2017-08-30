@@ -2,6 +2,7 @@
 
 namespace Drupal\message\Form;
 
+use Drupal\Component\Utility\SortArray;
 use Drupal\Core\Entity\EntityForm;
 use Drupal\Core\Entity\EntityTypeInterface;
 use Drupal\Core\Form\FormStateInterface;
@@ -105,12 +106,12 @@ class MessageTemplateForm extends EntityForm {
       '#default_value' => isset($settings['token options']['clear']) ? $settings['token options']['clear'] : FALSE,
     ];
 
-    $form['settings']['token options']['token replace'] = array(
+    $form['settings']['token options']['token replace'] = [
       '#type' => 'checkbox',
       '#title' => $this->t('Token replace'),
       '#description' => $this->t('When this option is selected, token processing will happen.'),
       '#default_value' => !isset($settings['token options']['token replace']) || !empty($settings['token options']['token replace']),
-    );
+    ];
 
     $form['settings']['purge_override'] = [
       '#title' => $this->t('Override global purge settings'),
@@ -170,16 +171,19 @@ class MessageTemplateForm extends EntityForm {
    * {@inheritdoc}
    */
   public function save(array $form, FormStateInterface $form_state) {
-    $values = $form_state->getValue('text');
-    usort($values, 'message_order_text_weight');
+    // Sort by weight.
+    $text = $form_state->getValue('text');
+    usort($text, function ($a, $b) {
+      return SortArray::sortByKeyInt($a, $b, '_weight');
+    });
+    // Do not store weight, as these are now sorted.
+    $text = array_map(function ($a) {
+      unset($a['_weight']);
+      return $a;
+    }, $text);
+    $this->entity->set('text', $text);
 
-    // Saving the message text values.
-    foreach ($values as $key => $value) {
-      $values[$key] = $value['value'];
-    }
-
-    $this->entity->set('text', $values);
-    $this->entity->save();
+    parent::save($form, $form_state);
 
     $params = [
       '@template' => $form_state->getValue('label'),

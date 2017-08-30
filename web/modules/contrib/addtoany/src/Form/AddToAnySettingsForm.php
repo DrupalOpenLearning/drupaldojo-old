@@ -75,7 +75,7 @@ class AddToAnySettingsForm extends ConfigFormBase {
       '#type'          => 'textarea',
       '#title'         => t('Service Buttons HTML code'),
       '#default_value' => $addtoany_settings->get('additional_html'),
-      '#description'   => t('You can add HTML code to display customized <a href="https://www.addtoany.com/buttons/customize/standalone_services" target="_blank">standalone service buttons</a> next to each universal share button. For example: <br /> <code>&lt;a class=&quot;a2a_button_facebook&quot;&gt;&lt;/a&gt;<br />&lt;a class=&quot;a2a_button_twitter&quot;&gt;&lt;/a&gt;<br />&lt;a class=&quot;a2a_button_pinterest&quot;&gt;&lt;/a&gt;</code>
+      '#description'   => t('You can add HTML code to display customized <a href="https://www.addtoany.com/buttons/customize/drupal/standalone_services" target="_blank">standalone service buttons</a> next to each universal share button. For example: <br /> <code>&lt;a class=&quot;a2a_button_facebook&quot;&gt;&lt;/a&gt;<br />&lt;a class=&quot;a2a_button_twitter&quot;&gt;&lt;/a&gt;<br />&lt;a class=&quot;a2a_button_pinterest&quot;&gt;&lt;/a&gt;</code>
       '),
       '#attributes' => $attributes_for_code,
     );
@@ -171,12 +171,8 @@ class AddToAnySettingsForm extends ConfigFormBase {
       ->set('additional_js', $values['addtoany_additional_js'])
       ->set('buttons_size', $values['addtoany_buttons_size'])
       ->set('custom_universal_button', $values['addtoany_custom_universal_button'])
-      ->set('display_in_nodecont', $values['addtoany_display_in_nodecont'])
-      ->set('display_in_teasers', $values['addtoany_display_in_teasers'])
-      ->set('display_weight', $values['addtoany_display_weight'])
       ->set('universal_button', $values['addtoany_universal_button'])
       ->set('universal_button_placement', $values['addtoany_universal_button_placement'])
-      ->set('nodetypes', array_values(array_filter($values['addtoany_nodetypes'])))
       ->set('no_3p', $values['addtoany_no_3p'])
       ->save();
 

@@ -1,10 +1,5 @@
 <?php
 
-/**
- * @file
- * Contains \Drupal\entity_module_test\Entity\EnhancedEntityBundle.
- */
-
 namespace Drupal\entity_module_test\Entity;
 
 use Drupal\Core\Config\Entity\ConfigEntityBundleBase;

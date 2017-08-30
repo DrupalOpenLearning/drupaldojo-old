@@ -75,29 +75,29 @@ class ServerStatusForm extends FormBase {
         'There is currently @count task pending for this server.',
         'There are currently @count tasks pending for this server.'
       );
-      $form['tasks'] = array(
+      $form['tasks'] = [
         '#type' => 'fieldset',
         '#title' => $this->t('Pending server tasks'),
-      );
-      $form['tasks']['help'] = array(
+      ];
+      $form['tasks']['help'] = [
         '#type' => 'item',
         '#title' => $status,
         '#description' => $this->t('Pending tasks are created when operations on the server, such as deleting one or more items, cannot be executed because the server is currently unavailable (which will usually also create an entry in the Drupal logs). They are automatically tried again before any other operation is executed and the operation is aborted if the tasks could still not be executed, or if there are too many pending tasks to be executed in a single page request. In the latter case, you can use this form to manually execute all tasks and thus unblock the server again.'),
-      );
-      $form['tasks']['execute'] = array(
+      ];
+      $form['tasks']['execute'] = [
         '#type' => 'submit',
         '#value' => $this->t('Execute tasks now'),
         '#disabled' => !$server->isAvailable(),
-        '#submit' => array('::executeTasks'),
-      );
+        '#submit' => ['::executeTasks'],
+      ];
     }
 
     $form['actions']['#type'] = 'actions';
-    $form['actions']['clear'] = array(
+    $form['actions']['clear'] = [
       '#type' => 'submit',
       '#value' => $this->t('Delete all indexed data on this server'),
       '#button_type' => 'danger',
-    );
+    ];
     return $form;
   }
 
@@ -117,7 +117,7 @@ class ServerStatusForm extends FormBase {
     // Redirect to the "Clear server" confirmation form.
     /** @var \Drupal\search_api\ServerInterface $server */
     $server = $form['#server'];
-    $form_state->setRedirect('entity.search_api_server.clear', array('search_api_server' => $server->id()));
+    $form_state->setRedirect('entity.search_api_server.clear', ['search_api_server' => $server->id()]);
   }
 
 }

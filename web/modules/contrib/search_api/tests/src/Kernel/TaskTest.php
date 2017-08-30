@@ -34,12 +34,12 @@ class TaskTest extends KernelTestBase {
   /**
    * {@inheritdoc}
    */
-  public static $modules = array(
+  public static $modules = [
     'user',
     'search_api',
     'search_api_test',
     'search_api_test_tasks',
-  );
+  ];
 
   /**
    * The task manager to use for the tests.
@@ -67,32 +67,26 @@ class TaskTest extends KernelTestBase {
     $this->taskWorker = $this->container->get('search_api_test_tasks.test_task_worker');
 
     // Create a test server.
-    $this->server = Server::create(array(
+    $this->server = Server::create([
       'name' => 'Test Server',
       'id' => 'test_server',
       'status' => 1,
       'backend' => 'search_api_test',
-    ));
+    ]);
     $this->server->save();
 
     // Create a test index.
-    $this->index = Index::create(array(
+    $this->index = Index::create([
       'name' => 'Test index',
       'id' => 'test_index',
       'status' => 0,
-      'datasource_settings' => array(
-        'entity:user' => array(
-          'plugin_id' => 'entity:user',
-          'settings' => array(),
-        ),
-      ),
-      'tracker_settings' => array(
-        'default' => array(
-          'plugin_id' => 'default',
-          'settings' => array(),
-        ),
-      ),
-    ));
+      'datasource_settings' => [
+        'entity:user' => [],
+      ],
+      'tracker_settings' => [
+        'default' => [],
+      ],
+    ]);
     $this->index->save();
   }
 
@@ -114,9 +108,9 @@ class TaskTest extends KernelTestBase {
     $task = $this->addTask('fail', $this->server);
     $this->assertEquals(1, $this->taskManager->getTasksCount());
     try {
-      $this->taskManager->executeAllTasks(array(
+      $this->taskManager->executeAllTasks([
         'server_id' => $this->server->id(),
-      ));
+      ]);
       $this->fail('Exception expected');
     }
     catch (SearchApiException $e) {
@@ -134,10 +128,10 @@ class TaskTest extends KernelTestBase {
     $type = $task->getType();
     $this->assertEquals(1, $this->taskManager->getTasksCount());
     try {
-      $this->taskManager->executeAllTasks(array(
-        'type' => array($type, 'unknown'),
+      $this->taskManager->executeAllTasks([
+        'type' => [$type, 'unknown'],
         'index_id' => $this->index->id(),
-      ));
+      ]);
       $this->fail('Exception expected');
     }
     catch (SearchApiException $e) {
@@ -164,7 +158,7 @@ class TaskTest extends KernelTestBase {
       $this->assertEquals("Could not execute task #$id of type '$type'. Type seems to be unknown.", $e->getMessage());
     }
     $this->assertEquals(1, $this->taskManager->getTasksCount());
-    $this->assertEquals(array(), $this->taskWorker->getEventLog());
+    $this->assertEquals([], $this->taskWorker->getEventLog());
   }
 
   /**
@@ -174,8 +168,8 @@ class TaskTest extends KernelTestBase {
     // Add some tasks to the system. We use explicit indexes since we want to
     // verify that the tasks are executed in a different order than the one they
     // were added, if appropriate $conditions parameters are given.
-    $tasks = array();
-    $tasks[0] = $this->addTask('success', $this->server, $this->index, array('foo' => 1, 'bar'));
+    $tasks = [];
+    $tasks[0] = $this->addTask('success', $this->server, $this->index, ['foo' => 1, 'bar']);
     $tasks[6] = $this->addTask('fail');
     $tasks[1] = $this->addTask('success', $this->server, NULL, TRUE);
     $tasks[4] = $this->addTask('success', NULL, NULL, 1);
@@ -189,15 +183,15 @@ class TaskTest extends KernelTestBase {
     $this->taskManager->executeSingleTask();
     $this->assertEquals(--$num, $this->taskManager->getTasksCount());
 
-    $this->taskManager->executeSingleTask(array(
+    $this->taskManager->executeSingleTask([
       'server_id' => $this->server->id(),
-    ));
+    ]);
     $this->assertEquals(--$num, $this->taskManager->getTasksCount());
 
     try {
-      $this->taskManager->executeAllTasks(array(
+      $this->taskManager->executeAllTasks([
         'server_id' => $this->server->id(),
-      ));
+      ]);
       $this->fail('Exception expected');
     }
     catch (SearchApiException $e) {
@@ -208,14 +202,14 @@ class TaskTest extends KernelTestBase {
     $tasks[2]->delete();
     $this->assertEquals(--$num, $this->taskManager->getTasksCount());
 
-    $this->taskManager->executeSingleTask(array(
+    $this->taskManager->executeSingleTask([
       'index_id' => $this->index->id(),
-    ));
+    ]);
     $this->assertEquals(--$num, $this->taskManager->getTasksCount());
 
-    $this->taskManager->executeAllTasks(array(
-      'type' => array('search_api_test_tasks.success', 'foobar'),
-    ));
+    $this->taskManager->executeAllTasks([
+      'type' => ['search_api_test_tasks.success', 'foobar'],
+    ]);
     $this->assertEquals($num -= 2, $this->taskManager->getTasksCount());
 
     $tasks[7] = $this->addTask('success');
@@ -276,11 +270,11 @@ class TaskTest extends KernelTestBase {
   protected function addTask($type, ServerInterface $server = NULL, IndexInterface $index = NULL, $data = NULL) {
     $type = "search_api_test_tasks.$type";
     $count_before = $this->taskManager->getTasksCount();
-    $conditions = array(
+    $conditions = [
       'type' => $type,
       'server_id' => $server ? $server->id() : NULL,
       'index_id' => $index ? $index->id() : NULL,
-    );
+    ];
     $conditions = array_filter($conditions);
     $count_before_conditions = $this->taskManager->getTasksCount($conditions);
 

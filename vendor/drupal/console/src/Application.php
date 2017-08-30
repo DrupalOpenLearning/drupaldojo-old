@@ -2,17 +2,20 @@
 
 namespace Drupal\Console;
 
+use Doctrine\Common\Annotations\AnnotationRegistry;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
+use Drupal\Console\Annotations\DrupalCommandAnnotationReader;
 use Drupal\Console\Utils\AnnotationValidator;
-use Drupal\Console\Style\DrupalStyle;
+use Drupal\Console\Core\Application as BaseApplication;
 
 /**
  * Class Application
+ *
  * @package Drupal\Console
  */
-class Application extends ConsoleApplication
+class Application extends BaseApplication
 {
     /**
      * @var string
@@ -22,11 +25,33 @@ class Application extends ConsoleApplication
     /**
      * @var string
      */
-    const VERSION = '1.0.0-rc9';
+    const VERSION = '1.0.1';
 
     public function __construct(ContainerInterface $container)
     {
         parent::__construct($container, $this::NAME, $this::VERSION);
+    }
+
+    /**
+     * Returns the long version of the application.
+     *
+     * @return string The long application version
+     */
+    public function getLongVersion()
+    {
+        $output = '';
+
+        if ('UNKNOWN' !== $this->getName()) {
+            if ('UNKNOWN' !== $this->getVersion()) {
+                $output .= sprintf('<info>%s</info> version <comment>%s</comment>', $this->getName(), $this->getVersion());
+            } else {
+                $output .= sprintf('<info>%s</info>', $this->getName());
+            }
+        } else {
+            $output .= '<info>Drupal Console</info>';
+        }
+
+        return $output;
     }
 
     /**
@@ -42,13 +67,9 @@ class Application extends ConsoleApplication
         if ($clear === true || $clear === 'true') {
             $output->write(sprintf("\033\143"));
         }
-        parent::doRun($input, $output);
-        if ($this->getCommandName($input) == 'list' && $this->container->hasParameter('console.warning')) {
-            $io = new DrupalStyle($input, $output);
-            $io->warning(
-                $this->trans($this->container->getParameter('console.warning'))
-            );
-        }
+
+        $exitCode = parent::doRun($input, $output);
+        return $exitCode;
     }
 
     private function registerGenerators()
@@ -68,7 +89,13 @@ class Application extends ConsoleApplication
                 continue;
             }
 
-            $generator = $this->container->get($name);
+            try {
+                $generator = $this->container->get($name);
+            } catch (\Exception $e) {
+                echo $name . ' - ' . $e->getMessage() . PHP_EOL;
+
+                continue;
+            }
 
             if (!$generator) {
                 continue;
@@ -90,7 +117,6 @@ class Application extends ConsoleApplication
 
     private function registerCommands()
     {
-        $logger = $this->container->get('console.logger');
         if ($this->container->hasParameter('drupal.commands')) {
             $consoleCommands = $this->container->getParameter(
                 'drupal.commands'
@@ -103,15 +129,20 @@ class Application extends ConsoleApplication
                 'console.warning',
                 'application.site.errors.settings'
             );
-
-            $logger->writeln($this->trans('application.site.errors.settings'));
         }
 
         $serviceDefinitions = [];
         $annotationValidator = null;
+        $annotationCommandReader = null;
         if ($this->container->hasParameter('console.service_definitions')) {
             $serviceDefinitions = $this->container
                 ->getParameter('console.service_definitions');
+
+            /**
+             * @var DrupalCommandAnnotationReader $annotationCommandReader
+             */
+            $annotationCommandReader = $this->container
+                ->get('console.annotation_command_reader');
 
             /**
              * @var AnnotationValidator $annotationValidator
@@ -125,11 +156,20 @@ class Application extends ConsoleApplication
             ->get('application.commands.aliases')?:[];
 
         foreach ($consoleCommands as $name) {
+
+            AnnotationRegistry::reset();
+            AnnotationRegistry::registerLoader(
+                [
+                    $this->container->get('class_loader'),
+                    "loadClass"
+                ]
+            );
+
             if (!$this->container->has($name)) {
                 continue;
             }
 
-            if ($annotationValidator) {
+            if ($annotationValidator && $annotationCommandReader) {
                 if (!$serviceDefinition = $serviceDefinitions[$name]) {
                     continue;
                 }
@@ -137,12 +177,23 @@ class Application extends ConsoleApplication
                 if (!$annotationValidator->isValidCommand($serviceDefinition->getClass())) {
                     continue;
                 }
+
+                $annotation = $annotationCommandReader
+                    ->readAnnotation($serviceDefinition->getClass());
+                if ($annotation) {
+                    $this->container->get('console.translator_manager')
+                        ->addResourceTranslationsByExtension(
+                            $annotation['extension'],
+                            $annotation['extensionType']
+                        );
+                }
             }
 
             try {
                 $command = $this->container->get($name);
             } catch (\Exception $e) {
-                $logger->writeln($e->getMessage());
+                echo $name . ' - ' . $e->getMessage() . PHP_EOL;
+
                 continue;
             }
 
@@ -163,7 +214,10 @@ class Application extends ConsoleApplication
             }
 
             if (array_key_exists($command->getName(), $aliases)) {
-                $commandAliases = $aliases[$command->getName()];
+                $commandAliases = array_unique(array_merge(
+                    $command->getAliases()?$command->getAliases():[],
+                    array_key_exists($command->getName(), $aliases)?$aliases[$command->getName()]:[]
+                ));
                 if (!is_array($commandAliases)) {
                     $commandAliases = [$commandAliases];
                 }
@@ -184,9 +238,10 @@ class Application extends ConsoleApplication
             'help',
             'init',
             'list',
-        //            'self-update',
+            'shell',
             'server'
         ];
+
         $languages = $this->container->get('console.configuration_manager')
             ->getConfiguration()
             ->get('application.languages');
@@ -249,16 +304,16 @@ class Application extends ConsoleApplication
             'arguments' => $arguments,
             'languages' => $languages,
             'messages' => [
-                'title' =>  $this->trans('commands.generate.doc.gitbook.messages.title'),
-                'note' =>  $this->trans('commands.generate.doc.gitbook.messages.note'),
-                'note_description' =>  $this->trans('commands.generate.doc.gitbook.messages.note-description'),
-                'command' =>  $this->trans('commands.generate.doc.gitbook.messages.command'),
-                'options' => $this->trans('commands.generate.doc.gitbook.messages.options'),
-                'option' => $this->trans('commands.generate.doc.gitbook.messages.option'),
-                'details' => $this->trans('commands.generate.doc.gitbook.messages.details'),
-                'arguments' => $this->trans('commands.generate.doc.gitbook.messages.arguments'),
-                'argument' => $this->trans('commands.generate.doc.gitbook.messages.argument'),
-                'examples' => $this->trans('commands.generate.doc.gitbook.messages.examples')
+                'title' => $this->trans('application.gitbook.messages.title'),
+                'note' =>  $this->trans('application.gitbook.messages.note'),
+                'note_description' =>  $this->trans('application.gitbook.messages.note-description'),
+                'command' =>  $this->trans('application.gitbook.messages.command'),
+                'options' => $this->trans('application.gitbook.messages.options'),
+                'option' => $this->trans('application.gitbook.messages.option'),
+                'details' => $this->trans('application.gitbook.messages.details'),
+                'arguments' => $this->trans('application.gitbook.messages.arguments'),
+                'argument' => $this->trans('application.gitbook.messages.argument'),
+                'examples' => $this->trans('application.gitbook.messages.examples')
             ],
             'examples' => []
         ];
@@ -326,16 +381,23 @@ class Application extends ConsoleApplication
             'key' => $commandKey,
             'dashed' => str_replace(':', '-', $command->getName()),
             'messages' => [
-                'usage' =>  $this->trans('commands.generate.doc.gitbook.messages.usage'),
-                'options' => $this->trans('commands.generate.doc.gitbook.messages.options'),
-                'option' => $this->trans('commands.generate.doc.gitbook.messages.option'),
-                'details' => $this->trans('commands.generate.doc.gitbook.messages.details'),
-                'arguments' => $this->trans('commands.generate.doc.gitbook.messages.arguments'),
-                'argument' => $this->trans('commands.generate.doc.gitbook.messages.argument'),
-                'examples' => $this->trans('commands.generate.doc.gitbook.messages.examples')
+                'usage' =>  $this->trans('application.gitbook.messages.usage'),
+                'options' => $this->trans('application.gitbook.messages.options'),
+                'option' => $this->trans('application.gitbook.messages.option'),
+                'details' => $this->trans('application.gitbook.messages.details'),
+                'arguments' => $this->trans('application.gitbook.messages.arguments'),
+                'argument' => $this->trans('application.gitbook.messages.argument'),
+                'examples' => $this->trans('application.gitbook.messages.examples')
             ],
         ];
 
         return $data;
+    }
+
+    public function setContainer($container)
+    {
+        $this->container = $container;
+        $this->registerGenerators();
+        $this->registerCommands();
     }
 }

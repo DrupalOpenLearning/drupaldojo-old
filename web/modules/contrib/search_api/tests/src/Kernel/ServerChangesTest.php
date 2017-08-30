@@ -40,12 +40,12 @@ class ServerChangesTest extends KernelTestBase {
   /**
    * {@inheritdoc}
    */
-  public static $modules = array(
+  public static $modules = [
     'search_api',
     'search_api_test',
     'user',
     'system',
-  );
+  ];
 
   /**
    * The task manager to use for the tests.
@@ -68,8 +68,8 @@ class ServerChangesTest extends KernelTestBase {
     parent::setUp();
 
     $this->installEntitySchema('user');
-    $this->installSchema('search_api', array('search_api_item'));
-    $this->installSchema('system', array('key_value_expire'));
+    $this->installSchema('search_api', ['search_api_item']);
+    $this->installSchema('system', ['key_value_expire']);
     $this->installEntitySchema('search_api_task');
 
     // Set tracking page size so tracking will work properly.
@@ -79,34 +79,28 @@ class ServerChangesTest extends KernelTestBase {
       ->save();
 
     // Create a test server.
-    $this->server = Server::create(array(
+    $this->server = Server::create([
       'name' => 'Test Server',
       'id' => 'test_server',
       'status' => 1,
       'backend' => 'search_api_test',
-    ));
+    ]);
     $this->server->save();
 
     // Create a test index.
-    $this->index = Index::create(array(
+    $this->index = Index::create([
       'name' => 'Test index',
       'id' => 'test_index',
       'status' => 1,
-      'datasource_settings' => array(
-        'entity:user' => array(
-          'plugin_id' => 'entity:user',
-          'settings' => array(),
-        ),
-      ),
-      'tracker_settings' => array(
-        'default' => array(
-          'plugin_id' => 'default',
-          'settings' => array(),
-        ),
-      ),
+      'datasource_settings' => [
+        'entity:user' => [],
+      ],
+      'tracker_settings' => [
+        'default' => [],
+      ],
       'server' => $this->server->id(),
-      'options' => array('index_directly' => FALSE),
-    ));
+      'options' => ['index_directly' => FALSE],
+    ]);
 
     // Reset the list of called backend methods.
     $this->getCalledMethods('backend');
@@ -126,15 +120,15 @@ class ServerChangesTest extends KernelTestBase {
     $this->index->delete();
 
     $methods = $this->getCalledMethods('backend');
-    $methods = array_intersect($methods, array('addIndex', 'removeIndex'));
-    $expected = array(
+    $methods = array_intersect($methods, ['addIndex', 'removeIndex']);
+    $expected = [
       'addIndex',
       'removeIndex',
       'addIndex',
       'removeIndex',
       'addIndex',
       'removeIndex',
-    );
+    ];
     $this->assertEquals($expected, array_values($methods));
   }
 

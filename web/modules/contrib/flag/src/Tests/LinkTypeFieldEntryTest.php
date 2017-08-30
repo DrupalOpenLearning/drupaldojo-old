@@ -18,6 +18,9 @@ class LinkTypeFieldEntryTest extends FlagTestBase {
   protected $flagConfirmMessage = 'Flag test label 123?';
   protected $flagDetailsMessage = 'Enter flag test label 123 details';
   protected $unflagConfirmMessage = 'Unflag test label 123?';
+  protected $createButtonText = 'Create flagging 123?';
+  protected $deleteButtonText = 'Delete flagging 123?';
+  protected $updateButtonText = 'Updating flagging 123?';
 
   protected $flagFieldId = 'flag_text_field';
   protected $flagFieldLabel = 'Flag Text Field';
@@ -83,6 +86,9 @@ class LinkTypeFieldEntryTest extends FlagTestBase {
         'flag_confirmation' => $this->flagConfirmMessage,
         'unflag_confirmation' => $this->unflagConfirmMessage,
         'edit_flagging' => $this->flagDetailsMessage,
+        'flag_create_button' => $this->createButtonText,
+        'flag_delete_button' => $this->deleteButtonText,
+        'flag_update_button' => $this->updateButtonText,
       ],
       'link_type' => 'field_entry',
     ];
@@ -119,7 +125,7 @@ class LinkTypeFieldEntryTest extends FlagTestBase {
 
     // Click the flag link.
     $this->drupalGet('node/' . $this->nodeId);
-    $this->clickLink($this->flag->getFlagShortText());
+    $this->clickLink($this->flag->getShortText('flag'));
 
     // Check if we have the confirm form message displayed.
     $this->assertText($this->flagConfirmMessage);
@@ -129,10 +135,10 @@ class LinkTypeFieldEntryTest extends FlagTestBase {
     $edit = [
       'field_' . $this->flagFieldId . '[0][value]' => $this->flagFieldValue,
     ];
-    $this->drupalPostForm(NULL, $edit, t('Create Flagging'));
+    $this->drupalPostForm(NULL, $edit, $this->createButtonText);
 
     // Check that the node is flagged.
-    $this->assertLink($this->flag->getUnflagShortText());
+    $this->assertLink($this->flag->getShortText('unflag'));
   }
 
   /**
@@ -144,7 +150,7 @@ class LinkTypeFieldEntryTest extends FlagTestBase {
     $this->drupalGet('node/' . $this->nodeId);
 
     // Get the details form.
-    $this->clickLink($this->flag->getUnflagShortText());
+    $this->clickLink($this->flag->getShortText('unflag'));
     $this->assertUrl('flag/details/edit/' . $flag_id . '/' . $this->nodeId, [
       'query' => [
         'destination' => 'node/' . $this->nodeId,
@@ -162,7 +168,7 @@ class LinkTypeFieldEntryTest extends FlagTestBase {
     $edit = [
       'field_' . $this->flagFieldId . '[0][value]' => $this->flagFieldValue,
     ];
-    $this->drupalPostForm(NULL, $edit, t('Update Flagging'));
+    $this->drupalPostForm(NULL, $edit, $this->updateButtonText);
 
     // Get the details form.
     $this->drupalGet('flag/details/edit/' . $flag_id . '/' . $this->nodeId);
@@ -200,21 +206,21 @@ class LinkTypeFieldEntryTest extends FlagTestBase {
     $this->drupalGet('node/' . $this->nodeId);
 
     // Click the Unflag link.
-    $this->clickLink($this->flag->getUnflagShortText());
+    $this->clickLink($this->flag->getShortText('unflag'));
 
     // Click the delete link.
-    $this->clickLink($this->t('Delete Flagging'));
+    $this->clickLink($this->deleteButtonText);
 
     // Check if we have the confirm form message displayed.
     $this->assertText($this->unflagConfirmMessage);
 
     // Submit the confirm form.
-    $this->drupalPostForm(NULL, [], $this->t('Unflag'));
+    $this->drupalPostForm(NULL, [], $this->deleteButtonText);
     $this->assertResponse(200);
 
     // Check that the node is no longer flagged.
     $this->drupalGet('node/' . $this->nodeId);
-    $this->assertLink($this->flag->getFlagShortText());
+    $this->assertLink($this->flag->getShortText('flag'));
   }
 
 }

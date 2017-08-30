@@ -30,14 +30,14 @@ class UnflagConfirmForm extends FlagConfirmFormBase {
    * {@inheritdoc}
    */
   public function getDescription() {
-    return $this->flag->getUnflagLongText();
+    return $this->flag->getLongText('unflag');
   }
 
   /**
    * {@inheritdoc}
    */
   public function getConfirmText() {
-    return $this->t('Unflag');
+    return $this->flag->getLinkTypePlugin()->getDeleteButtonText();
   }
 
   /**

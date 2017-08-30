@@ -18,9 +18,16 @@ use Drupal\user\UserInterface;
  * @ContentEntityType(
  *  id = "flagging",
  *  label = @Translation("Flagging"),
+ *  label_singular = @Translation("flagging"),
+ *  label_plural = @Translation("flaggings"),
+ *  label_count = @PluralTranslation(
+ *    singular = "@count flagging",
+ *    plural = "@count flaggings",
+ *  ),
  *  bundle_label = @Translation("Flagging"),
  *  handlers = {
  *    "storage" = "Drupal\flag\Entity\Storage\FlaggingStorage",
+ *    "storage_schema" = "Drupal\flag\Entity\Storage\FlaggingStorageSchema",
  *    "form" = {
  *      "add" = "Drupal\flag\Form\FlaggingForm",
  *      "edit" = "Drupal\flag\Form\FlaggingForm",
@@ -61,7 +68,7 @@ class Flagging extends ContentEntityBase implements FlaggingInterface {
    * {@inheritdoc}
    */
   public function getFlagId() {
-    return $this->get('flag_id')->value;
+    return $this->get('flag_id')->target_id;
   }
 
   /**
@@ -98,22 +105,11 @@ class Flagging extends ContentEntityBase implements FlaggingInterface {
    * {@inheritdoc}
    */
   public static function baseFieldDefinitions(EntityTypeInterface $entity_type) {
-    $fields['id'] = BaseFieldDefinition::create('integer')
-      ->setLabel(t('Flagging ID'))
-      ->setDescription(t('The flagging ID.'))
-      ->setSetting('unsigned', TRUE)
-      ->setReadOnly(TRUE);
+    $fields = parent::baseFieldDefinitions($entity_type);
 
-    $fields['uuid'] = BaseFieldDefinition::create('uuid')
-      ->setLabel(t('UUID'))
-      ->setDescription(t('The flagging UUID.'))
-      ->setReadOnly(TRUE);
-
-    $fields['flag_id'] = BaseFieldDefinition::create('string')
-      ->setLabel(t('Flag ID'))
-      ->setDescription(t('The Flag ID.'))
-      ->setRequired(TRUE)
-      ->setReadOnly(TRUE);
+    // Add descriptions to the fields defined by the parent method.
+    $fields['id']->setDescription(t('The flagging ID.'));
+    $fields['flag_id']->setDescription(t('The Flag ID.'));
 
     // This field is on flaggings even though it duplicates the entity type
     // field on the flag so that flagging queries can use it.
@@ -138,11 +134,15 @@ class Flagging extends ContentEntityBase implements FlaggingInterface {
 
     $fields['uid'] = BaseFieldDefinition::create('entity_reference')
       ->setLabel(t('User ID'))
-      ->setDescription(t('The user ID of the flagging user.'))
+      ->setDescription(t('The user ID of the flagging user. This is recorded for both global and personal flags.'))
       ->setSettings([
         'target_type' => 'user',
         'default_value' => 0,
       ]);
+
+    $fields['session_id'] = BaseFieldDefinition::create('string')
+      ->setLabel(t('Session ID'))
+      ->setDescription(t('The session ID associated with an anonymous user.'));
 
     $fields['created'] = BaseFieldDefinition::create('created')
       ->setLabel(t('Created'))
@@ -181,12 +181,6 @@ class Flagging extends ContentEntityBase implements FlaggingInterface {
    * {@inheritdoc
    */
   public function postSave(EntityStorageInterface $storage, $update = TRUE) {
-    if ($this->uid->entity && $this->uid->entity->isAnonymous()) {
-      $session = \Drupal::request()->getSession();
-      $session_flaggings = $session->get('flaggings', []);
-      $session_flaggings[] = $this->id();
-      $session->set('flaggings', $session_flaggings);
-    }
     parent::postSave($storage, $update);
 
     if (!$update) {
@@ -202,19 +196,6 @@ class Flagging extends ContentEntityBase implements FlaggingInterface {
 
     $event = new UnflaggingEvent($entities);
     \Drupal::service('event_dispatcher')->dispatch(FlagEvents::ENTITY_UNFLAGGED, $event);
-  }
-
-  /**
-   * {@inheritdoc}
-   */
-  public static function postDelete(EntityStorageInterface $storage, array $entities) {
-    $is_anonyymous = function (Flagging $entity) {
-      return $entity->uid->entity && $entity->uid->entity->isAnonymous();
-    };
-    if (($session = \Drupal::request()->getSession()) && ($delete = array_keys(array_filter($entities, $is_anonyymous)))) {
-      $session->set('flaggings', array_diff($session->get('flaggings', []), $delete));
-    }
-    parent::postDelete($storage, $entities);
   }
 
   /**

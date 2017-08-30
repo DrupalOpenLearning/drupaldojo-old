@@ -2,9 +2,6 @@
 
 namespace Drupal\group\Plugin\Block;
 
-use Drupal\group\Cache\Context\GroupTypeCacheContext;
-use Drupal\group\Cache\Context\GroupMembershipCacheContext;
-use Drupal\Core\Cache\Cache;
 use Drupal\Core\Block\BlockBase;
 
 /**
@@ -52,7 +49,13 @@ class GroupOperationsBlock extends BlockBase {
       }
 
       if ($links) {
+        // Allow modules to alter the collection of gathered links.
+        \Drupal::moduleHandler()->alter('group_operations', $links, $group);
+
+        // Sort the operations by weight.
         uasort($links, '\Drupal\Component\Utility\SortArray::sortByWeightElement');
+
+        // Create an operations element with all of the links.
         $build['#type'] = 'operations';
         // @todo We should have operation links provide cacheable metadata that
         // we could then merge in here.

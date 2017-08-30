@@ -10,6 +10,7 @@ define('FLAG_API_VERSION', 3);
 use Drupal\Core\Access\AccessResult;
 use Drupal\Core\Session\AccountInterface;
 use Drupal\Core\Entity\ContentEntityFormInterface;
+use Drupal\Core\Form\ConfirmFormInterface;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\flag\Plugin\Flag\EntityFlagType;
 use Drupal\Core\Cache\Cache;
@@ -17,6 +18,7 @@ use Drupal\node\NodeInterface;
 use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Entity\Display\EntityViewDisplayInterface;
 use Drupal\Core\Routing\RouteMatchInterface;
+use Drupal\system\Entity\Action;
 use Drupal\user\UserInterface;
 use Drupal\flag\FlagInterface;
 use Drupal\Core\Url;
@@ -49,7 +51,7 @@ function flag_help($route_name, RouteMatchInterface $route_match) {
       $output .= '<p>' . t('To learn about the various ways to use flags, please check out the <a href="@handbook-url">Flag module handbook</a>.', ['@handbook-url' => 'http://drupal.org/handbook/modules/flag']) . '</p>';
       return $output;
     case 'flag.add_page':
-      $output = '<p>' . t('Select the type of flag to create. An individual flag can only affect one type of object. This cannot be changed once the flag is created.') . '</p>';
+      $output = '<p>' . t('Select the type of flag to create.') . '</p>';
       return $output;
     case 'field_ui.overview_flagging':
       // @todo: Doesn't make sense at the moment, implement when form
@@ -116,29 +118,33 @@ function flag_help($route_name, RouteMatchInterface $route_match) {
 }
 
 /**
- * Implements hook_form_FORM_ID_alter(): user_admin_permissions().
- *
- * Disable permission on the permissions form that don't make sense for
- * anonymous users when Session API module is not enabled.
- */
-/*function flag_form_user_admin_permissions_alter(&$form, FormStateInterface $form_state, $form_id) {
-  @todo: Conditionally disable anon flagging permissions.
-}*/
-
-/**
  * Implements hook_form_alter().
  */
 function flag_form_alter(&$form, FormStateInterface $form_state, $form_id) {
   $object = $form_state->getFormObject();
-  if (!($object instanceof ContentEntityFormInterface)) {
+  if (!($object instanceof ContentEntityFormInterface) || ($object instanceof ConfirmFormInterface)) {
     return;
   }
   $flag_service = \Drupal::service('flag');
   $entity = $object->getEntity();
-  $flags = $flag_service->getFlags($entity->getEntityTypeId(), $entity->bundle(), \Drupal::currentUser());
-  $filtered_flags = array_filter($flags, function(FlagInterface $flag) {
+
+  $flags = $flag_service->getAllFlags($entity->getEntityTypeId(), $entity->bundle());
+  // Filter the flags to those that apply here:
+  //  - the flag uses the entity type plugin.
+  //  - the plugin is configured to output the flag in the entity form.
+  //  - the form is considered to be an edit form.
+  //  - the current user has access to the flag.
+  $filtered_flags = array_filter($flags, function(FlagInterface $flag) use ($flag_service, $object) {
     $plugin = $flag->getFlagTypePlugin();
-    return $plugin instanceof EntityFlagType && $plugin->showOnForm();
+    $entity = $object->getEntity();
+    $flagging = $flag_service->getFlagging($flag, $entity);
+    $action = is_null($flagging) ? 'flag' : 'unflag';
+    $access = $flag->actionAccess($action, NULL, $entity);
+
+    return ($plugin instanceof EntityFlagType)
+      && $plugin->showOnForm()
+      && $plugin->isAddEditForm($object->getOperation())
+      && $access->isAllowed();
   });
   if (!empty($filtered_flags)) {
     $form['flag'] = array(
@@ -149,12 +155,13 @@ function flag_form_alter(&$form, FormStateInterface $form_state, $form_id) {
       '#tree' => TRUE,
     );
     foreach ($filtered_flags as $flag) {
-      $account = $flag->isGlobal()? NULL : \Drupal::currentUser();
-      $flagging = $flag_service->getFlagging($flag, $entity, $account);
+      // TODO: refactor so we don't check this twice per flag.
+      $flagging = $flag_service->getFlagging($flag, $entity);
+
       $form['flag'][$flag->id()] = array(
         '#type' => 'checkbox',
         '#title' => $flag->label(),
-        '#description' => $flag->getFlagLongText(),
+        '#description' => $flag->getLongText('flag'),
         '#default_value' => is_null($flagging)? NULL: 1,
         '#return_value' => 1,
         // Used by our drupalSetSummary() on vertical tabs.
@@ -232,7 +239,7 @@ function flag_form_save(EntityInterface $entity, $values) {
 function flag_entity_extra_field_info() {
   $extra = [];
   $flag_service = \Drupal::service('flag');
-  $flags = $flag_service->getFlags();
+  $flags = $flag_service->getAllFlags();
   foreach ($flags as $flag) {
     // Skip flags that aren't on entities.
     $flag_type_plugin = $flag->getFlagTypePlugin();
@@ -322,7 +329,7 @@ function flag_entity_view(array &$build, EntityInterface $entity, EntityViewDisp
 
   // Get all possible flags for this entity type.
   $flag_service = \Drupal::service('flag');
-  $flags = $flag_service->getFlags($entity->getEntityTypeID(), $entity->bundle());
+  $flags = $flag_service->getAllFlags($entity->getEntityTypeID(), $entity->bundle());
 
   foreach ($flags as $flag) {
     $build['#cache']['tags'] = Cache::mergeTags($build['#cache']['tags'], $flag->getCacheTags());
@@ -358,7 +365,7 @@ function flag_entity_build_defaults_alter(array &$build, EntityInterface $entity
   $flag_service = \Drupal::service('flag');
 
   // Get all possible flags for this entity type.
-  $flags = $flag_service->getFlags($entity->getEntityTypeId(), $entity->bundle());
+  $flags = $flag_service->getAllFlags($entity->getEntityTypeId(), $entity->bundle());
 
   $no_cache = FALSE;
   foreach ($flags as $flag) {
@@ -398,7 +405,7 @@ function flag_entity_view_alter(&$build, EntityInterface $entity, EntityViewDisp
     $flag_service = \Drupal::service('flag');
 
     // Get all possible flags for this entity type.
-    $flags = $flag_service->getFlags($entity_type, $entity->bundle());
+    $flags = $flag_service->getAllFlags($entity_type, $entity->bundle());
 
     foreach ($flags as $flag) {
       $flag_type_plugin = $flag->getFlagTypePlugin();
@@ -444,7 +451,7 @@ function flag_contextual_links_alter(array &$links, $group, array $route_paramet
 
   // Get all possible flags for this entity type.
   $flag_service = \Drupal::service('flag');
-  $flags = $flag_service->getFlags($entity->getEntityTypeID(), $entity->bundle());
+  $flags = $flag_service->getAllFlags($entity->getEntityTypeID(), $entity->bundle());
 
   foreach ($flags as $flag) {
     /** @var \Drupal\flag\FlagInterface $flag */
@@ -466,29 +473,16 @@ function flag_contextual_links_alter(array &$links, $group, array $route_paramet
       continue;
     }
 
-    // Use reload link type plugin for contextual links display.
-    $flag_type_collection = new DefaultSingleLazyPluginCollection(
-      \Drupal::service('plugin.manager.flag.linktype'),
-      'reload', $flag_type_plugin->getConfiguration()
-    );
+    $flag_link = $flag
+      ->getLinkTypePlugin()
+      ->getAsLink($flag, $entity);
 
-    /** @var \Drupal\flag\Plugin\ActionLink\Reload $link_type_plugin */
-    $link_type_plugin = $flag_type_collection->get('reload');
+    $flag_url = $flag_link->getUrl();
 
-    $action = 'flag';
-    if ($flag->isFlagged($entity)) {
-      $action = 'unflag';
-    }
-
-    // Render the link to get the title.
-    $link = $link_type_plugin->buildLink($action, $flag, $entity);
     $links["flag_{$flag->id()}"] = array(
-      'route_name' => $link_type_plugin->routeName($action),
-      'route_parameters' => array(
-        'flag' => $flag->id(),
-        'entity_id' => $entity->id(),
-      ),
-      'title' => $link['#title'],
+      'route_name' => $flag_url->getRouteName(),
+      'route_parameters' => $flag_url->getRouteParameters(),
+      'title' => $flag_link->getText(),
     );
   }
 }
@@ -568,4 +562,66 @@ function flag_hook_info() {
   );
 
   return $hooks;
+}
+
+/**
+ * Implements hook_ENTITY_TYPE_insert().
+ */
+function flag_flag_insert(FlagInterface $flag) {
+  if ($flag->isSyncing()) {
+    // Do not create actions when config is progress of synchronization.
+    return;
+  }
+  // The action plugin cache needs to detect the new flag.
+  /** @var \Drupal\Core\Action\ActionManager $action_manager */
+  $action_manager = \Drupal::service('plugin.manager.action');
+  $action_manager->clearCachedDefinitions();
+
+  // Add the flag/unflag actions for this flag and entity combination.
+  $flag_id = 'flag_action.' . $flag->id() . '.flag';
+  if (!Action::load($flag_id)) {
+    $action = Action::create([
+      'id' => $flag_id,
+      'type' => $flag->getFlaggableEntityTypeId(),
+      'label' => $flag->getShortText('flag'),
+      'plugin' => 'flag_action:' . $flag->id() . '.flag',
+      'configuration' => [
+        'flag_id' => $flag->id(),
+        'flag_action' => 'flag'
+      ],
+    ]);
+    $action->trustData()->save();
+  }
+  $unflag_id = 'flag_action.' . $flag->id() . '.unflag';
+  if (!Action::load($unflag_id)) {
+    $action = Action::create([
+      'id' => $unflag_id,
+      'type' => $flag->getFlaggableEntityTypeId(),
+      'label' => $flag->getShortText('unflag'),
+      'plugin' => 'flag_action:' . $flag->id() . '.unflag',
+      'configuration' => [
+        'flag_id' => $flag->id(),
+        'flag_action' => 'unflag'
+      ],
+    ]);
+    $action->trustData()->save();
+  }
+}
+
+/**
+ * Implements hook_ENTITY_TYPE_delete().
+ */
+function flag_flag_delete(FlagInterface $flag) {
+  if ($flag->isSyncing()) {
+    // Do not delete actions when config is progress of synchronization.
+    return;
+  }
+  // Remove the flag/unflag actions for this flag and entity combination.
+  $actions = Action::loadMultiple([
+    'flag_action.' . $flag->id() . '.flag',
+    'flag_action.' . $flag->id() . '.unflag',
+  ]);
+  foreach ($actions as $action) {
+    $action->delete();
+  }
 }

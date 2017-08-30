@@ -69,7 +69,7 @@ class SearchApiEntity extends SearchApiStandard {
   public function defineOptions() {
     $options = parent::defineOptions();
 
-    $options['display_methods'] = array('default' => array());
+    $options['display_methods'] = ['default' => []];
 
     return $options;
   }
@@ -81,8 +81,8 @@ class SearchApiEntity extends SearchApiStandard {
     parent::buildOptionsForm($form, $form_state);
 
     $entity_type_id = $this->getTargetEntityTypeId();
-    $view_modes = array();
-    $bundles = array();
+    $view_modes = [];
+    $bundles = [];
     if ($entity_type_id) {
       $bundles = $this->getEntityManager()->getBundleInfo($entity_type_id);
       // In case the field definition specifies the bundles to expect, restrict
@@ -99,16 +99,16 @@ class SearchApiEntity extends SearchApiStandard {
 
     foreach ($bundles as $bundle => $info) {
       $args['@bundle'] = $info['label'];
-      $form['display_methods'][$bundle]['display_method'] = array(
+      $form['display_methods'][$bundle]['display_method'] = [
         '#type' => 'select',
         '#title' => $this->t('Display for "@bundle" bundle', $args),
-        '#options' => array(
+        '#options' => [
           '' => $this->t('Hide'),
           'id' => $this->t('Raw ID'),
           'label' => $this->t('Only label'),
-        ),
+        ],
         '#default_value' => 'label',
-      );
+      ];
       $display_method = $this->getDisplayMethod($bundle);
       if ($display_method !== NULL) {
         $form['display_methods'][$bundle]['display_method']['#default_value'] = $display_method;
@@ -116,28 +116,28 @@ class SearchApiEntity extends SearchApiStandard {
       if (!empty($view_modes[$bundle])) {
         $form['display_methods'][$bundle]['display_method']['#options']['view_mode'] = $this->t('Entity view');
         if (count($view_modes[$bundle]) > 1) {
-          $form['display_methods'][$bundle]['view_mode'] = array(
+          $form['display_methods'][$bundle]['view_mode'] = [
             '#type' => 'select',
             '#title' => $this->t('View mode for "@bundle" bundle', $args),
             '#options' => $view_modes[$bundle],
-            '#states' => array(
-              'visible' => array(
-                ':input[name="options[display_methods][' . $bundle . '][display_method]"]' => array(
+            '#states' => [
+              'visible' => [
+                ':input[name="options[display_methods][' . $bundle . '][display_method]"]' => [
                   'value' => 'view_mode',
-                ),
-              ),
-            ),
-          );
+                ],
+              ],
+            ],
+          ];
           if (isset($this->options['display_methods'][$bundle]['view_mode'])) {
             $form['display_methods'][$bundle]['view_mode']['#default_value'] = $this->options['display_methods'][$bundle]['view_mode'];
           }
         }
         else {
           reset($view_modes[$bundle]);
-          $form['display_methods'][$bundle]['view_mode'] = array(
+          $form['display_methods'][$bundle]['view_mode'] = [
             '#type' => 'value',
             '#value' => key($view_modes[$bundle]),
-          );
+          ];
         }
       }
       if (count($bundles) == 1) {
@@ -186,7 +186,7 @@ class SearchApiEntity extends SearchApiStandard {
       if (!empty($row->{$property_path})) {
         foreach ((array) $row->{$property_path} as $j => $value) {
           if (is_scalar($value)) {
-            $to_load[$value][] = array($i, $j);
+            $to_load[$value][] = [$i, $j];
           }
         }
       }
@@ -233,7 +233,7 @@ class SearchApiEntity extends SearchApiStandard {
   public function getItems(ResultRow $values) {
     $property_path = $this->getCombinedPropertyPath();
     if (!empty($values->{$property_path})) {
-      $items = array();
+      $items = [];
       foreach ((array) $values->{$property_path} as $value) {
         if ($value instanceof EntityInterface) {
           $item = $this->getItem($value);
@@ -244,7 +244,7 @@ class SearchApiEntity extends SearchApiStandard {
       }
       return $items;
     }
-    return array();
+    return [];
   }
 
   /**
@@ -265,7 +265,7 @@ class SearchApiEntity extends SearchApiStandard {
       return NULL;
     }
 
-    if (in_array($display_method, array('id', 'label'))) {
+    if (in_array($display_method, ['id', 'label'])) {
       if ($display_method == 'label') {
         $item['value'] = $entity->label();
       }
@@ -285,9 +285,9 @@ class SearchApiEntity extends SearchApiStandard {
     $build = $this->getEntityManager()
       ->getViewBuilder($entity->getEntityTypeId())
       ->view($entity, $view_mode);
-    return array(
+    return [
       'value' => $build,
-    );
+    ];
   }
 
   /**

@@ -6,7 +6,12 @@ use Drupal\node\Entity\Node;
 use Drupal\flag\Entity\Flag;
 
 /**
- * Tests default hook_flag_action_access() can be overridden by other modules.
+ * Tests related to access to flags.
+ *
+ * Three distinct areas:
+ *   Default hook_flag_action_access().
+ *   Users flagging only content they own.
+ *   UserFlagType optional self flagging tests.
  *
  * @group flag
  */
@@ -18,7 +23,7 @@ class AccessTest extends FlagKernelTestBase {
   protected function setUp() {
     parent::setUp();
 
-    $this->installSchema('user', 'users_data');
+    $this->installSchema('user', 'users_data', 'flag');
 
     // The first user is uid 1, create that to avoid that our test users
     // implicitly have all permissions even those that don't exist.
@@ -78,60 +83,135 @@ class AccessTest extends FlagKernelTestBase {
   }
 
   /**
-   * User permissions.
+   * Tests owners access to flaggables.
+   *
+   * authors own articles - and can only flag their own work.
+   * editors own articles - but can only flag the work of others.
+   */
+  public function testOwnersAccess() {
+    // A review flag with extra permissions set.
+    $flag = Flag::create([
+      'id' => 'me_myself_and_I',
+      'label' => 'Self Review Flag',
+      'entity_type' => 'node',
+      'bundles' => ['article'],
+      'flag_type' => 'entity:node',
+      'link_type' => 'reload',
+      'flagTypeConfig' => [
+        'extra_permissions' => ['owner'],
+      ],
+      'linkTypeConfig' => [],
+    ]);
+    $flag->save();
+
+    $flag_id = $flag->id();
+
+    // Give authors permission to flag their own work.
+    $user_author = $this->createUser([
+      "flag $flag_id own items",
+      "unflag $flag_id own items",
+    ]);
+
+    // Editors get permission.
+    $user_editor = $this->createUser([
+      "flag $flag_id other items",
+      "unflag $flag_id other items",
+    ]);
+
+    // Article is owned by Author.
+    $article_by_author = Node::create([
+      'type' => 'article',
+      'title' => 'Article node',
+    ]);
+    $article_by_author->setOwner($user_author);
+    $article_by_author->save();
+
+    // Article owned by editor (which NO one can flag or unflag).
+    $article_by_editor = Node::create([
+      'type' => 'article',
+      'title' => 'Article node',
+    ]);
+    $article_by_editor->setOwner($user_editor);
+    $article_by_editor->save();
+
+    // Author can self review his or her own work.
+    $this->assertTrue($flag->actionAccess('flag', $user_author, $article_by_author)->isAllowed());
+    $this->assertTrue($flag->actionAccess('unflag', $user_author, $article_by_author)->isAllowed());
+
+    // Author can review others work.
+    $this->assertTrue($flag->actionAccess('flag', $user_author, $article_by_editor)->isNeutral());
+    $this->assertTrue($flag->actionAccess('unflag', $user_author, $article_by_editor)->isNeutral());
+
+    // Editors should be able to access work that is not their own.
+    $this->assertTrue($flag->actionAccess('flag', $user_editor, $article_by_author)->isAllowed());
+    $this->assertTrue($flag->actionAccess('unflag', $user_editor, $article_by_author)->isAllowed());
+
+    // Editors should not get access to the self review flag.
+    $this->assertTrue($flag->actionAccess('flag', $user_editor, $article_by_editor)->isNeutral());
+    $this->assertTrue($flag->actionAccess('unflag', $user_editor, $article_by_editor)->isNeutral());
+
+    // When no flaggable is supplied EntityFlagType::actionAccess() tests are
+    // bypassed.
+    $this->assertTrue($flag->actionAccess('flag', $user_author)->isNeutral());
+    $this->assertTrue($flag->actionAccess('flag', $user_editor)->isNeutral());
+    $this->assertTrue($flag->actionAccess('unflag', $user_author)->isNeutral());
+    $this->assertTrue($flag->actionAccess('unflag', $user_editor)->isNeutral());
+  }
+
+  /**
+   * Tests specific UserFlagType permissions.
    */
   public function testUserFlag() {
-    // Self flagging permitted.
-    $selfies_flag = Flag::create([
-      'id' => 'selfies',
+    // A flag that shows on users profiles.
+    $flag = Flag::create([
+      'id' => 'A flag about users',
       'label' => $this->randomString(),
       'entity_type' => 'user',
       'flag_type' => 'entity:user',
       'link_type' => 'reload',
       'flagTypeConfig' => [
-        // Sefies permitted.
-        'access_uid' => TRUE,
+        'extra_permissions' => ['owner'],
       ],
       'linkTypeConfig' => [],
     ]);
-    $selfies_flag->save();
+    $flag->save();
 
-    // Cannot flag yourself.
-    $no_selfies_flag = Flag::create([
-      'id' => 'no_selfies',
-      'label' => $this->randomString(),
-      'entity_type' => 'user',
-      'flag_type' => 'entity:user',
-      'link_type' => 'reload',
-      'flagTypeConfig' => [
-        // Deny selfies.
-        'access_uid' => FALSE,
-      ],
-      'linkTypeConfig' => [],
-    ]);
-    $no_selfies_flag->save();
+    $flag_id = $flag->id();
 
-    // Create a user who may flag.
+    // Create a user who may flag her own user account.
     $user_alice = $this->createUser([
-      'administer flags',
-      'flag selfies',
-      'flag no_selfies',
+      "flag $flag_id own user account",
+      "unflag $flag_id own user account",
     ]);
 
-    // Create a user who may not flag.
-    $user_bob = $this->createUser();
+    // Create a user who may flag the work of others
+    $user_bob = $this->createUser([
+      "flag $flag_id other user accounts",
+      "unflag $flag_id other user accounts",
+    ]);
 
-    // What happens when selfies are permitted.
-    $this->assertTrue($selfies_flag->actionAccess('flag', $user_alice, $user_alice)->isAllowed());
-    $this->assertTrue($selfies_flag->actionAccess('flag', $user_alice, $user_bob)->isAllowed());
+    // For Alice selfies are permitted.
+    $this->assertTrue($flag->actionAccess('flag', $user_alice, $user_alice)->isAllowed());
+    $this->assertTrue($flag->actionAccess('unflag', $user_alice, $user_alice)->isAllowed());
 
-    // What happens when selfies are banned.
-    $this->assertTrue($no_selfies_flag->actionAccess('flag', $user_alice, $user_alice)->isNeutral());
-    $this->assertTrue($no_selfies_flag->actionAccess('flag', $user_alice, $user_bob)->isAllowed());
+    // For Bob selfies are banned.
+    $this->assertTrue($flag->actionAccess('flag', $user_bob, $user_bob)->isNeutral());
+    $this->assertTrue($flag->actionAccess('unflag', $user_bob, $user_bob)->isNeutral());
 
-    // When no flaggable is supplied UserFlagType::actionAccess() tests are bypassed.
-    $this->assertTrue($no_selfies_flag->actionAccess('flag', $user_alice)->isAllowed());
-    $this->assertTrue($no_selfies_flag->actionAccess('flag', $user_bob)->isNeutral());
+    // For alice flagging other people's profiles is banned.
+    $this->assertTrue($flag->actionAccess('flag', $user_alice, $user_bob)->isNeutral());
+    $this->assertTrue($flag->actionAccess('flag', $user_alice, $user_bob)->isNeutral());
+
+    // For Bob flagging other people's profiles is permitted.
+    $this->assertTrue($flag->actionAccess('unflag', $user_bob, $user_alice)->isAllowed());
+    $this->assertTrue($flag->actionAccess('unflag', $user_bob, $user_alice)->isAllowed());
+
+    // When no flaggable is supplied UserFlagType::actionAccess() tests are
+    // bypassed.
+    $this->assertTrue($flag->actionAccess('flag', $user_alice)->isNeutral());
+    $this->assertTrue($flag->actionAccess('flag', $user_bob)->isNeutral());
+    $this->assertTrue($flag->actionAccess('unflag', $user_alice)->isNeutral());
+    $this->assertTrue($flag->actionAccess('unflag', $user_bob)->isNeutral());
   }
 
 }

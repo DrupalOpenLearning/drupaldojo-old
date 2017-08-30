@@ -60,11 +60,17 @@ class GroupMembershipRolesCacheContext extends GroupMembershipCacheContextBase i
   public function getCacheableMetadata($group_role = NULL) {
     $cacheable_metadata =  new CacheableMetadata();
 
-    // If the membership is updated, it could mean the list of roles changed as
-    // well. We therefore need to set the membership's cacheable metadata.
     if ($this->hasExistingGroup()) {
+      // If the membership is updated, it could mean the list of roles changed
+      // as well. We therefore need to set the membership's cacheable metadata.
       if ($group_membership = $this->group->getMember($this->user)) {
         $cacheable_metadata->createFromObject($group_membership);
+      }
+      // If the user is authenticated but not a member, they may receive one or
+      // more synchronized roles. So we need to add the user's cacheable
+      // metadata in case they receive or lose some global roles.
+      elseif ($this->user->isAuthenticated()) {
+        $cacheable_metadata->createFromObject($this->user);
       }
     }
 

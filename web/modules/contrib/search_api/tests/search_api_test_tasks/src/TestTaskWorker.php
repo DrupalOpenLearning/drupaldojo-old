@@ -24,15 +24,15 @@ class TestTaskWorker implements EventSubscriberInterface {
    *
    * @var string[][]
    */
-  protected $eventLog = array();
+  protected $eventLog = [];
 
   /**
    * {@inheritdoc}
    */
   public static function getSubscribedEvents() {
-    $events['search_api.task.search_api_test_tasks.success'][] = array('success');
-    $events['search_api.task.search_api_test_tasks.fail'][] = array('fail');
-    $events['search_api.task.search_api_test_tasks.ignore'][] = array('ignore');
+    $events['search_api.task.search_api_test_tasks.success'][] = ['success'];
+    $events['search_api.task.search_api_test_tasks.fail'][] = ['fail'];
+    $events['search_api.task.search_api_test_tasks.ignore'][] = ['ignore'];
 
     return $events;
   }

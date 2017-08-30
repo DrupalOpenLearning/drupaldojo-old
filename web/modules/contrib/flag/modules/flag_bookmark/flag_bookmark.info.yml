@@ -3,7 +3,7 @@ description: Provides an example bookmark flag and supporting views.
 core: 8.x
 type: module
 dependencies:
-  - flag
-  - views
-  - node
+  - flag:flag
+  - drupal:views
+  - drupal:node
 package: Flags

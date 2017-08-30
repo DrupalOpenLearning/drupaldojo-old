@@ -9,7 +9,7 @@ use Drupal\Core\Extension\ThemeHandlerInterface;
 use Drupal\Core\Site\Settings;
 use Drupal\Core\Url;
 use Drupal\config_update\ConfigDiffInterface;
-use Drupal\config_update\ConfigListInterface;
+use Drupal\config_update\ConfigListByProviderInterface;
 use Drupal\config_update\ConfigRevertInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
@@ -28,7 +28,7 @@ class ConfigUpdateController extends ControllerBase {
   /**
    * The config lister.
    *
-   * @var \Drupal\config_update\ConfigListInterface
+   * @var \Drupal\config_update\ConfigListByProviderInterface
    */
   protected $configList;
 
@@ -65,7 +65,7 @@ class ConfigUpdateController extends ControllerBase {
    *
    * @param \Drupal\config_update\ConfigDiffInterface $config_diff
    *   The config differ.
-   * @param \Drupal\config_update\ConfigListInterface $config_list
+   * @param \Drupal\config_update\ConfigListByProviderInterface $config_list
    *   The config lister.
    * @param \Drupal\config_update\ConfigRevertInterface $config_update
    *   The config reverter.
@@ -76,7 +76,7 @@ class ConfigUpdateController extends ControllerBase {
    * @param \Drupal\Core\Extension\ThemeHandlerInterface $theme_handler
    *   The theme handler.
    */
-  public function __construct(ConfigDiffInterface $config_diff, ConfigListInterface $config_list, ConfigRevertInterface $config_update, DiffFormatter $diff_formatter, ModuleHandlerInterface $module_handler, ThemeHandlerInterface $theme_handler) {
+  public function __construct(ConfigDiffInterface $config_diff, ConfigListByProviderInterface $config_list, ConfigRevertInterface $config_update, DiffFormatter $diff_formatter, ModuleHandlerInterface $module_handler, ThemeHandlerInterface $theme_handler) {
     $this->configDiff = $config_diff;
     $this->configList = $config_list;
     $this->configRevert = $config_update;
@@ -241,7 +241,7 @@ class ConfigUpdateController extends ControllerBase {
     $definitions = $this->configList->listTypes();
     $links = [];
     foreach ($definitions as $entity_type => $definition) {
-      $links['type_' . $entity_type] = [
+      $links['report_type_' . $entity_type] = [
         'title' => $definition->getLabel(),
         'url' => Url::fromRoute('config_update_ui.report', ['report_type' => 'type', 'name' => $entity_type]),
       ];
@@ -250,11 +250,11 @@ class ConfigUpdateController extends ControllerBase {
     uasort($links, [$this, 'sortLinks']);
 
     $links = [
-      'type_all' => [
+      'report_type_all' => [
         'title' => $this->t('All types'),
         'url' => Url::fromRoute('config_update_ui.report', ['report_type' => 'type', 'name' => 'system.all']),
       ],
-      'type_system.simple' => [
+      'report_type_system.simple' => [
         'title' => $this->t('Simple configuration'),
         'url' => Url::fromRoute('config_update_ui.report', ['report_type' => 'type', 'name' => 'system.simple']),
       ],
@@ -275,8 +275,8 @@ class ConfigUpdateController extends ControllerBase {
     $modules = $this->moduleHandler->getModuleList();
     $links = [];
     foreach ($modules as $machine_name => $module) {
-      if ($machine_name != $profile) {
-        $links['module_' . $machine_name] = [
+      if ($machine_name != $profile && $this->configList->providerHasConfig('module', $machine_name)) {
+        $links['report_module_' . $machine_name] = [
           'title' => $this->moduleHandler->getName($machine_name),
           'url' => Url::fromRoute('config_update_ui.report', ['report_type' => 'module', 'name' => $machine_name]),
         ];
@@ -298,10 +298,12 @@ class ConfigUpdateController extends ControllerBase {
     $themes = $this->themeHandler->listInfo();
     $links = [];
     foreach ($themes as $machine_name => $theme) {
-      $links['theme_' . $machine_name] = [
-        'title' => $this->themeHandler->getName($machine_name),
-        'url' => Url::fromRoute('config_update_ui.report', ['report_type' => 'theme', 'name' => $machine_name]),
-      ];
+      if ($this->configList->providerHasConfig('theme', $machine_name)) {
+        $links['report_theme_' . $machine_name] = [
+          'title' => $this->themeHandler->getName($machine_name),
+          'url' => Url::fromRoute('config_update_ui.report', ['report_type' => 'theme', 'name' => $machine_name]),
+        ];
+      }
     }
     uasort($links, [$this, 'sortLinks']);
 
@@ -315,21 +317,24 @@ class ConfigUpdateController extends ControllerBase {
       ],
     ];
 
-    // Profile is just one option.
     $links = [];
-    $links['profile_' . $profile] = [
-      'title' => $this->moduleHandler->getName($profile),
-      'url' => Url::fromRoute('config_update_ui.report', ['report_type' => 'profile']),
-    ];
-    $build['links']['#rows'][] = [
-      $this->t('Installation profile'),
-      [
-        'data' => [
-          '#type' => 'operations',
-          '#links' => $links,
+
+    // Profile is just one option.
+    if ($this->configList->providerHasConfig('profile', $profile)) {
+      $links['report_profile_' . $profile] = [
+        'title' => $this->moduleHandler->getName($profile),
+        'url' => Url::fromRoute('config_update_ui.report', ['report_type' => 'profile']),
+      ];
+      $build['links']['#rows'][] = [
+        $this->t('Installation profile'),
+        [
+          'data' => [
+            '#type' => 'operations',
+            '#links' => $links,
+          ],
         ],
-      ],
-    ];
+      ];
+    }
 
     return $build;
   }
@@ -488,6 +493,10 @@ class ConfigUpdateController extends ControllerBase {
         'data' => $this->t('Type'),
         'class' => [RESPONSIVE_PRIORITY_MEDIUM],
       ],
+      'provider' => [
+        'data' => $this->t('Provider'),
+        'class' => [RESPONSIVE_PRIORITY_LOW],
+      ],
       'operations' => [
         'data' => $this->t('Operations'),
       ],
@@ -510,6 +519,7 @@ class ConfigUpdateController extends ControllerBase {
       if (!$entity_type) {
         // This is simple config.
         $id = $name;
+        $label = '';
         $type_label = $this->t('Simple configuration');
         $entity_type = 'system.simple';
       }
@@ -517,13 +527,57 @@ class ConfigUpdateController extends ControllerBase {
         $definition = $this->configList->getType($entity_type);
         $id_key = $definition->getKey('id');
         $id = $config[$id_key];
+        // The label key is not required.
+        if ($label_key = $definition->getKey('label')) {
+          $label = $config[$label_key];
+        }
+        else {
+          $label = '';
+        }
+
         $type_label = $definition->getLabel();
       }
 
-      $label = (isset($config['label'])) ? $config['label'] : '';
       $row[] = $name;
       $row[] = $label;
       $row[] = $type_label;
+      $provider = $this->configList->getConfigProvider($name);
+      $provider_name = '';
+      if (!empty($provider)) {
+        switch($provider[0]) {
+          case 'profile':
+            $provider_name = $this->moduleHandler->getName($provider[1]);
+            if ($provider_name) {
+              $provider_name = $this->t('@name profile', ['@name' => $provider_name]);
+            }
+            else {
+              $provider_name = '';
+            }
+            break;
+
+          case 'module':
+            $provider_name = $this->moduleHandler->getName($provider[1]);
+            if ($provider_name) {
+              $provider_name = $this->t('@name module', ['@name' => $provider_name]);
+            }
+            else {
+              $provider_name = '';
+            }
+            break;
+
+          case 'theme':
+            $provider_name = $this->themeHandler->getName($provider[1]);
+            if ($provider_name) {
+              $provider_name = $this->t('@name theme', ['@name' => $provider_name]);
+            }
+            else {
+              $provider_name = '';
+            }
+            break;
+            break;
+        }
+      }
+      $row[] = $provider_name;
 
       $links = [];
       $routes = [

@@ -4,14 +4,53 @@ namespace Drupal\flag\Controller;
 
 use Drupal\Core\Controller\ControllerBase;
 use Drupal\flag\FlagInterface;
+use Drupal\Flag\FlagServiceInterface;
 use Drupal\flag\FlaggingInterface;
-use Drupal\flag\Entity\Flag;
+use Drupal\Core\Session\SessionManagerInterface;
+use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 /**
  * Provides a controller for the Field Entry link type.
  */
 class FieldEntryFormController extends ControllerBase {
+
+  /**
+   * The flag service.
+   *
+   * @var \Drupal\Flag\FlagServiceInterface
+   */
+  protected $flagService;
+
+  /**
+   * The session manager.
+   *
+   * @var \Drupal\Core\Session\SessionManagerInterface
+   */
+  protected $sessionManager;
+
+  /**
+   * Constructor.
+   *
+   * @param \Drupal\Core\Session\SessionManagerInterface $session_manager
+   *   The session manager.
+   * @param \Drupal\Flag\FlagServiceInterface $flag_service
+   *   The flag service.
+   */
+  public function __construct(SessionManagerInterface $session_manager, FlagServiceInterface $flag_service) {
+    $this->sessionManager = $session_manager;
+    $this->flagService = $flag_service;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public static function create(ContainerInterface $container) {
+    return new static(
+      $container->get('session_manager'),
+      $container->get('flag')
+      );
+  }
 
   /**
    * Performs a flagging when called via a route.
@@ -21,21 +60,24 @@ class FieldEntryFormController extends ControllerBase {
    * @param int $entity_id
    *   The flaggable ID.
    *
-   * @return AjaxResponse
-   *   The response object.
+   * @return array
+   *   The processed form to create the flagging.
    *
    * @see \Drupal\flag\Plugin\ActionLink\AJAXactionLink
    */
   public function flag(FlagInterface $flag, $entity_id) {
     $flag_id = $flag->id();
 
-    $account = $this->currentUser();
+    // Set account and session ID to NULL to get the current user.
+    $account = $session_id = NULL;
+    $this->flagService->populateFlaggerDefaults($account, $session_id);
 
     $flagging = $this->entityTypeManager()->getStorage('flagging')->create([
       'flag_id' => $flag->id(),
       'entity_type' => $flag->getFlaggableEntityTypeId(),
       'entity_id' => $entity_id,
       'uid' => $account->id(),
+      'session_id' => $session_id,
     ]);
 
     return $this->getForm($flagging, 'add');
@@ -56,8 +98,7 @@ class FieldEntryFormController extends ControllerBase {
    *   The processed edit form for the given flagging.
    */
   public function edit(FlagInterface $flag, $entity_id) {
-    $flag_service = \Drupal::service('flag');
-    $entity = $flag_service->getFlaggableById($flag, $entity_id);
+    $entity = $this->flagService->getFlaggableById($flag, $entity_id);
 
     // If we couldn't find the flaggable, throw a 404.
     if (!$entity) {
@@ -65,7 +106,7 @@ class FieldEntryFormController extends ControllerBase {
     }
 
     // Load the flagging from the flag and flaggable.
-    $flagging = $flag_service->getFlagging($flag, $entity);
+    $flagging = $this->flagService->getFlagging($flag, $entity);
 
     // If we couldn't find the flagging, we can't edit. Throw a 404.
     if (!$flagging) {
@@ -92,16 +133,15 @@ class FieldEntryFormController extends ControllerBase {
    *   Thrown if the flagging could not be found.
    */
   public function unflag(FlagInterface $flag, $entity_id) {
-    $flag_service = \Drupal::service('flag');
-    $entity = $flag_service->getFlaggableById($flag, $entity_id);
+    $entity = $this->flagService->getFlaggableById($flag, $entity_id);
 
     // If we can't find the flaggable entity, throw a 404.
-    if (!entity) {
+    if (!$entity) {
       throw new NotFoundHttpException('The flagging could not be found.');
     }
 
     // Load the flagging. If we can't find it, we can't unflag and throw a 404.
-    $flagging = $flag_service->getFlagging($flag, $entity);
+    $flagging = $this->flagService->getFlagging($flag, $entity);
     if (!$flagging) {
       throw new NotFoundHttpException('The flagging could not be found.');
     }
@@ -144,7 +184,7 @@ class FieldEntryFormController extends ControllerBase {
   /**
    * Get the flag's field entry form.
    *
-   * @param FlaggingInterface $flagging
+   * @param \Drupal\flag\FlaggingInterface $flagging
    *   The flagging from which to get the form.
    * @param string|null $operation
    *   (optional) The operation identifying the form variant to return.

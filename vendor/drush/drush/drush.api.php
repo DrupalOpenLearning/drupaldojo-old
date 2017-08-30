@@ -14,7 +14,7 @@ function hook_drush_command() {
 }
 
 /**
- * All drush commands are invoked in a specific order, using
+ * All Drush commands are invoked in a specific order, using
  * drush-made hooks, very similar to the Drupal hook system. See drush_invoke()
  * for the actual implementation.
  *

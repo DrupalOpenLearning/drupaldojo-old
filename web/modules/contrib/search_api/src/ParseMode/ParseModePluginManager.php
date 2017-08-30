@@ -17,25 +17,6 @@ use Drupal\Core\Plugin\DefaultPluginManager;
 class ParseModePluginManager extends DefaultPluginManager {
 
   /**
-   * Static cache for the parse mode definitions.
-   *
-   * @var \Drupal\search_api\ParseMode\ParseModeInterface[]
-   *
-   * @see \Drupal\search_api\ParseMode\ParseModePluginManager::createInstance()
-   * @see \Drupal\search_api\ParseMode\ParseModePluginManager::getInstances()
-   */
-  protected $parseModes;
-
-  /**
-   * Whether all plugin instances have already been created.
-   *
-   * @var bool
-   *
-   * @see \Drupal\search_api\ParseMode\ParseModePluginManager::getInstances()
-   */
-  protected $allCreated = FALSE;
-
-  /**
    * Constructs a ParseModePluginManager object.
    *
    * @param \Traversable $namespaces
@@ -54,49 +35,21 @@ class ParseModePluginManager extends DefaultPluginManager {
   }
 
   /**
-   * Creates or retrieves a parse mode plugin.
-   *
-   * @param string $plugin_id
-   *   The ID of the plugin being instantiated.
-   * @param array $configuration
-   *   (optional) An array of configuration relevant to the plugin instance.
-   *   Ignored for parse mode plugins.
-   *
-   * @return \Drupal\search_api\ParseMode\ParseModeInterface
-   *   The requested parse mode plugin.
-   *
-   * @throws \Drupal\Component\Plugin\Exception\PluginException
-   *   If the instance cannot be created, such as if the ID is invalid.
-   */
-  public function createInstance($plugin_id, array $configuration = array()) {
-    if (empty($this->parseModes[$plugin_id])) {
-      $this->parseModes[$plugin_id] = parent::createInstance($plugin_id, $configuration);
-    }
-    return $this->parseModes[$plugin_id];
-  }
-
-  /**
    * Returns all known parse modes.
    *
    * @return \Drupal\search_api\ParseMode\ParseModeInterface[]
    *   An array of parse mode plugins, keyed by type identifier.
    */
   public function getInstances() {
-    if (!$this->allCreated) {
-      $this->allCreated = TRUE;
-      if (!isset($this->parseModes)) {
-        $this->parseModes = array();
-      }
+    $parse_modes = [];
 
-      foreach ($this->getDefinitions() as $plugin_id => $definition) {
-        if (class_exists($definition['class']) && empty($this->parseModes[$plugin_id])) {
-          $parse_mode = $this->createInstance($plugin_id);
-          $this->parseModes[$plugin_id] = $parse_mode;
-        }
+    foreach ($this->getDefinitions() as $plugin_id => $definition) {
+      if (class_exists($definition['class'])) {
+        $parse_modes[$plugin_id] = $this->createInstance($plugin_id);
       }
     }
 
-    return $this->parseModes;
+    return $parse_modes;
   }
 
   /**
@@ -109,7 +62,7 @@ class ParseModePluginManager extends DefaultPluginManager {
    * @see \Drupal\search_api\ParseMode\ParseModePluginManager::getInstances()
    */
   public function getInstancesOptions() {
-    $parse_modes = array();
+    $parse_modes = [];
     foreach ($this->getInstances() as $id => $info) {
       $parse_modes[$id] = $info->label();
     }

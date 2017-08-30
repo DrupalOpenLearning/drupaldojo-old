@@ -4,8 +4,6 @@ namespace Drupal\Tests\group\Kernel;
 
 use Drupal\Component\Render\FormattableMarkup;
 use Drupal\Core\Render\BubbleableMetadata;
-use Drupal\group\Entity\Group;
-use Drupal\Tests\system\Kernel\Token\TokenReplaceKernelTestBase;
 
 /**
  * Generates text using placeholders for dummy content to check group token
@@ -13,26 +11,7 @@ use Drupal\Tests\system\Kernel\Token\TokenReplaceKernelTestBase;
  *
  * @group group
  */
-class GroupTokenReplaceTest extends TokenReplaceKernelTestBase {
-
-  /**
-   * Modules to enable.
-   *
-   * @var array
-   */
-  public static $modules = ['group', 'group_test_config'];
-
-  /**
-   * {@inheritdoc}
-   */
-  protected function setUp() {
-    parent::setUp();
-    $this->installConfig(['group', 'group_test_config']);
-    $this->installEntitySchema('group');
-    $this->installEntitySchema('group_type');
-    $this->installEntitySchema('group_content');
-    $this->installEntitySchema('group_content_type');
-  }
+class GroupTokenReplaceTest extends GroupTokenReplaceKernelTestBase {
 
   /**
    * Tests the tokens replacement for group.
@@ -43,28 +22,22 @@ class GroupTokenReplaceTest extends TokenReplaceKernelTestBase {
       'language' => $this->interfaceLanguage,
     ];
 
-    // Create a user and a group.
-    $account = $this->createUser();
-
-    /* @var \Drupal\group\Entity\GroupInterface $group */
-    $group = Group::create([
-      'type' => 'default',
-      'uid' => $account->id(),
-      'label' => $this->randomMachineName(),
-    ]);
-    $group->save();
+    // Create a group and retrieve its owner.
+    $group = $this->createGroup();
+    $account = $group->getOwner();
 
     // Generate and test tokens.
     $tests = [];
     $tests['[group:id]'] = $group->id();
     $tests['[group:type]'] = 'default';
     $tests['[group:type-name]'] = 'Default label';
+    $tests['[group:title]'] = $group->label();
     $tests['[group:langcode]'] = $group->language()->getId();
     $tests['[group:url]'] = $group->url('canonical', $url_options);
     $tests['[group:edit-url]'] = $group->url('edit-form', $url_options);
-    $tests['[group:author]'] = $account->getUsername();
+    $tests['[group:author]'] = $account->getAccountName();
     $tests['[group:author:uid]'] = $group->getOwnerId();
-    $tests['[group:author:name]'] = $account->getUsername();
+    $tests['[group:author:name]'] = $account->getAccountName();
     $tests['[group:created:since]'] = \Drupal::service('date.formatter')->formatTimeDiffSince($group->getCreatedTime(), ['langcode' => $this->interfaceLanguage->getId()]);
     $tests['[group:changed:since]'] = \Drupal::service('date.formatter')->formatTimeDiffSince($group->getChangedTime(), ['langcode' => $this->interfaceLanguage->getId()]);
 
@@ -74,11 +47,12 @@ class GroupTokenReplaceTest extends TokenReplaceKernelTestBase {
     $metadata_tests['[group:id]'] = $base_bubbleable_metadata;
     $metadata_tests['[group:type]'] = $base_bubbleable_metadata;
     $metadata_tests['[group:type-name]'] = $base_bubbleable_metadata;
+    $metadata_tests['[group:title]'] = $base_bubbleable_metadata;
     $metadata_tests['[group:langcode]'] = $base_bubbleable_metadata;
     $metadata_tests['[group:url]'] = $base_bubbleable_metadata;
     $metadata_tests['[group:edit-url]'] = $base_bubbleable_metadata;
     $bubbleable_metadata = clone $base_bubbleable_metadata;
-    $metadata_tests['[group:author]'] = $bubbleable_metadata->addCacheTags(['user:1']);
+    $metadata_tests['[group:author]'] = $bubbleable_metadata->addCacheTags($account->getCacheTags());
     $metadata_tests['[group:author:uid]'] = $bubbleable_metadata;
     $metadata_tests['[group:author:name]'] = $bubbleable_metadata;
     $bubbleable_metadata = clone $base_bubbleable_metadata;

@@ -2,7 +2,6 @@
 
 namespace Drupal\search_api\Plugin\views\filter;
 
-use Drupal\search_api\UncacheableDependencyTrait;
 use Drupal\user\Plugin\views\filter\Name;
 
 /**
@@ -16,51 +15,50 @@ use Drupal\user\Plugin\views\filter\Name;
  */
 class SearchApiUser extends Name {
 
-  use UncacheableDependencyTrait;
   use SearchApiFilterTrait;
 
   /**
    * {@inheritdoc}
    */
   public function operators() {
-    return array(
-      'or' => array(
+    return [
+      'or' => [
         'title' => $this->t('Is one of'),
         'short' => $this->t('or'),
         'short_single' => $this->t('='),
         'method' => 'opHelper',
         'values' => 1,
         'ensure_my_table' => 'helper',
-      ),
-      'and' => array(
+      ],
+      'and' => [
         'title' => $this->t('Is all of'),
         'short' => $this->t('and'),
         'short_single' => $this->t('='),
         'method' => 'opHelper',
         'values' => 1,
         'ensure_my_table' => 'helper',
-      ),
-      'not' => array(
+      ],
+      'not' => [
         'title' => $this->t('Is none of'),
         'short' => $this->t('not'),
         'short_single' => $this->t('<>'),
         'method' => 'opHelper',
         'values' => 1,
         'ensure_my_table' => 'helper',
-      ),
-      'empty' => array(
+      ],
+      'empty' => [
         'title' => $this->t('Is empty (NULL)'),
         'method' => 'opEmpty',
         'short' => $this->t('empty'),
         'values' => 0,
-      ),
-      'not empty' => array(
+      ],
+      'not empty' => [
         'title' => $this->t('Is not empty (NOT NULL)'),
         'method' => 'opEmpty',
         'short' => $this->t('not empty'),
         'values' => 0,
-      ),
-    );
+      ],
+    ];
   }
 
 }

@@ -1,10 +1,5 @@
 <?php
 
-/**
- * @file
- * Contains \Drupal\field_group\Element\HorizontalTabs.
- */
-
 namespace Drupal\field_group\Element;
 
 use Drupal\Core\Form\FormStateInterface;
@@ -66,7 +61,7 @@ class HorizontalTabs extends RenderElement {
     }
 
     // Add required JavaScript and Stylesheet.
-    $element['#attached']['library'][] = 'field_group/formatter.horizontal_tabs';
+    $element['#attached']['library'][] = 'field_group/element.horizontal_tabs';
 
     // Only add forms library on forms.
     if ($on_form) {

@@ -10,13 +10,6 @@ use Drupal\search_api\UnsavedConfigurationInterface;
 trait UnsavedConfigurationFormTrait {
 
   /**
-   * The entity type manager.
-   *
-   * @var \Drupal\Core\Entity\EntityTypeManagerInterface
-   */
-  protected $entityTypeManager;
-
-  /**
    * The renderer.
    *
    * @var \Drupal\Core\Render\RendererInterface
@@ -29,16 +22,6 @@ trait UnsavedConfigurationFormTrait {
    * @var \Drupal\Core\Datetime\DateFormatterInterface
    */
   protected $dateFormatter;
-
-  /**
-   * Retrieves the entity type manager.
-   *
-   * @return \Drupal\Core\Entity\EntityTypeManagerInterface
-   *   The entity type manager.
-   */
-  protected function getEntityTypeManager() {
-    return $this->entityTypeManager;
-  }
 
   /**
    * Retrieves the renderer.
@@ -81,41 +64,41 @@ trait UnsavedConfigurationFormTrait {
     if ($entity instanceof UnsavedConfigurationInterface && $entity->hasChanges()) {
       if ($entity->isLocked()) {
         $form['#disabled'] = TRUE;
-        $username = array(
+        $username = [
           '#theme' => 'username',
-          '#account' => $entity->getLockOwner($this->entityTypeManager),
-        );
-        $lockMessageSubstitutions = array(
+          '#account' => $entity->getLockOwner(),
+        ];
+        $lockMessageSubstitutions = [
           '@user' => $this->renderer->render($username),
           '@age' => $this->dateFormatter->formatTimeDiffSince($entity->getLastUpdated()),
           ':url' => $entity->toUrl('break-lock-form')->toString(),
-        );
-        $form['locked'] = array(
+        ];
+        $form['locked'] = [
           '#type' => 'container',
-          '#attributes' => array(
-            'class' => array(
+          '#attributes' => [
+            'class' => [
               'index-locked',
               'messages',
               'messages--warning',
-            ),
-          ),
+            ],
+          ],
           '#children' => $this->t('This index is being edited by user @user, and is therefore locked from editing by others. This lock is @age old. Click here to <a href=":url">break this lock</a>.', $lockMessageSubstitutions),
           '#weight' => -10,
-        );
+        ];
       }
       elseif ($reportChanged) {
-        $form['changed'] = array(
+        $form['changed'] = [
           '#type' => 'container',
-          '#attributes' => array(
-            'class' => array(
+          '#attributes' => [
+            'class' => [
               'index-changed',
               'messages',
               'messages--warning',
-            ),
-          ),
+            ],
+          ],
           '#children' => $this->t('You have unsaved changes.'),
           '#weight' => -10,
-        );
+        ];
       }
     }
   }

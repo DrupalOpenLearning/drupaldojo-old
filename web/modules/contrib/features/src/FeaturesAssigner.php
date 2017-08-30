@@ -5,7 +5,7 @@ namespace Drupal\features;
 use Drupal\Component\Plugin\PluginManagerInterface;
 use Drupal\Core\Config\ConfigFactoryInterface;
 use Drupal\Core\Config\ExtensionInstallStorage;
-use Drupal\Core\Entity\EntityManagerInterface;
+use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Config\StorageInterface;
 use Drupal\Core\StringTranslation\StringTranslationTrait;
 use Drupal\features\Entity\FeaturesBundle;
@@ -45,11 +45,11 @@ class FeaturesAssigner implements FeaturesAssignerInterface {
   protected $configStorage;
 
   /**
-   * The entity manager.
+   * The entity type manager.
    *
-   * @var \Drupal\Core\Entity\EntityManagerInterface
+   * @var \Drupal\Core\Entity\EntityTypeManagerInterface
    */
-  protected $entityManager;
+  protected $entityTypeManager;
 
   /**
    * Local cache for package assignment method instances.
@@ -79,17 +79,17 @@ class FeaturesAssigner implements FeaturesAssignerInterface {
    *    The features manager.
    * @param \Drupal\Component\Plugin\PluginManagerInterface $assigner_manager
    *   The package assignment methods plugin manager.
-   * @param \Drupal\Core\Entity\EntityManagerInterface $entity_manager
-   *   The entity manager.
+   * @param \Drupal\Core\Entity\EntityTypeManagerInterface $entity_type_manager
+   *   The entity type manager.
    * @param \Drupal\Core\Config\ConfigFactoryInterface $config_factory
    *   The configuration factory.
    * @param \Drupal\Core\Config\StorageInterface $config_storage
    *   The configuration factory.
    */
-  public function __construct(FeaturesManagerInterface $features_manager, PluginManagerInterface $assigner_manager, EntityManagerInterface $entity_manager, ConfigFactoryInterface $config_factory, StorageInterface $config_storage) {
+  public function __construct(FeaturesManagerInterface $features_manager, PluginManagerInterface $assigner_manager, EntityTypeManagerInterface $entity_type_manager, ConfigFactoryInterface $config_factory, StorageInterface $config_storage) {
     $this->featuresManager = $features_manager;
     $this->assignerManager = $assigner_manager;
-    $this->entityManager = $entity_manager;
+    $this->entityTypeManager = $entity_type_manager;
     $this->configFactory = $config_factory;
     $this->configStorage = $config_storage;
     $this->bundles = $this->getBundleList();
@@ -184,7 +184,7 @@ class FeaturesAssigner implements FeaturesAssignerInterface {
       $instance = $this->assignerManager->createInstance($method_id, array());
       $instance->setFeaturesManager($this->featuresManager);
       $instance->setAssigner($this);
-      $instance->setEntityManager($this->entityManager);
+      $instance->setEntityTypeManager($this->entityTypeManager);
       $instance->setConfigFactory($this->configFactory);
       $this->methods[$method_id] = $instance;
     }
@@ -262,7 +262,7 @@ class FeaturesAssigner implements FeaturesAssignerInterface {
   public function getBundleList() {
     if (empty($this->bundles)) {
       $this->bundles = array();
-      foreach ($this->entityManager->getStorage('features_bundle')->loadMultiple() as $machine_name => $bundle) {
+      foreach ($this->entityTypeManager->getStorage('features_bundle')->loadMultiple() as $machine_name => $bundle) {
         $this->bundles[$machine_name] = $bundle;
       }
     }
@@ -297,7 +297,7 @@ class FeaturesAssigner implements FeaturesAssignerInterface {
       // config file.
       $ext_storage = new ExtensionInstallStorage($this->configStorage);
       $record = $ext_storage->read('features.bundle.default');
-      $bundle_storage = $this->entityManager->getStorage('features_bundle');
+      $bundle_storage = $this->entityTypeManager->getStorage('features_bundle');
       $default = $bundle_storage->createFromStorageRecord($record);
     }
 

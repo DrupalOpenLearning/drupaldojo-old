@@ -40,14 +40,14 @@ abstract class DatasourcePluginBase extends IndexPluginBase implements Datasourc
    * {@inheritdoc}
    */
   public function getPropertyDefinitions() {
-    return array();
+    return [];
   }
 
   /**
    * {@inheritdoc}
    */
   public function load($id) {
-    $items = $this->loadMultiple(array($id));
+    $items = $this->loadMultiple([$id]);
     return $items ? reset($items) : NULL;
   }
 
@@ -55,7 +55,7 @@ abstract class DatasourcePluginBase extends IndexPluginBase implements Datasourc
    * {@inheritdoc}
    */
   public function loadMultiple(array $ids) {
-    return array();
+    return [];
   }
 
   /**
@@ -104,30 +104,30 @@ abstract class DatasourcePluginBase extends IndexPluginBase implements Datasourc
    * {@inheritdoc}
    */
   public function getViewModes($bundle = NULL) {
-    return array();
+    return [];
   }
 
   /**
    * {@inheritdoc}
    */
   public function getBundles() {
-    return array(
+    return [
       $this->getPluginId() => $this->label(),
-    );
+    ];
   }
 
   /**
    * {@inheritdoc}
    */
   public function viewItem(ComplexDataInterface $item, $view_mode, $langcode = NULL) {
-    return array();
+    return [];
   }
 
   /**
    * {@inheritdoc}
    */
   public function viewMultipleItems(array $items, $view_mode, $langcode = NULL) {
-    $build = array();
+    $build = [];
     foreach ($items as $key => $item) {
       $build[$key] = $this->viewItem($item, $view_mode, $langcode);
     }
@@ -152,7 +152,7 @@ abstract class DatasourcePluginBase extends IndexPluginBase implements Datasourc
    * {@inheritdoc}
    */
   public function getFieldDependencies(array $fields) {
-    return array();
+    return [];
   }
 
 }

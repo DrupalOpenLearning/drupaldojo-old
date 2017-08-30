@@ -76,10 +76,16 @@ interface FlagCountManagerInterface {
    *   The flag.
    * @param \Drupal\Core\Session\AccountInterface $user
    *   The account.
+   * @param string $session_id
+   *   (optional) The session ID used to specify a unique anonymous user.
    *
    * @return int
    *   The number of flaggings for the given flag and user.
+   *
+   * @throws \LogicException
+   *   Throws an exception if $account is the anonymous user but $session_id is
+   *   NULL.
    */
-  public function getUserFlagFlaggingCount(FlagInterface $flag, AccountInterface $user);
+  public function getUserFlagFlaggingCount(FlagInterface $flag, AccountInterface $user, $session_id = NULL);
 
 }

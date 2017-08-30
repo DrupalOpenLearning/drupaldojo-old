@@ -1,10 +1,5 @@
 <?php
 
-/**
- * @file
- * Contains \Drupal\entity\Routing\RevisionRouteProvider.
- */
-
 namespace Drupal\entity\Routing;
 
 use Drupal\Core\Entity\EntityTypeInterface;

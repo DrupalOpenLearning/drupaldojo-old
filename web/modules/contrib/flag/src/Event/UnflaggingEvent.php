@@ -35,4 +35,5 @@ class UnflaggingEvent extends Event {
   public function getFlaggings() {
     return $this->flaggings;
   }
+
 }

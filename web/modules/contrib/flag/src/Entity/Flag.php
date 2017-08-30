@@ -208,16 +208,13 @@ class Flag extends ConfigEntityBundleBase implements FlagInterface {
   /**
    * {@inheritdoc}
    */
-  public function isFlagged(EntityInterface $entity, AccountInterface $account = NULL) {
-    // Get the current user if one wasn't passed to the method.
-    if ($account == NULL) {
-      $account = \Drupal::currentUser();
-    }
+  public function isFlagged(EntityInterface $entity, AccountInterface $account = NULL, $session_id = NULL) {
+    \Drupal::service('flag')->populateFlaggerDefaults($account, $session_id);
 
     // Load the is flagged list from the flagging storage, check if this flag
     // is in the list.
     $flag_ids = \Drupal::entityTypeManager()->getStorage('flagging')
-      ->loadIsFlagged($entity, $account);
+      ->loadIsFlagged($entity, $account, $session_id);
     return isset($flag_ids[$this->id()]);
 
   }
@@ -387,15 +384,15 @@ class Flag extends ConfigEntityBundleBase implements FlagInterface {
   /**
    * {@inheritdoc}
    */
-  public function getFlagShortText() {
-    return $this->flag_short;
+  public function getShortText($action) {
+    return $action === 'unflag' ? $this->unflag_short : $this->flag_short;
   }
 
   /**
    * {@inheritdoc}
    */
-  public function getFlagLongText() {
-    return $this->flag_long;
+  public function getLongText($action) {
+    return $action === 'unflag' ? $this->unflag_long : $this->flag_long;
   }
 
   /**
@@ -408,8 +405,8 @@ class Flag extends ConfigEntityBundleBase implements FlagInterface {
   /**
    * {@inheritdoc}
    */
-  public function getFlagMessage() {
-    return $this->flag_message;
+  public function getMessage($action) {
+    return $action === 'unflag' ? $this->unflag_message : $this->flag_message;
   }
 
   /**
@@ -422,13 +419,6 @@ class Flag extends ConfigEntityBundleBase implements FlagInterface {
   /**
    * {@inheritdoc}
    */
-  public function getUnflagLongText() {
-    return $this->unflag_long;
-  }
-
-  /**
-   * {@inheritdoc}
-   */
   public function setUnflagLongText($unflag_long) {
     $this->unflag_long = $unflag_long;
   }
@@ -436,22 +426,8 @@ class Flag extends ConfigEntityBundleBase implements FlagInterface {
   /**
    * {@inheritdoc}
    */
-  public function getUnflagMessage() {
-    return $this->unflag_message;
-  }
-
-  /**
-   * {@inheritdoc}
-   */
   public function setUnflagMessage($unflag_message) {
     $this->unflag_message = $unflag_message;
-  }
-
-  /**
-   * {@inheritdoc}
-   */
-  public function getUnflagShortText() {
-    return $this->unflag_short;
   }
 
   /**

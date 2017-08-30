@@ -15,6 +15,7 @@ use Drupal\search_api\Task\TaskInterface;
  * @ContentEntityType(
  *   id = "search_api_task",
  *   label = @Translation("Search task"),
+ *   label_collection = @Translation("Search tasks"),
  *   label_singular = @Translation("search task"),
  *   label_plural = @Translation("search tasks"),
  *   label_count = @PluralTranslation(
@@ -139,6 +140,11 @@ class Task extends ContentEntityBase implements TaskInterface {
       $data = $this->get('data')[0];
       if ($data) {
         $this->unserializedData = unserialize($data->value);
+        if (!empty($this->unserializedData['#entity_type'])) {
+          $this->unserializedData = \Drupal::entityTypeManager()
+            ->getStorage($this->unserializedData['#entity_type'])
+            ->create($this->unserializedData['#values']);
+        }
       }
     }
 

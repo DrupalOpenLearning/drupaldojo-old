@@ -11,13 +11,13 @@ services:
       - { name: access_check, applies_to: _unflag_access }
   plugin.manager.flag.flagtype:
     class: Drupal\flag\FlagType\FlagTypePluginManager
-    arguments: ['@container.namespaces', '@cache.default', '@module_handler']
+    arguments: ['@container.namespaces', '@cache.discovery', '@module_handler']
   plugin.manager.flag.linktype:
     class: Drupal\flag\ActionLink\ActionLinkPluginManager
-    arguments: ['@container.namespaces', '@cache.default', '@module_handler']
+    arguments: ['@container.namespaces', '@cache.discovery', '@module_handler']
   flag:
     class: Drupal\flag\FlagService
-    arguments: ['@entity.query', '@current_user', '@entity_type.manager']
+    arguments: ['@entity.query', '@current_user', '@entity_type.manager', '@session_manager']
   flag.count:
     class: Drupal\flag\FlagCountManager
     arguments: ['@database']

@@ -22,10 +22,10 @@ class BackendTest extends BackendTestBase {
   /**
    * {@inheritdoc}
    */
-  public static $modules = array(
+  public static $modules = [
     'search_api_db',
     'search_api_test_db',
-  );
+  ];
 
   /**
    * {@inheritdoc}
@@ -46,15 +46,15 @@ class BackendTest extends BackendTestBase {
     // Create a dummy table that will cause a naming conflict with the backend's
     // default table names, thus testing whether it correctly reacts to such
     // conflicts.
-    \Drupal::database()->schema()->createTable('search_api_db_database_search_index', array(
-      'fields' => array(
-        'id' => array(
+    \Drupal::database()->schema()->createTable('search_api_db_database_search_index', [
+      'fields' => [
+        'id' => [
           'type' => 'int',
-        ),
-      ),
-    ));
+        ],
+      ],
+    ]);
 
-    $this->installConfig(array('search_api_test_db'));
+    $this->installConfig(['search_api_test_db']);
   }
 
   /**
@@ -77,6 +77,7 @@ class BackendTest extends BackendTestBase {
   protected function backendSpecificRegressionTests() {
     $this->regressionTest2557291();
     $this->regressionTest2511860();
+    $this->regressionTest2846932();
   }
 
   /**
@@ -87,7 +88,7 @@ class BackendTest extends BackendTestBase {
     $normalized_storage_table = $db_info['index_table'];
     $field_infos = $db_info['field_tables'];
 
-    $expected_fields = array(
+    $expected_fields = [
       'body',
       'category',
       'created',
@@ -98,7 +99,7 @@ class BackendTest extends BackendTestBase {
       'search_api_language',
       'type',
       'width',
-    );
+    ];
     $actual_fields = array_keys($field_infos);
     sort($actual_fields);
     $this->assertEquals($expected_fields, $actual_fields, 'All expected field tables were created.');
@@ -113,7 +114,7 @@ class BackendTest extends BackendTestBase {
       else {
         $this->assertEmpty($field_info['table']);
       }
-      $this->assertTrue(\Drupal::database()->schema()->fieldExists($normalized_storage_table, $field_info['column']), new FormattableMarkup('Field column %column exists', array('%column' => $field_info['column'])));
+      $this->assertTrue(\Drupal::database()->schema()->fieldExists($normalized_storage_table, $field_info['column']), new FormattableMarkup('Field column %column exists', ['%column' => $field_info['column']]));
     }
   }
 
@@ -164,7 +165,7 @@ class BackendTest extends BackendTestBase {
     $db_info = $this->getIndexDbInfo();
     $field_info = $db_info['field_tables'];
 
-    $fields = array(
+    $fields = [
       'name',
       'body',
       'type',
@@ -173,12 +174,12 @@ class BackendTest extends BackendTestBase {
       'width',
       'search_api_datasource',
       'search_api_language',
-    );
-    $multi_valued = array(
+    ];
+    $multi_valued = [
       'name',
       'body',
       'keywords',
-    );
+    ];
     foreach ($fields as $field_id) {
       $this->assertArrayHasKey($field_id, $field_info, "Field info saved for field $field_id.");
       if (in_array($field_id, $multi_valued)) {
@@ -210,42 +211,42 @@ class BackendTest extends BackendTestBase {
    */
   protected function searchSuccessPartial() {
     $results = $this->buildSearch('foobaz')->range(0, 1)->execute();
-    $this->assertResults(array(1), $results, 'Partial search for »foobaz«');
+    $this->assertResults([1], $results, 'Partial search for »foobaz«');
 
-    $results = $this->buildSearch('foo', array(), array(), FALSE)
+    $results = $this->buildSearch('foo', [], [], FALSE)
       ->sort('search_api_relevance', QueryInterface::SORT_DESC)
       ->sort('id')
       ->execute();
-    $this->assertResults(array(1, 2, 4, 3, 5), $results, 'Partial search for »foo«');
+    $this->assertResults([1, 2, 4, 3, 5], $results, 'Partial search for »foo«');
 
     $results = $this->buildSearch('foo tes')->execute();
-    $this->assertResults(array(1, 2, 3, 4), $results, 'Partial search for »foo tes«');
+    $this->assertResults([1, 2, 3, 4], $results, 'Partial search for »foo tes«');
 
     $results = $this->buildSearch('oob est')->execute();
-    $this->assertResults(array(1, 2, 3), $results, 'Partial search for »oob est«');
+    $this->assertResults([1, 2, 3], $results, 'Partial search for »oob est«');
 
     $results = $this->buildSearch('foo nonexistent')->execute();
-    $this->assertResults(array(), $results, 'Partial search for »foo nonexistent«');
+    $this->assertResults([], $results, 'Partial search for »foo nonexistent«');
 
     $results = $this->buildSearch('bar nonexistent')->execute();
-    $this->assertResults(array(), $results, 'Partial search for »foo nonexistent«');
+    $this->assertResults([], $results, 'Partial search for »foo nonexistent«');
 
-    $keys = array(
+    $keys = [
       '#conjunction' => 'AND',
       'oob',
-      array(
+      [
         '#conjunction' => 'OR',
         'est',
         'nonexistent',
-      ),
-    );
+      ],
+    ];
     $results = $this->buildSearch($keys)->execute();
-    $this->assertResults(array(1, 2, 3), $results, 'Partial search for complex keys');
+    $this->assertResults([1, 2, 3], $results, 'Partial search for complex keys');
 
-    $results = $this->buildSearch('foo', array('category,item_category'), array(), FALSE)
+    $results = $this->buildSearch('foo', ['category,item_category'], [], FALSE)
       ->sort('id', QueryInterface::SORT_DESC)
       ->execute();
-    $this->assertResults(array(2, 1), $results, 'Partial search for »foo« with additional filter');
+    $this->assertResults([2, 1], $results, 'Partial search for »foo« with additional filter');
 
     $query = $this->buildSearch();
     $conditions = $query->createConditionGroup('OR');
@@ -253,7 +254,7 @@ class BackendTest extends BackendTestBase {
     $conditions->addCondition('body', 'test');
     $query->addConditionGroup($conditions);
     $results = $query->execute();
-    $this->assertResults(array(1, 2, 3, 4), $results, 'Partial search with multi-field fulltext filter');
+    $this->assertResults([1, 2, 3, 4], $results, 'Partial search with multi-field fulltext filter');
   }
 
   /**
@@ -280,7 +281,7 @@ class BackendTest extends BackendTestBase {
   protected function searchSuccessMinChars() {
     $results = $this->getIndex()->query()->keys('test')->range(1, 2)->execute();
     $this->assertEquals(4, $results->getResultCount(), 'Search for »test« returned correct number of results.');
-    $this->assertEquals($this->getItemIds(array(4, 1)), array_keys($results->getResultItems()), 'Search for »test« returned correct result.');
+    $this->assertEquals($this->getItemIds([4, 1]), array_keys($results->getResultItems()), 'Search for »test« returned correct result.');
     $this->assertEmpty($results->getIgnoredSearchKeys());
     $this->assertEmpty($results->getWarnings());
 
@@ -290,71 +291,71 @@ class BackendTest extends BackendTestBase {
     $conditions->addCondition('body', 'test');
     $query->addConditionGroup($conditions);
     $results = $query->execute();
-    $this->assertResults(array(1, 2, 3, 4), $results, 'Search with multi-field fulltext filter');
+    $this->assertResults([1, 2, 3, 4], $results, 'Search with multi-field fulltext filter');
 
-    $results = $this->buildSearch(NULL, array('body,test foobar'))->execute();
-    $this->assertResults(array(3), $results, 'Search with multi-term fulltext filter');
+    $results = $this->buildSearch(NULL, ['body,test foobar'])->execute();
+    $this->assertResults([3], $results, 'Search with multi-term fulltext filter');
 
     $results = $this->getIndex()->query()->keys('test foo')->execute();
-    $this->assertResults(array(2, 4, 1, 3), $results, 'Search for »test foo«', array('foo'));
+    $this->assertResults([2, 4, 1, 3], $results, 'Search for »test foo«', ['foo']);
 
-    $results = $this->buildSearch('foo', array('type,item'))->execute();
-    $this->assertResults(array(1, 2, 3), $results, 'Search for »foo«', array('foo'), array($this->t('No valid search keys were present in the query.')));
+    $results = $this->buildSearch('foo', ['type,item'])->execute();
+    $this->assertResults([1, 2, 3], $results, 'Search for »foo«', ['foo'], ['No valid search keys were present in the query.']);
 
-    $keys = array(
+    $keys = [
       '#conjunction' => 'AND',
       'test',
-      array(
+      [
         '#conjunction' => 'OR',
         'baz',
         'foobar',
-      ),
-      array(
+      ],
+      [
         '#conjunction' => 'OR',
         '#negation' => TRUE,
         'bar',
         'fooblob',
-      ),
-    );
+      ],
+    ];
     $results = $this->buildSearch($keys)->execute();
-    $this->assertResults(array(3), $results, 'Complex search 1', array('baz', 'bar'));
+    $this->assertResults([3], $results, 'Complex search 1', ['baz', 'bar']);
 
-    $keys = array(
+    $keys = [
       '#conjunction' => 'AND',
       'test',
-      array(
+      [
         '#conjunction' => 'OR',
         'baz',
         'foobar',
-      ),
-      array(
+      ],
+      [
         '#conjunction' => 'OR',
         '#negation' => TRUE,
         'bar',
         'fooblob',
-      ),
-    );
+      ],
+    ];
     $results = $this->buildSearch($keys)->execute();
-    $this->assertResults(array(3), $results, 'Complex search 2', array('baz', 'bar'));
+    $this->assertResults([3], $results, 'Complex search 2', ['baz', 'bar']);
 
-    $results = $this->buildSearch(NULL, array('keywords,orange'))->execute();
-    $this->assertResults(array(1, 2, 5), $results, 'Filter query 1 on multi-valued field');
+    $results = $this->buildSearch(NULL, ['keywords,orange'])->execute();
+    $this->assertResults([1, 2, 5], $results, 'Filter query 1 on multi-valued field');
 
-    $conditions = array(
+    $conditions = [
       'keywords,orange',
       'keywords,apple',
-    );
+    ];
     $results = $this->buildSearch(NULL, $conditions)->execute();
-    $this->assertResults(array(2), $results, 'Filter query 2 on multi-valued field');
+    $this->assertResults([2], $results, 'Filter query 2 on multi-valued field');
 
     $results = $this->buildSearch()->addCondition('keywords', 'orange', '<>')->execute();
-    $this->assertResults(array(3, 4), $results, 'Negated filter on multi-valued field');
+    $this->assertResults([3, 4], $results, 'Negated filter on multi-valued field');
 
     $results = $this->buildSearch()->addCondition('keywords', NULL)->execute();
-    $this->assertResults(array(3), $results, 'Query with NULL filter');
+    $this->assertResults([3], $results, 'Query with NULL filter');
 
     $results = $this->buildSearch()->addCondition('keywords', NULL, '<>')->execute();
-    $this->assertResults(array(1, 2, 4, 5), $results, 'Query with NOT NULL filter');
+    $this->assertResults([1, 2, 4, 5], $results, 'Query with NOT NULL filter');
   }
 
   /**
@@ -379,7 +380,7 @@ class BackendTest extends BackendTestBase {
     $query = $this->buildSearch();
     $query->setOption('search_api_test_db_search_api_db_query_alter', TRUE);
     $results = $query->execute();
-    $this->assertResults(array(), $results, 'Query triggering custom alter hook');
+    $this->assertResults([], $results, 'Query triggering custom alter hook');
   }
 
   /**
@@ -390,8 +391,8 @@ class BackendTest extends BackendTestBase {
       ->renameField('type', 'foobar')
       ->save();
 
-    $results = $this->buildSearch(NULL, array('foobar,item'))->execute();
-    $this->assertResults(array(1, 2, 3), $results, 'Search after renaming a field.');
+    $results = $this->buildSearch(NULL, ['foobar,item'])->execute();
+    $this->assertResults([1, 2, 3], $results, 'Search after renaming a field.');
     $this->getIndex()->renameField('foobar', 'type')->save();
   }
 
@@ -400,13 +401,13 @@ class BackendTest extends BackendTestBase {
    */
   protected function checkSecondServer() {
     /** @var \Drupal\search_api\ServerInterface $second_server */
-    $second_server = Server::create(array(
+    $second_server = Server::create([
       'id' => 'test2',
       'backend' => 'search_api_db',
-      'backend_config' => array(
+      'backend_config' => [
         'database' => 'default:default',
-      ),
-    ));
+      ],
+    ]);
     $second_server->save();
     $query = $this->buildSearch();
     try {
@@ -426,22 +427,22 @@ class BackendTest extends BackendTestBase {
    */
   protected function regressionTest2557291() {
     $results = $this->buildSearch('case')->execute();
-    $this->assertResults(array(1), $results, 'Search for lowercase "case"');
+    $this->assertResults([1], $results, 'Search for lowercase "case"');
 
     $results = $this->buildSearch('Case')->execute();
-    $this->assertResults(array(1, 3), $results, 'Search for capitalized "Case"');
+    $this->assertResults([1, 3], $results, 'Search for capitalized "Case"');
 
     $results = $this->buildSearch('CASE')->execute();
-    $this->assertResults(array(), $results, 'Search for non-existent uppercase version of "CASE"');
+    $this->assertResults([], $results, 'Search for non-existent uppercase version of "CASE"');
 
     $results = $this->buildSearch('föö')->execute();
-    $this->assertResults(array(1), $results, 'Search for keywords with umlauts');
+    $this->assertResults([1], $results, 'Search for keywords with umlauts');
 
     $results = $this->buildSearch('smile' . json_decode('"\u1F601"'))->execute();
-    $this->assertResults(array(1), $results, 'Search for keywords with umlauts');
+    $this->assertResults([1], $results, 'Search for keywords with umlauts');
 
     $results = $this->buildSearch()->addCondition('keywords', 'grape', '<>')->execute();
-    $this->assertResults(array(1, 3), $results, 'Negated filter on multi-valued field');
+    $this->assertResults([1, 3], $results, 'Negated filter on multi-valued field');
   }
 
   /**
@@ -462,15 +463,26 @@ class BackendTest extends BackendTestBase {
   }
 
   /**
+   * Tests changing a field boost to a floating point value.
+   *
+   * @see https://www.drupal.org/node/2846932
+   */
+  protected function regressionTest2846932() {
+    $index = $this->getIndex();
+    $index->getField('body')->setBoost(0.8);
+    $index->save();
+  }
+
+  /**
    * {@inheritdoc}
    */
   protected function checkIndexWithoutFields() {
     $index = parent::checkIndexWithoutFields();
 
-    $expected = array(
+    $expected = [
       'search_api_datasource',
       'search_api_language',
-    );
+    ];
     $db_info = $this->getIndexDbInfo($index->id());
     $info_fields = array_keys($db_info['field_tables']);
     sort($info_fields);
@@ -540,13 +552,13 @@ class BackendTest extends BackendTestBase {
     }
 
     // Uninstall the module.
-    \Drupal::service('module_installer')->uninstall(array('search_api_db'), FALSE);
+    \Drupal::service('module_installer')->uninstall(['search_api_db'], FALSE);
     $this->assertFalse(\Drupal::moduleHandler()->moduleExists('search_api_db'), 'The Database Search module was successfully uninstalled.');
 
     $tables = $schema->findTables('search_api_db_%');
-    $expected = array(
+    $expected = [
       'search_api_db_database_search_index' => 'search_api_db_database_search_index',
-    );
+    ];
     $this->assertEquals($expected, $tables, 'All the tables of the the Database Search module have been removed.');
   }
 

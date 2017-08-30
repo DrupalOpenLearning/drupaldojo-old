@@ -38,7 +38,8 @@ use Drupal\Core\Entity\EntityStorageInterface;
  *     "roles",
  *     "weight",
  *     "status",
- *     "langcode"
+ *     "langcode",
+ *     "use_revisions"
  *   },
  *   links = {
  *     "add-form" = "/admin/config/people/profiles/types/add",
@@ -54,7 +55,7 @@ class ProfileType extends ConfigEntityBundleBase implements ProfileTypeInterface
   /**
    * The primary identifier of the profile type.
    *
-   * @var integer
+   * @var int
    */
   protected $id;
 
@@ -75,14 +76,14 @@ class ProfileType extends ConfigEntityBundleBase implements ProfileTypeInterface
   /**
    * Whether the profile type is shown during registration.
    *
-   * @var boolean
+   * @var bool
    */
   protected $registration = FALSE;
 
   /**
    * Whether the profile type allows multiple profiles.
    *
-   * @var boolean
+   * @var bool
    */
   protected $multiple = FALSE;
 
@@ -96,9 +97,16 @@ class ProfileType extends ConfigEntityBundleBase implements ProfileTypeInterface
   /**
    * The weight of the profile type compared to others.
    *
-   * @var integer
+   * @var int
    */
   protected $weight = 0;
+
+  /**
+   * Should profiles of this type always generate revisions.
+   *
+   * @var bool
+   */
+  protected $use_revisions = FALSE;
 
   /**
    * {@inheritdoc}
@@ -140,7 +148,7 @@ class ProfileType extends ConfigEntityBundleBase implements ProfileTypeInterface
   /**
    * {@inheritdoc}
    */
-  public function setRoles($roles) {
+  public function setRoles(array $roles) {
     $this->roles = $roles;
     return $this;
   }
@@ -163,12 +171,20 @@ class ProfileType extends ConfigEntityBundleBase implements ProfileTypeInterface
   /**
    * {@inheritdoc}
    */
+  public function shouldCreateNewRevision() {
+    return $this->use_revisions;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
   public function postSave(EntityStorageInterface $storage, $update = TRUE) {
     parent::postSave($storage, $update);
 
-    // @todo Setting ->setRebuildNeeded isn't enough. Investigate.
-    \Drupal::service('router.builder')->rebuild();
+    // Rebuild module data to generate bundle permissions and link tasks.
+    if (!$update) {
+      system_rebuild_module_data();
+    }
   }
-
 
 }

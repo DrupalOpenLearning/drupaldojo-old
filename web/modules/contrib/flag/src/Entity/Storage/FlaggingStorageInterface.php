@@ -18,13 +18,19 @@ interface FlaggingStorageInterface extends ContentEntityStorageInterface {
    *   The entity to check.
    * @param \Drupal\Core\Session\AccountInterface $account
    *   The user account to check for.
+   * @param string $session_id
+   *   (optional) The session ID. This must be supplied if $account is the
+   *   anonymous user.
    *
    * @return string[]
    *   A list of flag_ids that for which the given entity is flagged, either
    *   globally or for the given account.
    *
+   * @throws \LogicException
+   *   Thrown when $account is anonymous but no associated session ID is
+   *   specified.
    */
-  public function loadIsFlagged(EntityInterface $entity, AccountInterface $account);
+  public function loadIsFlagged(EntityInterface $entity, AccountInterface $account, $session_id = NULL);
 
   /**
    * Loads a list of flags the entities are flagged with for the given account.
@@ -33,11 +39,18 @@ interface FlaggingStorageInterface extends ContentEntityStorageInterface {
    *   The entities to check. All entities must be of the same type.
    * @param \Drupal\Core\Session\AccountInterface $account
    *   The user account to check for.
+   * @param string $session_id
+   *   (optional) The session ID. This must be supplied if $account is the
+   *   anonymous user.
    *
    * @return string[][]
    *   A list of flag_ids that for which the given entity is flagged, either
    *   globally or for the given account. Keyed by the entity IDs.
+   *
+   * @throws \LogicException
+   *   Thrown when $account is anonymous but no associated session ID is
+   *   specified.
    */
-  public function loadIsFlaggedMultiple($entities, AccountInterface $account);
+  public function loadIsFlaggedMultiple(array $entities, AccountInterface $account, $session_id = NULL);
 
 }

@@ -22,6 +22,16 @@ function get_address_format_customizations($countryCode) {
     $formatCustomizations['DE'] = [
         'format' => '%organization\n%givenName %familyName\n%addressLine1\n%addressLine2\n%postalCode %locality',
     ];
+    // Remove the administrative area.
+    // https://github.com/googlei18n/libaddressinput/issues/115
+    $formatCustomizations['GU'] = [
+        'format' => '%givenName %familyName\n%organization\n%addressLine1\n%addressLine2\n%locality %postalCode',
+         'required_fields' => [
+             'addressLine1',
+             'locality',
+             'postalCode',
+         ],
+    ];
     // Make the postal codes required, add administrative area fields (EE, LT).
     // https://github.com/googlei18n/libaddressinput/issues/64
     $formatCustomizations['EE'] = [
@@ -98,29 +108,6 @@ function get_subdivision_customizations($group) {
             'name' => 'México',
             'iso_code' => 'MX-MEX',
             'postal_code_pattern' => '5[0-7]',
-        ],
-    ];
-    // ISO codes for Telangana, Uttarakhand.
-    // https://github.com/googlei18n/libaddressinput/issues/54
-    // https://github.com/googlei18n/libaddressinput/issues/59
-    $subdivisionCustomizations['IN'] = [
-        '_replace' => ['Telangana', 'Uttarakhand'],
-        'Telangana' => [
-            'iso_code' => 'IN-TG',
-            'postal_code_pattern' => '5[0-3]',
-        ],
-        'Uttarakhand' => [
-            'iso_code' => 'IN-UT',
-            'postal_code_pattern' => '24[46-9]|254|26[23]',
-        ],
-    ];
-    // Remove Swiss administrative areas, they're not used for addressing.
-    // https://github.com/googlei18n/libaddressinput/issues/89
-    $subdivisionCustomizations['CH'] = [
-        '_remove' => [
-            'AG', 'AR', 'AI', 'BE', 'BL', 'BS', 'FR', 'GE', 'GL', 'GR', 'JU',
-            'LU', 'NE', 'NW', 'OW', 'SH', 'SZ', 'SO', 'SG', 'TI', 'TG', 'UR',
-            'VD', 'VS', 'ZG', 'ZH',
         ],
     ];
 

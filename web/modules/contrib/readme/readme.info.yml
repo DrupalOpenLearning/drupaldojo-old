@@ -1,0 +1,12 @@
+name: Readme
+type: module
+description: "Allows site builders and administrator to view a module's README file."
+package: Help
+# core: 8.x
+configure: readme.settings
+
+# Information added by Drupal.org packaging script on 2016-06-17
+version: '8.x-1.0-beta2'
+core: '8.x'
+project: 'readme'
+datestamp: 1466191440

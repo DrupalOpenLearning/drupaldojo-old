@@ -1,10 +1,5 @@
 <?php
 
-/**
- * @file
- * Definition of Drupal\field_group\Tests\EntityDisplayTest.
- */
-
 namespace Drupal\field_group\Tests;
 
 use Drupal\field\Entity\FieldConfig;
@@ -245,7 +240,6 @@ class EntityDisplayTest extends WebTestBase {
     $this->assertFieldByXPath("//div[contains(@class, 'test-class-wrapper')]", NULL, t('Test class set on tabs wrapper'));
     $this->assertFieldByXPath("//details[contains(@class, 'test-class-2')]", NULL, t('Test class set on second tab'));
     $this->assertRaw('<div class="details-description">description of second tab</div>', t('Description of tab is shown'));
-    $this->assertRaw('class="collapsible collapsed test-class-2', t('Second tab is default collapsed'));
 
     // Test if correctly nested.
     $this->assertFieldByXPath("//div[contains(@class, 'test-class-wrapper')]//details[contains(@class, 'test-class')]", NULL, 'First tab is displayed as child of the wrapper.');

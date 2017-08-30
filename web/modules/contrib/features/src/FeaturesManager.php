@@ -8,12 +8,13 @@ use Drupal\Core\Config\ConfigFactoryInterface;
 use Drupal\Core\Config\ConfigManagerInterface;
 use Drupal\Core\Config\InstallStorage;
 use Drupal\Core\Config\StorageInterface;
-use Drupal\Core\Entity\EntityManagerInterface;
+use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Entity\EntityTypeInterface;
 use Drupal\Core\Extension\Extension;
 use Drupal\Core\Extension\ExtensionDiscovery;
 use Drupal\Core\Extension\ModuleHandlerInterface;
 use Drupal\Core\StringTranslation\StringTranslationTrait;
+use Drupal\config_update\ConfigRevertInterface;
 
 /**
  * The FeaturesManager provides helper functions for building packages.
@@ -22,11 +23,11 @@ class FeaturesManager implements FeaturesManagerInterface {
   use StringTranslationTrait;
 
   /**
-   * The entity manager.
+   * The entity type manager.
    *
-   * @var \Drupal\Core\Entity\EntityManagerInterface
+   * @var \Drupal\Core\Entity\EntityTypeManagerInterface
    */
-  protected $entityManager;
+  protected $entityTypeManager;
 
   /**
    * The target storage.
@@ -62,6 +63,13 @@ class FeaturesManager implements FeaturesManagerInterface {
    * @var \Drupal\Core\Extension\ModuleHandlerInterface
    */
   protected $moduleHandler;
+
+  /**
+   * The config reverter.
+   *
+   * @var \Drupal\config_update\ConfigRevertInterface
+   */
+  protected $configReverter;
 
   /**
    * The Features settings.
@@ -117,8 +125,8 @@ class FeaturesManager implements FeaturesManagerInterface {
    *
    * @param string $root
    *   The app root.
-   * @param \Drupal\Core\Entity\EntityManagerInterface $entity_manager
-   *   The entity manager.
+   * @param \Drupal\Core\Entity\EntityTypeManagerInterface $entity_type_manager
+   *   The entity type manager.
    * @param \Drupal\Core\Config\ConfigFactoryInterface $config_factory
    *   The configuration factory.
    * @param \Drupal\Core\Config\StorageInterface $config_storage
@@ -127,16 +135,18 @@ class FeaturesManager implements FeaturesManagerInterface {
    *   The configuration manager.
    * @param \Drupal\Core\Extension\ModuleHandlerInterface $module_handler
    *   The module handler.
+   * @param \Drupal\config_update\ConfigRevertInterface $config_reverter
    */
-  public function __construct($root, EntityManagerInterface $entity_manager, ConfigFactoryInterface $config_factory,
+  public function __construct($root, EntityTypeManagerInterface $entity_type_manager, ConfigFactoryInterface $config_factory,
                               StorageInterface $config_storage, ConfigManagerInterface $config_manager,
-                              ModuleHandlerInterface $module_handler) {
+                              ModuleHandlerInterface $module_handler, ConfigRevertInterface $config_reverter) {
     $this->root = $root;
-    $this->entityManager = $entity_manager;
+    $this->entityTypeManager = $entity_type_manager;
     $this->configStorage = $config_storage;
     $this->configManager = $config_manager;
     $this->moduleHandler = $module_handler;
     $this->configFactory = $config_factory;
+    $this->configReverter = $config_reverter;
     $this->settings = $config_factory->getEditable('features.settings');
     $this->extensionStorages = new FeaturesExtensionStorages($this->configStorage);
     $this->extensionStorages->addStorage(InstallStorage::CONFIG_INSTALL_DIRECTORY);
@@ -177,7 +187,7 @@ class FeaturesManager implements FeaturesManagerInterface {
       return $name;
     }
 
-    $definition = $this->entityManager->getDefinition($type);
+    $definition = $this->entityTypeManager->getDefinition($type);
     $prefix = $definition->getConfigPrefix() . '.';
     return $prefix . $name;
   }
@@ -191,12 +201,12 @@ class FeaturesManager implements FeaturesManagerInterface {
       'name_short' => '',
     );
     $prefix = FeaturesManagerInterface::SYSTEM_SIMPLE_CONFIG . '.';
-    if (strpos($fullname, $prefix)) {
+    if (strpos($fullname, $prefix) !== FALSE) {
       $result['type'] = FeaturesManagerInterface::SYSTEM_SIMPLE_CONFIG;
       $result['name_short'] = substr($fullname, strlen($prefix));
     }
     else {
-      foreach ($this->entityManager->getDefinitions() as $entity_type => $definition) {
+      foreach ($this->entityTypeManager->getDefinitions() as $entity_type => $definition) {
         if ($definition->isSubclassOf('Drupal\Core\Config\Entity\ConfigEntityInterface')) {
           $prefix = $definition->getConfigPrefix() . '.';
           if (strpos($fullname, $prefix) === 0) {
@@ -284,6 +294,26 @@ class FeaturesManager implements FeaturesManagerInterface {
     if ($package->getMachineName()) {
       $this->packages[$package->getMachineName()] = $package;
     }
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function loadPackage($module_name, $any = FALSE) {
+    $package = $this->getPackage($module_name);
+    // Load directly from module if packages are not loaded or
+    // if we want to include ANY module regardless of its a feature.
+    if ((empty($this->packages) || $any) && !isset($package)) {
+      $module_list = $this->moduleHandler->getModuleList();
+      if (!empty($module_list[$module_name])) {
+        $extension = $module_list[$module_name];
+        $package = $this->initPackageFromExtension($extension);
+        $config = $this->listExtensionConfig($extension);
+        $package->setConfigOrig($config);
+        $package->setStatus(FeaturesManagerInterface::STATUS_INSTALLED);
+      }
+    }
+    return $package;
   }
 
   /**
@@ -517,7 +547,7 @@ class FeaturesManager implements FeaturesManagerInterface {
     $dependencies = [];
     $type = $config->getType();
     if ($type != FeaturesManagerInterface::SYSTEM_SIMPLE_CONFIG) {
-      $provider = $this->entityManager->getDefinition($type)->getProvider();
+      $provider = $this->entityTypeManager->getDefinition($type)->getProvider();
       // Ensure the provider is an installed module and not, for example, 'core'
       if (isset($module_list[$provider])) {
         $dependencies[] = $provider;
@@ -602,9 +632,13 @@ class FeaturesManager implements FeaturesManagerInterface {
       '/block\.block\..*_page_title/',
     ];
     $config_collection = $this->getConfigCollection();
-    // Reverse sort by key so that child package will claim items before parent
-    // package. E.g., event_registration will claim before event.
-    krsort($config_collection);
+    // Sort by key so that specific package will claim items before general
+    // package. E.g., event_registration and registration_event will claim
+    // before event.
+    uksort($patterns, function($a, $b) {
+      // Count underscores to determine specificity of the package.
+      return (int) (substr_count($a, '_') <= substr_count($b, '_'));
+    });
     foreach ($patterns as $pattern => $machine_name) {
       if (isset($this->packages[$machine_name])) {
         foreach ($config_collection as $item_name => $item) {
@@ -615,7 +649,7 @@ class FeaturesManager implements FeaturesManagerInterface {
             }
           }
 
-          if (!$item->getPackage() && preg_match('/[_\-.]' . $pattern . '[_\-.]/', '.' . $item->getShortName() . '.')) {
+          if (!$item->getPackage() && preg_match('/(\.|-|_|^)' . $pattern . '(\.|-|_|$)/', $item->getShortName())) {
             try {
               $this->assignConfigPackage($machine_name, [$item_name]);
             }
@@ -945,23 +979,7 @@ class FeaturesManager implements FeaturesManagerInterface {
       // Add configuration files.
       foreach ($package->getConfig() as $name) {
         $config = $config_collection[$name];
-        $data = $config->getData();
-        // The _core is site-specific, so don't export it.
-        unset($data['_core']);
-        // The UUID is site-specfic, so don't export it.
-        if ($entity_type_id = $this->configManager->getEntityTypeIdByName($name)) {
-          unset($data['uuid']);
-        }
-        $config->setData($data);
-        // User roles include all permissions currently assigned to them. To
-        // avoid extraneous additions, reset permissions.
-        if ($config->getType() == 'user_role') {
-          $data = $config->getData();
-          // Unset and not empty permissions data to prevent loss of configured
-          // role permissions in the event of a feature revert.
-          unset($data['permissions']);
-          $config->setData($data);
-        }
+
         $package->appendFile([
           'filename' => $config->getName() . '.yml',
           'subdirectory' => $config->getSubdirectory(),
@@ -999,7 +1017,7 @@ class FeaturesManager implements FeaturesManagerInterface {
    */
   public function listConfigTypes($bundles_only = FALSE) {
     $definitions = [];
-    foreach ($this->entityManager->getDefinitions() as $entity_type => $definition) {
+    foreach ($this->entityTypeManager->getDefinitions() as $entity_type => $definition) {
       if ($definition->isSubclassOf('Drupal\Core\Config\Entity\ConfigEntityInterface')) {
         if (!$bundles_only || $definition->getBundleOf()) {
           $definitions[$entity_type] = $definition;
@@ -1044,7 +1062,7 @@ class FeaturesManager implements FeaturesManagerInterface {
   public function listConfigByType($config_type) {
     // For a given entity type, load all entities.
     if ($config_type && $config_type !== FeaturesManagerInterface::SYSTEM_SIMPLE_CONFIG) {
-      $entity_storage = $this->entityManager->getStorage($config_type);
+      $entity_storage = $this->entityTypeManager->getStorage($config_type);
       $names = [];
       foreach ($entity_storage->loadMultiple() as $entity) {
         $entity_id = $entity->id();
@@ -1055,7 +1073,7 @@ class FeaturesManager implements FeaturesManagerInterface {
     // Handle simple configuration.
     else {
       $definitions = [];
-      foreach ($this->entityManager->getDefinitions() as $entity_type => $definition) {
+      foreach ($this->entityTypeManager->getDefinitions() as $entity_type => $definition) {
         if ($definition->isSubclassOf('Drupal\Core\Config\Entity\ConfigEntityInterface')) {
           $definitions[$entity_type] = $definition;
         }
@@ -1306,6 +1324,59 @@ class FeaturesManager implements FeaturesManagerInterface {
     }
     $this->featureInfoCache[$module_name] = $features_info;
     return $features_info;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function createConfiguration(array $config_to_create) {
+    $existing_config = $this->getConfigCollection();
+
+    // If config data is not specified, load it from the extension storage.
+    foreach ($config_to_create as $name => $item) {
+      if (empty($item)) {
+        $config = $this->configReverter->getFromExtension('', $name);
+        // For testing purposes, if it couldn't load from a module, get config
+        // from the cached Config Collection
+        if (empty($config) && isset($existing_config[$name])) {
+          $config = $existing_config[$name]->getData();
+        }
+        $config_to_create[$name] = $config;
+      }
+    }
+
+    // Determine which config is new vs existing.
+    $existing = array_intersect_key($config_to_create, $existing_config);
+    $new = array_diff_key($config_to_create, $existing);
+
+    // The FeaturesConfigInstaller exposes the normally protected createConfiguration
+    // function from Core ConfigInstaller than handles the creation of new
+    // config or the changing of existing config.
+    /** @var \Drupal\features\FeaturesConfigInstaller $config_installer */
+    $config_installer = \Drupal::service('features.config.installer');
+    $config_installer->createConfiguration(StorageInterface::DEFAULT_COLLECTION, $config_to_create);
+
+    // Collect results for new and updated config.
+    $new_config = $this->getConfigCollection(TRUE);
+    $result['updated'] = array_intersect_key($new_config, $existing);
+    $result['new'] = array_intersect_key($new_config, $new);
+    return $result;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function import($modules, $any = FALSE) {
+    $result = [];
+    foreach ($modules as $module_name) {
+      $package = $this->loadPackage($module_name, $any);
+      $components = isset($package) ? $package->getConfigOrig() : [];
+      if (empty($components)) {
+        continue;
+      }
+      $result[$module_name] = $this->createConfiguration(array_fill_keys($components, []));
+    }
+    return $result;
   }
 
 }

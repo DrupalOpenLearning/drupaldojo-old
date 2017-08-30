@@ -1,10 +1,5 @@
 <?php
 
-/**
- * @file
- * Definition of Drupal\field_group\Tests\ManageDisplayTest.
- */
-
 namespace Drupal\field_group\Tests;
 
 use Drupal\Component\Utility\Unicode;
@@ -51,15 +46,27 @@ class ManageDisplayTest extends WebTestBase {
     $this->group_label = $this->randomString(8);
     $this->group_name_input = Unicode::strtolower($this->randomMachineName());
     $this->group_name = 'group_' . $this->group_name_input;
+    $this->group_formatter = 'details';
 
     // Setup new group.
     $group = array(
-      'fields[_add_new_group][label]' => $this->group_label,
-      'fields[_add_new_group][group_name]' => $this->group_name_input,
+      'group_formatter' => $this->group_formatter,
+      'label' => $this->group_label,
+    );
+
+    $this->drupalPostForm('admin/structure/types/manage/' . $this->type . '/form-display/add-group', $group, t('Save and continue'));
+    $this->assertText('Machine-readable name field is required.');
+
+    // Setup new group.
+    $group = array(
+      'group_formatter' => $this->group_formatter,
+      'label' => $this->group_label,
+      'group_name' => $this->group_name_input,
     );
 
     // Add new group on the 'Manage form display' page.
-    $this->drupalPostForm('admin/structure/types/manage/' . $this->type . '/form-display', $group, t('Save'));
+    $this->drupalPostForm('admin/structure/types/manage/' . $this->type . '/form-display/add-group', $group, t('Save and continue'));
+    $this->drupalPostForm(NULL, [], t('Create group'));
 
     $this->assertRaw(t('New group %label successfully created.', array('%label' => $this->group_label)), t('Group message displayed on screen.'));
 
@@ -68,7 +75,9 @@ class ManageDisplayTest extends WebTestBase {
     $this->assertNotNull($this->group, t('Group was loaded'));
 
     // Add new group on the 'Manage display' page.
-    $this->drupalPostForm('admin/structure/types/manage/' . $this->type . '/display', $group, t('Save'));
+    $this->drupalPostForm('admin/structure/types/manage/' . $this->type . '/display/add-group', $group, t('Save and continue'));
+    $this->drupalPostForm(NULL, [], t('Create group'));
+
     $this->assertRaw(t('New group %label successfully created.', array('%label' => $this->group_label)), t('Group message displayed on screen.'));
 
     // Test if group is in the $groups array.
@@ -88,19 +97,15 @@ class ManageDisplayTest extends WebTestBase {
 
     $group = $this->createGroup('node', $this->type, 'form', 'default', $data);
 
-    $config_name = 'node.' . $this->type . '.form.default.' . $group->group_name;
-
-    $this->drupalPostForm('admin/structure/types/manage/' . $this->type . '/groups/' . $config_name . '/delete', array(), t('Delete'));
+    $this->drupalPostForm('admin/structure/types/manage/' . $this->type . '/form-display/' . $group->group_name . '/delete', array(), t('Delete'));
     $this->assertRaw(t('The group %label has been deleted from the %type content type.', array('%label' => $group->label, '%type' => $this->type)), t('Group removal message displayed on screen.'));
 
     $display = EntityFormDisplay::load($group->entity_type . '.' . $group->bundle . '.' . $group->mode);
     $data = $display->getThirdPartySettings('field_group');
-    debug($data);
 
     // Test that group is not in the $groups array.
-    \Drupal::entityManager()->getStorage('entity_form_display')->resetCache();
+    \Drupal::entityTypeManager()->getStorage('entity_form_display')->resetCache();
     $loaded_group = field_group_load_field_group($group->group_name, 'node', $this->type, 'form', 'default');
-    debug($loaded_group);
     $this->assertNull($loaded_group, t('Group not found after deleting'));
 
     $data = array(
@@ -110,15 +115,12 @@ class ManageDisplayTest extends WebTestBase {
 
     $group = $this->createGroup('node', $this->type, 'view', 'default', $data);
 
-    $config_name = 'node.' . $this->type . '.view.default.' . $group->group_name;
-
-    $this->drupalPostForm('admin/structure/types/manage/' . $this->type . '/groups/' . $config_name . '/delete', array(), t('Delete'));
+    $this->drupalPostForm('admin/structure/types/manage/' . $this->type . '/display/' . $group->group_name . '/delete', array(), t('Delete'));
     $this->assertRaw(t('The group %label has been deleted from the %type content type.', array('%label' => $group->label, '%type' => $this->type)), t('Group removal message displayed on screen.'));
 
     // Test that group is not in the $groups array.
-    \Drupal::entityManager()->getStorage('entity_view_display')->resetCache();
+    \Drupal::entityTypeManager()->getStorage('entity_view_display')->resetCache();
     $loaded_group = field_group_load_field_group($group->group_name, 'node', $this->type, 'view', 'default');
-    debug($loaded_group);
     $this->assertNull($loaded_group, t('Group not found after deleting'));
   }
 

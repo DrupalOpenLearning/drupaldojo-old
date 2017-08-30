@@ -17,7 +17,7 @@ class MinkContext extends MinkExtension implements TranslatableContext {
    * @return array
    */
   public static function getTranslationResources() {
-    return glob(__DIR__ . '/../../../../i18n/*.xliff');
+    return self::getMinkTranslationResources() + glob(__DIR__ . '/../../../../i18n/*.xliff');
   }
 
   /**
@@ -82,9 +82,14 @@ class MinkContext extends MinkExtension implements TranslatableContext {
   /**
    * For javascript enabled scenarios, always wait for AJAX before clicking.
    *
-   * @BeforeStep @javascript
+   * @BeforeStep
    */
   public function beforeJavascriptStep($event) {
+    /** @var \Behat\Behat\Hook\Scope\BeforeStepScope $event */
+    $tags = $event->getFeature()->getTags();
+    if (!in_array('javascript', $tags)) {
+      return;
+    }
     $text = $event->getStep()->getText();
     if (preg_match('/(follow|press|click|submit)/i', $text)) {
       $this->iWaitForAjaxToFinish();
@@ -94,9 +99,14 @@ class MinkContext extends MinkExtension implements TranslatableContext {
   /**
    * For javascript enabled scenarios, always wait for AJAX after clicking.
    *
-   * @AfterStep @javascript
+   * @AfterStep
    */
   public function afterJavascriptStep($event) {
+    /** @var \Behat\Behat\Hook\Scope\BeforeStepScope $event */
+    $tags = $event->getFeature()->getTags();
+    if (!in_array('javascript', $tags)) {
+      return;
+    }
     $text = $event->getStep()->getText();
     if (preg_match('/(follow|press|click|submit)/i', $text)) {
       $this->iWaitForAjaxToFinish();
@@ -305,6 +315,18 @@ class MinkContext extends MinkExtension implements TranslatableContext {
     $buttonObj = $element->findButton($button);
     if (empty($buttonObj)) {
       throw new \Exception(sprintf("The button '%s' was not found on the page %s", $button, $this->getSession()->getCurrentUrl()));
+    }
+  }
+
+  /**
+   * @Then I should not see the button :button
+   * @Then I should not see the :button button
+   */
+  public function assertNotButton($button) {
+    $element = $this->getSession()->getPage();
+    $buttonObj = $element->findButton($button);
+    if (!empty($buttonObj)) {
+      throw new \Exception(sprintf("The button '%s' was found on the page %s", $button, $this->getSession()->getCurrentUrl()));
     }
   }
 

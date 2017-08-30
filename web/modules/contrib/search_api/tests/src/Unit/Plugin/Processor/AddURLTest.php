@@ -64,7 +64,7 @@ class AddURLTest extends UnitTestCase {
       ->will($this->returnValue($datasource));
 
     // Create the tested processor and set the mocked indexer.
-    $this->processor = new AddURL(array(), 'add_url', array());
+    $this->processor = new AddURL([], 'add_url', []);
     $this->processor->setIndex($index);
     /** @var \Drupal\Core\StringTranslation\TranslationInterface $translation */
     $translation = $this->getStringTranslationStub();
@@ -80,16 +80,16 @@ class AddURLTest extends UnitTestCase {
       ->disableOriginalConstructor()
       ->getMock();
 
-    $body_value = array('Some text value');
-    $fields = array(
-      'search_api_url' => array(
+    $body_value = ['Some text value'];
+    $fields = [
+      'search_api_url' => [
         'type' => 'string',
-      ),
-      'entity:node/body' => array(
+      ],
+      'entity:node/body' => [
         'type' => 'text',
         'values' => $body_value,
-      ),
-    );
+      ],
+    ];
     $items = $this->createItems($this->index, 2, $fields, EntityAdapter::createFromEntity($node));
 
     // Add the processor's field values to the items.
@@ -99,7 +99,7 @@ class AddURLTest extends UnitTestCase {
 
     // Check the valid item.
     $field = $items[$this->itemIds[0]]->getField('url');
-    $this->assertEquals(array('http://www.example.com/node/example'), $field->getValues(), 'Valid URL added as value to the field.');
+    $this->assertEquals(['http://www.example.com/node/example'], $field->getValues(), 'Valid URL added as value to the field.');
 
     // Check that no other fields were changed.
     $field = $items[$this->itemIds[0]]->getField('body');
@@ -107,7 +107,7 @@ class AddURLTest extends UnitTestCase {
 
     // Check the second item to be sure that all are processed.
     $field = $items[$this->itemIds[1]]->getField('url');
-    $this->assertEquals(array('http://www.example.com/node/example'), $field->getValues(), 'Valid URL added as value to the field in the second item.');
+    $this->assertEquals(['http://www.example.com/node/example'], $field->getValues(), 'Valid URL added as value to the field in the second item.');
   }
 
   /**

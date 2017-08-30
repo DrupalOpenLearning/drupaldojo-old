@@ -9,7 +9,9 @@ use Drupal\comment\Entity\Comment;
 use Drupal\Core\Config\ConfigImporter;
 use Drupal\Core\Entity\ContentEntityInterface;
 use Drupal\Core\Entity\EntityInterface;
+use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Url;
+use Drupal\field\Entity\FieldConfig;
 use Drupal\node\NodeInterface;
 use Drupal\search_api\Entity\Index;
 use Drupal\search_api\IndexInterface;
@@ -52,9 +54,9 @@ function search_api_cron() {
   \Drupal::getContainer()->get('search_api.server_task_manager')->execute();
 
   // Load all enabled, not read-only indexes.
-  $conditions = array(
+  $conditions = [
     'status' => TRUE,
-  );
+  ];
   $index_storage = \Drupal::entityTypeManager()->getStorage('search_api_index');
   /** @var \Drupal\search_api\IndexInterface[] $indexes */
   $indexes = $index_storage->loadByProperties($conditions);
@@ -66,10 +68,10 @@ function search_api_cron() {
   // happened yet.
   $task_manager = \Drupal::getContainer()->get('search_api.task_manager');
   foreach ($indexes as $index_id => $index) {
-    $conditions = array(
+    $conditions = [
       'type' => IndexTaskManager::TRACK_ITEMS_TASK_TYPE,
       'index_id' => $index_id,
-    );
+    ];
     $task_manager->executeSingleTask($conditions);
 
     // Filter out read-only indexes here, since we want to have tracking but not
@@ -81,7 +83,7 @@ function search_api_cron() {
 
   // Now index items.
   // Remember servers which threw an exception.
-  $ignored_servers = array();
+  $ignored_servers = [];
 
   // Continue indexing, one batch from each index, until the time is up, but at
   // least index one batch per index.
@@ -107,10 +109,10 @@ function search_api_cron() {
         try {
           $num = $index->indexItems($limit);
           if ($num) {
-            $variables = array(
+            $variables = [
               '@num' => $num,
               '%name' => $index->label(),
-            );
+            ];
             \Drupal::service('logger.channel.search_api')->info('Indexed @num items for index %name.', $variables);
           }
         }
@@ -133,6 +135,38 @@ function search_api_cron() {
 }
 
 /**
+ * Implements hook_hook_info().
+ */
+function search_api_hook_info() {
+  $hooks = [
+    'search_api_backend_info_alter',
+    'search_api_server_features_alter',
+    'search_api_datasource_info_alter',
+    'search_api_processor_info_alter',
+    'search_api_data_type_info_alter',
+    'search_api_parse_mode_info_alter',
+    'search_api_tracker_info_alter',
+    'search_api_displays_alter',
+    'search_api_field_type_mapping_alter',
+    'search_api_views_handler_mapping_alter',
+    'search_api_views_field_handler_mapping_alter',
+    'search_api_index_items_alter',
+    'search_api_items_indexed',
+    'search_api_query_alter',
+    // Unfortunately, it's not possible to add hook infos for hooks with
+    // "wildcards".
+//    'search_api_query_TAG_alter',
+    'search_api_results_alter',
+//    'search_api_results_TAG_alter',
+    'search_api_index_reindex',
+  ];
+  $info = [
+    'group' => 'search_api',
+  ];
+  return array_fill_keys($hooks, $info);
+}
+
+/**
  * Implements hook_config_import_steps_alter().
  */
 function search_api_config_import_steps_alter(&$sync_steps, ConfigImporter $config_importer) {
@@ -143,7 +177,7 @@ function search_api_config_import_steps_alter(&$sync_steps, ConfigImporter $conf
   $prefix_length = strlen($prefix);
   foreach ($new_or_changed as $config_id) {
     if (substr($config_id, 0, $prefix_length) === $prefix) {
-      $sync_steps[] = array('Drupal\search_api\Task\IndexTaskManager', 'processIndexTasks');
+      $sync_steps[] = ['Drupal\search_api\Task\IndexTaskManager', 'processIndexTasks'];
     }
   }
 }
@@ -169,7 +203,7 @@ function search_api_entity_insert(EntityInterface $entity) {
   }
 
   // Compute the item IDs for all languages of the entity.
-  $item_ids = array();
+  $item_ids = [];
   $entity_id = $entity->id();
   foreach (array_keys($entity->getTranslationLanguages()) as $langcode) {
     $item_ids[] = $entity_id . ':' . $langcode;
@@ -205,9 +239,9 @@ function search_api_entity_update(EntityInterface $entity) {
   // Compare old and new languages for the entity to identify inserted,
   // updated and deleted translations (and, therefore, search items).
   $entity_id = $entity->id();
-  $inserted_item_ids = array();
+  $inserted_item_ids = [];
   $updated_item_ids = $entity->getTranslationLanguages();
-  $deleted_item_ids = array();
+  $deleted_item_ids = [];
   $old_translations = $entity->original->getTranslationLanguages();
   foreach ($old_translations as $langcode => $language) {
     if (!isset($updated_item_ids[$langcode])) {
@@ -264,7 +298,7 @@ function search_api_entity_delete(EntityInterface $entity) {
   }
 
   // Remove the search items for all the entity's translations.
-  $item_ids = array();
+  $item_ids = [];
   $entity_id = $entity->id();
   foreach (array_keys($entity->getTranslationLanguages()) as $langcode) {
     $item_ids[] = $entity_id . ':' . $langcode;
@@ -294,8 +328,14 @@ function search_api_node_access_records_alter(&$grants, NodeInterface $node) {
     foreach ($index->getDatasources() as $datasource_id => $datasource) {
       switch ($datasource->getEntityTypeId()) {
         case 'node':
+          // Don't index the node if search_api_skip_tracking is set on it.
+          if ($node->search_api_skip_tracking) {
+            continue 2;
+          }
           $item_id = $datasource->getItemId($node->getTypedData());
-          $index->trackItemsUpdated($datasource_id, array($item_id));
+          if ($item_id !== NULL) {
+            $index->trackItemsUpdated($datasource_id, [$item_id]);
+          }
           break;
 
         case 'comment':
@@ -307,11 +347,16 @@ function search_api_node_access_records_alter(&$grants, NodeInterface $node) {
             /** @var \Drupal\comment\CommentInterface[] $comments */
             $comments = Comment::loadMultiple($comment_ids);
           }
-          $item_ids = array();
+          $item_ids = [];
           foreach ($comments as $comment) {
-            $item_ids[] = $datasource->getItemId($comment->getTypedData());
+            $item_id = $datasource->getItemId($comment->getTypedData());
+            if ($item_id !== NULL) {
+              $item_ids[] = $item_id;
+            }
           }
-          $index->trackItemsUpdated($datasource_id, $item_ids);
+          if ($item_ids) {
+            $index->trackItemsUpdated($datasource_id, $item_ids);
+          }
           break;
       }
     }
@@ -322,44 +367,44 @@ function search_api_node_access_records_alter(&$grants, NodeInterface $node) {
  * Implements hook_theme().
  */
 function search_api_theme() {
-  return array(
-    'search_api_admin_fields_table' => array(
+  return [
+    'search_api_admin_fields_table' => [
       'render element' => 'element',
       'function' => 'theme_search_api_admin_fields_table',
       'file' => 'search_api.theme.inc',
-    ),
-    'search_api_admin_data_type_table' => array(
-      'variables' => array(
-        'data_types' => array(),
-        'fallback_mapping' => array()
-      ),
+    ],
+    'search_api_admin_data_type_table' => [
+      'variables' => [
+        'data_types' => [],
+        'fallback_mapping' => []
+      ],
       'function' => 'theme_search_api_admin_data_type_table',
       'file' => 'search_api.theme.inc',
-    ),
-    'search_api_form_item_list' => array(
+    ],
+    'search_api_form_item_list' => [
       'render element' => 'element',
       'function' => 'theme_search_api_form_item_list',
       'file' => 'search_api.theme.inc',
-    ),
-    'search_api_server' => array(
-      'variables' => array('server' => NULL),
+    ],
+    'search_api_server' => [
+      'variables' => ['server' => NULL],
       'function' => 'theme_search_api_server',
       'file' => 'search_api.theme.inc',
-    ),
-    'search_api_index' => array(
-      'variables' => array(
+    ],
+    'search_api_index' => [
+      'variables' => [
         'index' => NULL,
         'server_count' => NULL,
         'server_count_error' => NULL,
-      ),
+      ],
       'function' => 'theme_search_api_index',
       'file' => 'search_api.theme.inc',
-    ),
-  );
+    ],
+  ];
 }
 
 /**
- * Implements hook_search_api_index_update().
+ * Implements hook_ENTITY_TYPE_update() for type "search_api_index".
  *
  * Implemented on behalf of the "entity" datasource plugin.
  *
@@ -388,10 +433,10 @@ function search_api_search_api_index_update(IndexInterface $index) {
     if ($old_config != $new_config) {
       // Bundles and languages share the same structure, so changes can be
       // processed in a unified way.
-      $tasks = array();
+      $tasks = [];
       $insert_task = ContentEntityTaskManager::INSERT_ITEMS_TASK_TYPE;
       $delete_task = ContentEntityTaskManager::DELETE_ITEMS_TASK_TYPE;
-      $settings = array();
+      $settings = [];
       $entity_type = \Drupal::entityTypeManager()
         ->getDefinition($datasource->getEntityTypeId());
       if ($entity_type->hasKey('bundle')) {
@@ -432,20 +477,20 @@ function search_api_search_api_index_update(IndexInterface $index) {
       $task_manager = \Drupal::getContainer()
         ->get('search_api.task_manager');
       foreach ($tasks as $task => $data) {
-        $data += array(
+        $data += [
           'datasource' => $datasource_id,
           'page' => 0,
-        );
+        ];
         $task_manager->addTask($task, NULL, $index, $data);
       }
 
       // If we added any new tasks, set a batch for them. (If we aren't in a
       // form submission, this will just be ignored.)
       if ($tasks) {
-        $task_manager->setTasksBatch(array(
+        $task_manager->setTasksBatch([
           'index_id' => $index->id(),
           'type' => array_keys($tasks),
-        ));
+        ]);
       }
     }
   }
@@ -457,6 +502,23 @@ function search_api_search_api_index_update(IndexInterface $index) {
 function search_api_view_insert(ViewEntityInterface $view) {
   _search_api_view_crud_event($view);
 
+  // Disable Views' default caching mechanisms on Search API views.
+  $displays = $view->get('display');
+  if ($displays['default']['display_options']['query']['type'] === 'search_api_query') {
+    $change = FALSE;
+    foreach ($displays as $id => $display) {
+      if (isset($display['display_options']['cache']['type']) && in_array($display['display_options']['cache']['type'], ['tag', 'time'])) {
+        $displays[$id]['display_options']['cache']['type'] = 'none';
+        $change = TRUE;
+      }
+    }
+
+    if ($change) {
+      drupal_set_message(\Drupal::translation()->translate('The selected caching mechanism does not work with views on Search API indexes. Please either use one of the Search API-specific caching options or "None". Caching was turned off for this view.'), 'warning');
+      $view->set('display', $displays);
+      $view->save();
+    }
+  }
 }
 
 /**
@@ -490,6 +552,43 @@ function _search_api_view_crud_event(ViewEntityInterface $view) {
 }
 
 /**
+ * Retrieves the allowed values for a list field instance.
+ *
+ * @param string $entity_type
+ *   The entity type to which the field is attached.
+ * @param string $bundle
+ *   The bundle to which the field is attached.
+ * @param string $field_name
+ *   The field's field name.
+ *
+ * @return array|null
+ *   An array of allowed values in the form key => label, or NULL.
+ *
+ * @see _search_api_views_handler_adjustments()
+ */
+function _search_api_views_get_allowed_values($entity_type, $bundle, $field_name) {
+  if ($field_config = FieldConfig::loadByName($entity_type, $bundle, $field_name)) {
+    $options = $field_config->getSetting('allowed_values');
+    if ($options) {
+      return $options;
+    }
+  }
+  return NULL;
+}
+
+/**
+ * Implements hook_form_FORM_ID_alter() for form "views_ui_edit_display_form".
+ */
+function search_api_form_views_ui_edit_display_form_alter(&$form, FormStateInterface $form_state) {
+  // Disable Views' default caching mechanisms on Search API views.
+  $displays = $form_state->getStorage()['view']->get('display');
+  if ($displays['default']['display_options']['query']['type'] === 'search_api_query') {
+    unset($form['options']['cache']['type']['#options']['tag']);
+    unset($form['options']['cache']['type']['#options']['time']);
+  }
+}
+
+/**
  * Returns a warning message if the Core Search module is enabled.
  *
  * @return string|null
@@ -499,11 +598,12 @@ function _search_api_view_crud_event(ViewEntityInterface $view) {
  * @see search_api_requirements()
  */
 function _search_api_search_module_warning() {
-  if (Drupal::moduleHandler()->moduleExists('search')) {
-    $args = array(
+  if (\Drupal::moduleHandler()->moduleExists('search')) {
+    $args = [
       ':url' => Url::fromRoute('system.modules_uninstall')->toString(),
-    );
-    return t('The default Drupal Search module is still enabled. If you are using Search API, you probably want to <a href=":url">uninstall</a> the Search module for performance reasons.', $args);
+      ':documentation' => 'https://www.drupal.org/node/2010146#core-search',
+    ];
+    return t('The default Drupal core Search module is still enabled. If you are using Search API, you probably want to <a href=":url">uninstall</a> the Search module for performance reasons. For more information see <a href=":documentation">the Search API handbook</a>.', $args);
   }
   return NULL;
 }

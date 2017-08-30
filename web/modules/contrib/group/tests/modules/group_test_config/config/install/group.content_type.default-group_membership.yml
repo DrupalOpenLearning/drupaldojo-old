@@ -11,8 +11,5 @@ description: 'Adds users to groups as members.'
 group_type: default
 content_plugin: group_membership
 plugin_config:
-  group_cardinality: 0
+  group_cardinality: 99
   entity_cardinality: 1
-  info_text:
-    value: "<p>test</p>"
-    format: basic_html

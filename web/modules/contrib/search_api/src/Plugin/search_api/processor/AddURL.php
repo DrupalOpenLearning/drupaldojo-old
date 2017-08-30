@@ -27,15 +27,15 @@ class AddURL extends ProcessorPluginBase {
    * {@inheritdoc}
    */
   public function getPropertyDefinitions(DatasourceInterface $datasource = NULL) {
-    $properties = array();
+    $properties = [];
 
     if (!$datasource) {
-      $definition = array(
+      $definition = [
         'label' => $this->t('URI'),
         'description' => $this->t('A URI where the item can be accessed'),
         'type' => 'string',
         'processor_id' => $this->getPluginId(),
-      );
+      ];
       $properties['search_api_url'] = new ProcessorProperty($definition);
     }
 
@@ -48,10 +48,11 @@ class AddURL extends ProcessorPluginBase {
   public function addFieldValues(ItemInterface $item) {
     $url = $item->getDatasource()->getItemUrl($item->getOriginalObject());
     if ($url) {
-      foreach ($this->filterForPropertyPath($item->getFields(), 'search_api_url') as $field) {
-        if (!$field->getDatasourceId()) {
-          $field->addValue($url->toString());
-        }
+      $url = $url->toString();
+      $fields = $this->getFieldsHelper()
+        ->filterForPropertyPath($item->getFields(), NULL, 'search_api_url');
+      foreach ($fields as $field) {
+        $field->addValue($url);
       }
     }
   }

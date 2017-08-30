@@ -1,10 +1,5 @@
 <?php
 
-/**
- * @file
- * Contains \Drupal\field_group\Element\Accordion.
- */
-
 namespace Drupal\field_group\Element;
 
 use Drupal\Core\Form\FormStateInterface;

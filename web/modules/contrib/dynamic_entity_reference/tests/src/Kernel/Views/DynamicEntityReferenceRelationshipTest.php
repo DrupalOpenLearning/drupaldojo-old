@@ -49,7 +49,7 @@ class DynamicEntityReferenceRelationshipTest extends ViewsKernelTestBase {
    *
    * @var array
    */
-  protected $entities = array();
+  protected $entities = [];
 
   /**
    * {@inheritdoc}
@@ -61,53 +61,53 @@ class DynamicEntityReferenceRelationshipTest extends ViewsKernelTestBase {
     $this->installEntitySchema('entity_test');
     $this->installEntitySchema('entity_test_mul');
 
-    $field_storage = FieldStorageConfig::create(array(
+    $field_storage = FieldStorageConfig::create([
       'entity_type' => 'entity_test',
       'field_name' => 'field_test',
       'type' => 'dynamic_entity_reference',
-      'settings' => array(
+      'settings' => [
         'exclude_entity_types' => FALSE,
         'entity_type_ids' => [
           'entity_test',
           'entity_test_mul',
         ],
-      ),
+      ],
       'cardinality' => FieldStorageDefinitionInterface::CARDINALITY_UNLIMITED,
-    ));
+    ]);
     $field_storage->save();
 
-    $field = FieldConfig::create(array(
+    $field = FieldConfig::create([
       'entity_type' => 'entity_test',
       'field_name' => 'field_test',
       'bundle' => 'entity_test',
-      'settings' => array(),
-    ));
+      'settings' => [],
+    ]);
     $field->save();
 
-    $field_storage = FieldStorageConfig::create(array(
+    $field_storage = FieldStorageConfig::create([
       'entity_type' => 'entity_test_mul',
       'field_name' => 'field_test_mul',
       'type' => 'dynamic_entity_reference',
-      'settings' => array(
+      'settings' => [
         'exclude_entity_types' => FALSE,
         'entity_type_ids' => [
           'entity_test',
           'entity_test_mul',
         ],
-      ),
+      ],
       'cardinality' => FieldStorageDefinitionInterface::CARDINALITY_UNLIMITED,
-    ));
+    ]);
     $field_storage->save();
 
-    $field = FieldConfig::create(array(
+    $field = FieldConfig::create([
       'entity_type' => 'entity_test_mul',
       'field_name' => 'field_test_mul',
       'bundle' => 'entity_test_mul',
-      'settings' => array(),
-    ));
+      'settings' => [],
+    ]);
     $field->save();
 
-    ViewTestData::createTestViews(get_class($this), array('dynamic_entity_reference_test_views'));
+    ViewTestData::createTestViews(get_class($this), ['dynamic_entity_reference_test_views']);
   }
 
   /**

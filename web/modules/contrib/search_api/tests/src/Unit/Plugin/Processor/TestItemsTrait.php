@@ -23,12 +23,12 @@ trait TestItemsTrait {
    *
    * @var string[]
    */
-  protected $itemIds = array();
+  protected $itemIds = [];
 
   /**
    * The class container.
    *
-   * @var \Symfony\Component\DependencyInjection\ContainerInterface $container
+   * @var \Symfony\Component\DependencyInjection\ContainerInterface
    */
   protected $container;
 
@@ -59,7 +59,7 @@ trait TestItemsTrait {
     $item->setField($fieldId, $field);
     $item->setFieldsExtracted(TRUE);
 
-    return array($itemId => $item);
+    return [$itemId => $item];
   }
 
   /**
@@ -81,9 +81,9 @@ trait TestItemsTrait {
    * @return \Drupal\search_api\Item\ItemInterface[]
    *   An array containing the requested test items.
    */
-  public function createItems(IndexInterface $index, $count, array $fields, ComplexDataInterface $object = NULL, array $datasource_ids = array('entity:node')) {
+  public function createItems(IndexInterface $index, $count, array $fields, ComplexDataInterface $object = NULL, array $datasource_ids = ['entity:node']) {
     $datasource_count = count($datasource_ids);
-    $items = array();
+    $items = [];
     for ($i = 0; $i < $count; ++$i) {
       $datasource_id = $datasource_ids[$i % $datasource_count];
       $this->itemIds[$i] = $item_id = Utility::createCombinedId($datasource_id, ($i + 1) . ':en');
@@ -97,10 +97,10 @@ trait TestItemsTrait {
         if (isset($field_info['datasource_id']) && $field_info['datasource_id'] != $datasource_id) {
           continue;
         }
-        $field_id = \Drupal::getContainer()
-          ->get('search_api.fields_helper')
-          ->getNewFieldId($index, $field_info['property_path']);
-        $field = Utility::createField($index, $field_id, $field_info);
+        $fields_helper = \Drupal::getContainer()
+          ->get('search_api.fields_helper');
+        $field_id = $fields_helper->getNewFieldId($index, $field_info['property_path']);
+        $field = $fields_helper->createField($index, $field_id, $field_info);
         $item->setField($field_id, $field);
       }
       $item->setFieldsExtracted(TRUE);
@@ -118,28 +118,31 @@ trait TestItemsTrait {
       ->disableOriginalConstructor()
       ->getMock();
     $dataTypeManager->method('getInstances')
-      ->will($this->returnValue(array()));
+      ->will($this->returnValue([]));
 
     $moduleHandler = $this->getMockBuilder('Drupal\Core\Extension\ModuleHandlerInterface')
       ->disableOriginalConstructor()
       ->getMock();
     $dataTypeHelper = new DataTypeHelper($moduleHandler, $dataTypeManager);
 
+    $entityTypeManager = $this->getMockBuilder('Drupal\Core\Entity\EntityTypeManagerInterface')
+      ->disableOriginalConstructor()
+      ->getMock();
     $entityFieldManager = $this->getMockBuilder('Drupal\Core\Entity\EntityFieldManagerInterface')
       ->disableOriginalConstructor()
       ->getMock();
     $entityBundleInfo = $this->getMockBuilder('Drupal\Core\Entity\EntityTypeBundleInfoInterface')
       ->disableOriginalConstructor()
       ->getMock();
-    $fieldsHelper = new FieldsHelper($entityFieldManager, $entityBundleInfo, $dataTypeHelper);
+    $fieldsHelper = new FieldsHelper($entityTypeManager, $entityFieldManager, $entityBundleInfo, $dataTypeHelper);
 
     $queryHelper = $this->getMock('Drupal\search_api\Utility\QueryHelperInterface');
     $queryHelper->method('createQuery')
-      ->willReturnCallback(function (IndexInterface $index, array $options = array()) {
+      ->willReturnCallback(function (IndexInterface $index, array $options = []) {
         return Query::create($index, $options);
       });
     $queryHelper->method('getResults')
-      ->will($this->returnValue(array()));
+      ->will($this->returnValue([]));
 
     $this->container = new ContainerBuilder();
     $this->container->set('plugin.manager.search_api.data_type', $dataTypeManager);

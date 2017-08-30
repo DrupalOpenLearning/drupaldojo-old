@@ -29,24 +29,24 @@ class DynamicEntityReferenceFieldDefaultValueTest extends BrowserTestBase {
    *
    * @var array
    */
-  public static $modules = array(
+  public static $modules = [
     'dynamic_entity_reference',
     'field_ui',
     'node',
-  );
+  ];
 
   /**
    * Permissions to grant admin user.
    *
    * @var array
    */
-  protected $permissions = array(
+  protected $permissions = [
     'access content',
     'administer content types',
     'administer node fields',
     'administer node form display',
     'bypass node access',
-  );
+  ];
 
   /**
    * {@inheritdoc}
@@ -55,8 +55,8 @@ class DynamicEntityReferenceFieldDefaultValueTest extends BrowserTestBase {
     parent::setUp();
 
     // Create default content type.
-    $this->drupalCreateContentType(array('type' => 'reference_content'));
-    $this->drupalCreateContentType(array('type' => 'referenced_content'));
+    $this->drupalCreateContentType(['type' => 'reference_content']);
+    $this->drupalCreateContentType(['type' => 'referenced_content']);
 
     // Create admin user.
     $this->adminUser = $this->drupalCreateUser($this->permissions);
@@ -69,40 +69,47 @@ class DynamicEntityReferenceFieldDefaultValueTest extends BrowserTestBase {
   public function testEntityReferenceDefaultValue() {
     $assert_session = $this->assertSession();
     // Create a node to be referenced.
-    $referenced_node = $this->drupalCreateNode(array('type' => 'referenced_content'));
+    $referenced_node = $this->drupalCreateNode(['type' => 'referenced_content']);
 
     $field_name = Unicode::strtolower($this->randomMachineName());
-    $field_storage = FieldStorageConfig::create(array(
+    $field_storage = FieldStorageConfig::create([
       'field_name' => $field_name,
       'entity_type' => 'node',
       'type' => 'dynamic_entity_reference',
-      'settings' => array(
+      'settings' => [
         'exclude_entity_types' => FALSE,
         'entity_type_ids' => [
           'node',
+          'user',
         ],
-      ),
-    ));
+      ],
+    ]);
     $field_storage->save();
-    FieldConfig::create(array(
+    FieldConfig::create([
       'field_storage' => $field_storage,
       'bundle' => 'reference_content',
-      'settings' => array(
-        'node' => array(
+      'settings' => [
+        'node' => [
           'handler' => 'default',
-          'handler_settings' => array(
-            'target_bundles' => array('referenced_content'),
-            'sort' => array('field' => '_none'),
-          ),
-        ),
-      ),
-    ))->save();
+          'handler_settings' => [
+            'target_bundles' => ['referenced_content'],
+            'sort' => ['field' => '_none'],
+          ],
+        ],
+        'user' => [
+          'handler' => 'default:user',
+          'handler_settings' => [
+            'target_bundles' => NULL,
+          ],
+        ],
+      ],
+    ])->save();
 
     // Set created node as default_value.
-    $field_edit = array(
+    $field_edit = [
       'default_value_input[' . $field_name . '][0][target_type]' => $referenced_node->getEntityTypeId(),
       'default_value_input[' . $field_name . '][0][target_id]' => $referenced_node->getTitle() . ' (' . $referenced_node->id() . ')',
-    );
+    ];
     $this->drupalGet('admin/structure/types/manage/reference_content/fields/node.reference_content.' . $field_name);
     $this->submitForm($field_edit, t('Save settings'));
 
@@ -117,7 +124,7 @@ class DynamicEntityReferenceFieldDefaultValueTest extends BrowserTestBase {
     $this->assertEquals($config_entity['default_value'][0]['target_uuid'], $referenced_node->uuid(), 'Content uuid and config entity uuid are the same');
     // Ensure the configuration has the expected dependency on the entity that
     // is being used a default value.
-    $this->assertEquals(array($referenced_node->getConfigDependencyName()), $config_entity['dependencies']['content']);
+    $this->assertEquals([$referenced_node->getConfigDependencyName()], $config_entity['dependencies']['content']);
 
     // Clear field definitions cache in order to avoid stale cache values.
     \Drupal::service('entity_field.manager')->clearCachedFieldDefinitions();

@@ -1,14 +1,8 @@
 <?php
 
-/**
- * @file
- * Contains \Drupal\field_group\Plugin\field_group\FieldGroupFormatter\HtmlElement.
- */
-
 namespace Drupal\field_group\Plugin\field_group\FieldGroupFormatter;
 
 use Drupal\Component\Utility\Html;
-use Drupal\Component\Utility\SafeMarkup;
 use Drupal\Core\Form\FormState;
 use Drupal\Core\Template\Attribute;
 use Drupal\field_group\FieldGroupFormatterBase;
@@ -18,7 +12,7 @@ use Drupal\field_group\FieldGroupFormatterBase;
  *
  * @FieldGroupFormatter(
  *   id = "html_element",
- *   label = @Translation("Html element"),
+ *   label = @Translation("HTML element"),
  *   description = @Translation("This fieldgroup renders the inner content in a HTML element with classes and attributes."),
  *   supported_contexts = {
  *     "form",
@@ -32,6 +26,7 @@ class HtmlElement extends FieldGroupFormatterBase {
    * {@inheritdoc}
    */
   public function preRender(&$element, $rendering_object) {
+    parent::preRender($element, $rendering_object);
 
     $element_attributes = new Attribute();
 
@@ -73,11 +68,16 @@ class HtmlElement extends FieldGroupFormatterBase {
     $element['#attributes'] = $element_attributes;
     if ($this->getSetting('show_label')) {
       $element['#title_element'] = $this->getSetting('label_element');
-      $element['#title'] = SafeMarkup::checkPlain($this->t($this->getLabel()));
+      $element['#title'] = Html::escape($this->t($this->getLabel()));
     }
 
     $form_state = new FormState();
     \Drupal\field_group\Element\HtmlElement::processHtmlElement($element, $form_state);
+
+    if ($this->getSetting('required_fields')) {
+      $element['#attached']['library'][] = 'field_group/formatter.html_element';
+      $element['#attached']['library'][] = 'field_group/core';
+    }
   }
 
   /**
@@ -101,6 +101,9 @@ class HtmlElement extends FieldGroupFormatterBase {
       '#options' => array(0 => $this->t('No'), 1 => $this->t('Yes')),
       '#default_value' => $this->getSetting('show_label'),
       '#weight' => 2,
+      '#attributes' => array(
+        'data-fieldgroup-selector' => 'show_label'
+      ),
     );
 
     $form['label_element'] = array(
@@ -108,14 +111,28 @@ class HtmlElement extends FieldGroupFormatterBase {
       '#type' => 'textfield',
       '#default_value' => $this->getSetting('label_element'),
       '#weight' => 3,
+      '#states' => array(
+        'visible' => array(
+          ':input[data-fieldgroup-selector="show_label"]' => array('value' => 1),
+        ),
+      ),
     );
+
+    if ($this->context == 'form') {
+      $form['required_fields'] = array(
+        '#title' => $this->t('Mark group as required if it contains required fields.'),
+        '#type' => 'checkbox',
+        '#default_value' => $this->getSetting('required_fields'),
+        '#weight' => 4,
+      );
+    }
 
     $form['attributes'] = array(
       '#title' => $this->t('Attributes'),
       '#type' => 'textfield',
       '#default_value' => $this->getSetting('attributes'),
       '#description' => $this->t('E.g. name="anchor"'),
-      '#weight' => 4,
+      '#weight' => 5,
     );
 
     $form['effect'] = array(
@@ -127,7 +144,10 @@ class HtmlElement extends FieldGroupFormatterBase {
         'blind' => $this->t('Blind')
       ),
       '#default_value' => $this->getSetting('effect'),
-      '#weight' => 5,
+      '#weight' => 6,
+      '#attributes' => array(
+        'data-fieldgroup-selector' => 'effect'
+      ),
     );
 
     $form['speed'] = array(
@@ -135,7 +155,12 @@ class HtmlElement extends FieldGroupFormatterBase {
       '#type' => 'select',
       '#options' => array('slow' => $this->t('Slow'), 'fast' => $this->t('Fast')),
       '#default_value' => $this->getSetting('speed'),
-      '#weight' => 6,
+      '#weight' => 7,
+      '#states' => array(
+        '!visible' => array(
+          ':input[data-fieldgroup-selector="effect"]' => array('value' => 'none'),
+        ),
+      ),
     );
 
     return $form;

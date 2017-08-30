@@ -170,12 +170,24 @@ class DrupalContext extends RawDrupalContext implements TranslatableContext {
   /**
    * Find text in a table row containing given text.
    *
-   * @Then I should see (the text ):text in the ":rowText" row
+   * @Then I should see (the text ):text in the :rowText row
    */
   public function assertTextInTableRow($text, $rowText) {
     $row = $this->getTableRow($this->getSession()->getPage(), $rowText);
     if (strpos($row->getText(), $text) === FALSE) {
       throw new \Exception(sprintf('Found a row containing "%s", but it did not contain the text "%s".', $rowText, $text));
+    }
+  }
+
+  /**
+   * Asset text not in a table row containing given text.
+   *
+   * @Then I should not see (the text ):text in the :rowText row
+   */
+  public function assertTextNotInTableRow($text, $rowText) {
+    $row = $this->getTableRow($this->getSession()->getPage(), $rowText);
+    if (strpos($row->getText(), $text) !== FALSE) {
+      throw new \Exception(sprintf('Found a row containing "%s", but it contained the text "%s".', $rowText, $text));
     }
   }
 
@@ -222,7 +234,6 @@ class DrupalContext extends RawDrupalContext implements TranslatableContext {
     $node = (object) array(
       'title' => $title,
       'type' => $type,
-      'body' => $this->getRandom()->string(255),
     );
     $saved = $this->nodeCreate($node);
     // Set internal page on the new node.
@@ -242,7 +253,7 @@ class DrupalContext extends RawDrupalContext implements TranslatableContext {
     $node = (object) array(
       'title' => $title,
       'type' => $type,
-      'body' => $this->getRandom()->string(255),
+      'body' => $this->getRandom()->name(255),
       'uid' => $this->user->uid,
     );
     $saved = $this->nodeCreate($node);
@@ -297,7 +308,10 @@ class DrupalContext extends RawDrupalContext implements TranslatableContext {
    * @Then I should be able to edit a/an :type( content)
    */
   public function assertEditNodeOfType($type) {
-    $node = (object) array('type' => $type);
+    $node = (object) array(
+      'type' => $type,
+      'title' => "Test $type",
+    );
     $saved = $this->nodeCreate($node);
 
     // Set internal browser on the node edit page.
@@ -319,7 +333,7 @@ class DrupalContext extends RawDrupalContext implements TranslatableContext {
     $term = (object) array(
       'name' => $name,
       'vocabulary_machine_name' => $vocabulary,
-      'description' => $this->getRandom()->string(255),
+      'description' => $this->getRandom()->name(255),
     );
     $saved = $this->termCreate($term);
 
@@ -365,6 +379,14 @@ class DrupalContext extends RawDrupalContext implements TranslatableContext {
   /**
    * Creates one or more terms on an existing vocabulary.
    *
+   * Provide term data in the following format:
+   *
+   * | name  | parent | description | weight | taxonomy_field_image |
+   * | Snook | Fish   | Marine fish | 10     | snook-123.jpg        |
+   * | ...   | ...    | ...         | ...    | ...                  |
+   *
+   * Only the 'name' field is required.
+   *
    * @Given :vocabulary terms:
    */
   public function createTerms($vocabulary, TableNode $termsTable) {
@@ -405,10 +427,28 @@ class DrupalContext extends RawDrupalContext implements TranslatableContext {
    */
     public function iPutABreakpoint()
     {
-      fwrite(STDOUT, "\033[s \033[93m[Breakpoint] Press \033[1;93m[RETURN]\033[0;93m to continue...\033[0m");
-      while (fgets(STDIN, 1024) == '') {}
+      fwrite(STDOUT, "\033[s \033[93m[Breakpoint] Press \033[1;93m[RETURN]\033[0;93m to continue, or 'q' to quit...\033[0m");
+      do {
+        $line = trim(fgets(STDIN, 1024));
+        //Note: this assumes ASCII encoding.  Should probably be revamped to
+        //handle other character sets.
+        $charCode = ord($line);
+        switch($charCode){
+          case 0: //CR
+          case 121: //y
+          case 89: //Y
+            break 2;
+          // case 78: //N
+          // case 110: //n
+          case 113: //q
+          case 81: //Q
+            throw new \Exception("Exiting test intentionally.");
+          default:
+            fwrite(STDOUT, sprintf("\nInvalid entry '%s'.  Please enter 'y', 'q', or the enter key.\n", $line));
+          break;
+        }
+      } while (true);
       fwrite(STDOUT, "\033[u");
-      return;
     }
 
 }

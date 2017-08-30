@@ -5,8 +5,8 @@ namespace Drupal\image_widget_crop\Element;
 use Drupal\Core\Render\Element\FormElement;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\StringTranslation\TranslatableMarkup;
-use Drupal\Core\Url;
 use Drupal\crop\Entity\Crop;
+use Drupal\crop\Entity\CropType;
 use Drupal\file\FileInterface;
 use RecursiveArrayIterator;
 use RecursiveIteratorIterator;
@@ -32,6 +32,7 @@ class ImageCrop extends FormElement {
       '#crop_type_list' => [],
       '#warn_multiple_usages' => FALSE,
       '#show_default_crop' => TRUE,
+      '#show_crop_area' => FALSE,
       '#attached' => [
         'library' => 'image_widget_crop/cropper.integration',
       ],
@@ -59,25 +60,6 @@ class ImageCrop extends FormElement {
     if (!empty($file) && preg_match('/image/', $file->getMimeType())) {
       $element['#attached']['drupalSettings']['crop_default'] = $element['#show_default_crop'];
 
-      // Display an error message if the local/remote library and CSS are not
-      // set.
-      $config = \Drupal::config('image_widget_crop.settings');
-      $js_library = $config->get('settings.library_url');
-      if (!\Drupal::moduleHandler()->moduleExists('libraries')) {
-        if (empty($js_library)) {
-          $element['message'] = [
-            '#type' => 'container',
-            '#markup' => t('Either set the library locally (in /libraries/cropper) and enable the libraries module or enter the remote URL on <a href="@link">Image Crop Widget settings</a>.', [
-              '@link' => Url::fromRoute('image_widget_crop.crop_widget_settings')
-                ->toString(),
-            ]),
-            '#attributes' => [
-              'class' => ['messages messages--error'],
-            ],
-          ];
-        }
-      }
-
       /** @var \Drupal\Core\Image\Image $image */
       $image = \Drupal::service('image.factory')->get($file->getFileUri());
       if (!$image->isValid()) {
@@ -96,10 +78,18 @@ class ImageCrop extends FormElement {
       }
 
       $crop_type_list = $element['#crop_type_list'];
+      // Display all crop types if none is selected.
+      if (empty($crop_type_list)) {
+        /** @var \Drupal\image_widget_crop\ImageWidgetCropManager $image_widget_crop_manager */
+        $image_widget_crop_manager = \Drupal::service('image_widget_crop.manager');
+        $available_crop_types = $image_widget_crop_manager->getAvailableCropType(CropType::getCropTypeNames());
+        $crop_type_list = array_keys($available_crop_types);
+      }
       $element['crop_wrapper'] = [
         '#type' => 'details',
         '#title' => t('Crop image'),
         '#attributes' => ['class' => ['image-data__crop-wrapper']],
+        '#open' => $element['#show_crop_area'],
         '#weight' => 100,
       ];
 
@@ -273,7 +263,7 @@ class ImageCrop extends FormElement {
    * @param string $crop_type_id
    *   The id of the current crop.
    *
-   * @return array|NULL
+   * @return array|null
    *   Populate all crop elements into the form.
    */
   public static function getCropFormElement(array &$element, $element_wrapper_name, array $original_properties, $edit, $crop_type_id) {
@@ -335,12 +325,12 @@ class ImageCrop extends FormElement {
    *   The id of the current crop.
    * @param bool $edit
    *   Context of this form.
-   * @param int|NULL $value
+   * @param int|null $value
    *   The values calculated by ImageCrop::getCropFormProperties().
    * @param string $property
    *   Name of current property @see setCoordinatesElement().
    *
-   * @return int|NULL
+   * @return int|null
    *   Value of this element.
    */
   public static function getCropFormPropertyValue(array &$element, $crop_type, $edit, $value, $property) {

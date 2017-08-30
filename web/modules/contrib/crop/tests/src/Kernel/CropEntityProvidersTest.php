@@ -1,10 +1,5 @@
 <?php
 
-/**
- * @file
- * Contains \Drupal\Tests\crop\Kernel\CropEntityProvidersTest.
- */
-
 namespace Drupal\Tests\crop\Kernel;
 
 use Drupal\crop\EntityProviderNotFoundException;
@@ -63,7 +58,7 @@ class CropEntityProvidersTest extends CropUnitTestBase {
       $this->assertTrue(FALSE, 'File entity provider plugin was found.');
     }
 
-    $this->assertEqual($provider->uri($file), $file->getFileUri(), 'File provider plugin returned correct URI.');
+    $this->assertEquals($provider->uri($file), $file->getFileUri(), 'File provider plugin returned correct URI.');
   }
 
 }

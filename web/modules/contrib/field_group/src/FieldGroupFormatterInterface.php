@@ -1,10 +1,5 @@
 <?php
 
-/**
- * @file
- * Contains \Drupal\field_group\FieldGroupFormatterInterface.
- */
-
 namespace Drupal\field_group;
 
 use Drupal\Component\Plugin\PluginInspectionInterface;

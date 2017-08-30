@@ -81,7 +81,7 @@ class FlagViewsRelationship extends RelationshipPluginBase {
     $entity_type = $this->definition['flaggable'];
     $form['label']['#description'] .= ' ' . $this->t('The name of the selected flag makes a good label.');
 
-    $flags = $this->flagService->getFlags($entity_type);
+    $flags = $this->flagService->getAllFlags($entity_type);
 
     $form['flag'] = [
       '#type' => 'radios',

@@ -65,6 +65,32 @@ class ShowOnEntityFormTest extends FlagTestBase {
     // Go back to the node edit page and check if the flag checkbox is updated.
     $this->drupalGet($node_edit_path);
     $this->assertNoFieldChecked($flag_checkbox_id, $this->t('The flag checkbox is unchecked on the entity form.'));
+
+    // Verify link is on the add form.
+    $this->drupalGet('node/add/' . $this->nodeType);
+    $this->assertField($flag_checkbox_id, $this->t('The flag checkbox exists on the entity add form.'));
+
+    // Tests flagging via the add form.
+    $edit = [
+      'title[0][value]' => $this->randomString(),
+      'flag[' . $flag->id() . ']' => TRUE,
+    ];
+    $this->drupalPostForm('node/add/' . $this->nodeType, $edit, $this->t('Save and publish'));
+    $node = $this->getNodeByTitle($edit['title[0][value]']);
+    $this->assertTrue($flag->isFlagged($node, $this->adminUser));
+
+    // Tests submitting a new node and not flagging.
+    $edit = [
+      'title[0][value]' => $this->randomString(),
+      'flag[' . $flag->id() . ']' => FALSE,
+    ];
+    $this->drupalPostForm('node/add/' . $this->nodeType, $edit, $this->t('Save and publish'));
+    $node = $this->getNodeByTitle($edit['title[0][value]']);
+    $this->assertFalse($flag->isFlagged($node, $this->adminUser));
+
+    // Form element should not appear on the delete form.
+    $this->drupalGet($node->toUrl('delete-form'));
+    $this->assertNoField($flag_checkbox_id);
   }
 
 }

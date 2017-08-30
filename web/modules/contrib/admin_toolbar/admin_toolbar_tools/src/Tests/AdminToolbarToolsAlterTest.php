@@ -4,7 +4,6 @@ namespace Drupal\admin_toolbar_tools\Tests;
 
 use Drupal\simpletest\WebTestBase;
 
-
 /**
  * Tests for the existence of Admin Toolbar tools new links.
  *
@@ -31,7 +30,6 @@ class AdminToolbarToolsAlterTest extends WebTestBase {
    */
   protected function setUp() {
     parent::setUp();
-
     // Create and log in an administrative user.
     $this->adminUser = $this->drupalCreateUser([
       'access toolbar',
@@ -41,10 +39,11 @@ class AdminToolbarToolsAlterTest extends WebTestBase {
   }
 
   /**
-   * Tests for a the hover of sub menus.
+   * Tests for the hover of sub menus.
    */
-  function testAdminToolbarTools() {
+  public function testAdminToolbarTools() {
     // Assert that special menu items are present in the HTML.
     $this->assertRaw('class="toolbar-icon toolbar-icon-admin-toolbar-tools-flush"');
   }
+
 }

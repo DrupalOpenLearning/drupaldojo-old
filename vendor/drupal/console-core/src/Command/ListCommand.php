@@ -1,24 +1,25 @@
 <?php
 /**
  * @file
- * Contains \Drupal\Console\Command\ListCommand.
+ * Contains \Drupal\Console\Core\Command\ListCommand.
  */
-namespace Drupal\Console\Command;
+namespace Drupal\Console\Core\Command;
 
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputDefinition;
 use Symfony\Component\Console\Input\InputOption;
-use Drupal\Console\Helper\DescriptorHelper;
+use Drupal\Console\Core\Helper\DescriptorHelper;
 use Symfony\Component\Console\Output\OutputInterface;
-use Symfony\Component\Console\Command\Command;
-use Drupal\Console\Command\Shared\CommandTrait;
-use Drupal\Console\Style\DrupalStyle;
+use Drupal\Console\Core\Style\DrupalStyle;
 
+/**
+ * Class ListCommand
+ *
+ * @package Drupal\Console\Core\Command
+ */
 class ListCommand extends Command
 {
-    use CommandTrait;
-
     /**
      * {@inheritdoc}
      */
@@ -72,12 +73,12 @@ class ListCommand extends Command
     private function createDefinition()
     {
         return new InputDefinition(
-            array(
+            [
                 new InputArgument('namespace', InputArgument::OPTIONAL, $this->trans('commands.list.arguments.namespace')),
                 new InputOption('xml', null, InputOption::VALUE_NONE, $this->trans('commands.list.options.xml')),
                 new InputOption('raw', null, InputOption::VALUE_NONE, $this->trans('commands.list.options.raw')),
                 new InputOption('format', null, InputOption::VALUE_REQUIRED, $this->trans('commands.list.options.format'), 'txt'),
-            )
+            ]
         );
     }
 }

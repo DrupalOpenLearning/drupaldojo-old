@@ -13,7 +13,7 @@ class ProfileStorage extends SqlContentEntityStorage implements ProfileStorageIn
   /**
    * {@inheritdoc}
    */
-  public function loadByUser(AccountInterface $account, $profile_type, $active = PROFILE_ACTIVE) {
+  public function loadByUser(AccountInterface $account, $profile_type, $active = TRUE) {
     $result = $this->loadByProperties([
       'uid' => $account->id(),
       'type' => $profile_type,
@@ -26,12 +26,12 @@ class ProfileStorage extends SqlContentEntityStorage implements ProfileStorageIn
   /**
    * {@inheritdoc}
    */
-  public function loadMultipleByUser(AccountInterface $account, $profile_type, $active = PROFILE_ACTIVE) {
+  public function loadMultipleByUser(AccountInterface $account, $profile_type, $active = TRUE) {
     return $this->loadByProperties([
-        'uid' => $account->id(),
-        'type' => $profile_type,
-        'status' => $active,
-      ]);
+      'uid' => $account->id(),
+      'type' => $profile_type,
+      'status' => $active,
+    ]);
   }
 
   /**
@@ -41,7 +41,7 @@ class ProfileStorage extends SqlContentEntityStorage implements ProfileStorageIn
     $result = $this->loadByProperties([
       'uid' => $account->id(),
       'type' => $profile_type,
-      'status' => PROFILE_ACTIVE,
+      'status' => TRUE,
       'is_default' => TRUE,
     ]);
 

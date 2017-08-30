@@ -23,7 +23,7 @@ trait ResultsTrait {
     $results = array_keys($result->getResultItems());
     sort($results);
 
-    $ids = array();
+    $ids = [];
     foreach ($expected as $entity_type => $items) {
       $datasource_id = "entity:$entity_type";
       foreach ($items as $i) {

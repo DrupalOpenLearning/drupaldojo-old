@@ -16,6 +16,8 @@ class LinkTypeConfirmFormTest extends FlagTestBase {
 
   protected $flagConfirmMessage = 'Flag test label 123?';
   protected $unflagConfirmMessage = 'Unflag test label 123?';
+  protected $createButtonText = 'Create flagging 123?';
+  protected $deleteButtonText = 'Delete flagging 123?';
 
   /**
    * The flag object.
@@ -61,6 +63,8 @@ class LinkTypeConfirmFormTest extends FlagTestBase {
       'linkTypeConfig' => [
         'flag_confirmation' => $this->flagConfirmMessage,
         'unflag_confirmation' => $this->unflagConfirmMessage,
+        'flag_create_button' => $this->createButtonText,
+        'flag_delete_button' => $this->deleteButtonText,
       ],
       'link_type' => 'confirm'
     ];
@@ -93,18 +97,18 @@ class LinkTypeConfirmFormTest extends FlagTestBase {
 
     // Click the flag link.
     $this->drupalGet('node/' . $node_id);
-    $this->clickLink($this->flag->getFlagShortText());
+    $this->clickLink($this->flag->getShortText('flag'));
 
     // Check if we have the confirm form message displayed.
     $this->assertText($this->flagConfirmMessage);
 
     // Submit the confirm form.
-    $this->drupalPostForm('flag/confirm/flag/' . $flag_id . '/' . $node_id, [], t('Flag'));
+    $this->drupalPostForm('flag/confirm/flag/' . $flag_id . '/' . $node_id, [], $this->createButtonText);
     $this->assertResponse(200);
 
     // Check that the node is flagged.
     $this->drupalGet('node/' . $node_id);
-    $this->assertLink($this->flag->getUnflagShortText());
+    $this->assertLink($this->flag->getShortText('unflag'));
 
     // Check the flag count was incremented.
     $flag_count_flagged = db_query('SELECT count FROM {flag_counts}
@@ -116,18 +120,18 @@ class LinkTypeConfirmFormTest extends FlagTestBase {
     $this->assertEqual($flag_count_flagged, $flag_count_pre + 1, "The flag count was incremented.");
 
     // Unflag the node.
-    $this->clickLink($this->flag->getUnflagShortText());
+    $this->clickLink($this->flag->getShortText('unflag'));
 
     // Check if we have the confirm form message displayed.
     $this->assertText($this->unflagConfirmMessage);
 
     // Submit the confirm form.
-    $this->drupalPostForm(NULL, [], t('Unflag'));
+    $this->drupalPostForm(NULL, [], $this->deleteButtonText);
     $this->assertResponse(200);
 
     // Check that the node is no longer flagged.
     $this->drupalGet('node/' . $node_id);
-    $this->assertLink($this->flag->getFlagShortText());
+    $this->assertLink($this->flag->getShortText('flag'));
 
     // Check the flag count was decremented.
     $flag_count_unflagged = db_query('SELECT count FROM {flag_counts}
