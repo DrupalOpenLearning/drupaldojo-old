@@ -1,0 +1,15 @@
+# node.type.allinone_backup.yml
+langcode: en
+status: true
+dependencies:
+  enforced:
+    module:
+      - allinone_backup # This is the name of the module we're using for this example
+name: 'Allinone Backup'
+type: allinone_backup
+description: 'Content type that can be used to provide additional information on <em>Backups</em>'
+help: ''
+new_revision: false
+preview_mode: 1
+display_submitted: false
+hidden: true

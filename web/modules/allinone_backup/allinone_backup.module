@@ -1,0 +1,80 @@
+<?php
+
+/**
+ * @file
+ * Provides functionality for Delete Backup File.
+ */
+
+use Drupal\views\ViewExecutable;
+use Drupal\Core\Entity\EntityInterface;
+use Drupal\Core\Routing\RouteMatchInterface;
+
+/**
+ * Hook For Help _help()
+ */
+function allinone_backup_help($route_name, RouteMatchInterface $route_match) {
+  $content = t('
+  <ul>
+  <li>Backup Database.</li>
+  <li>Backup Files.</li>
+  <li>Maintain backup log so you can download any backup from the backup log.</li>
+  <li>Configuration for how many rows the backup log to be displayed.</li>
+  <li>Backup log filter by database & files.</li>
+  <li>Fast backups functionality implemented.</li>
+  <li>Importing database feature from backed interface.</li>
+  </ul>');
+  $content2 = t('
+  <p>
+  <b>Go to Configuration => System and click on "All in One Backup".</b><br />
+  In Next screen you can see 5 different tabs:
+  <ol>
+  <li>Create Database Backup</li>
+  <li>Create Files Backup</li>
+  <li>Import Backup</li>
+  <li>Backup Logs</li>
+  <li>Configuration.</li>
+  </ol><br />
+  <b>1. Create Database Backup:</b> In this tab you can see the list of database tables and this list is for exclude tables from database backup. After select list add Description and click on "Backup Now".<br />
+  <b>2.Create Files Backup:</b>  In this tab you can add Description for files backup and just click on "Backup Now".<br />
+  <b>3.Import Backup:</b> In this tab you can see list of database backups and just click any on any "Import Now" to import database.<br />
+  <b>4.Backup Logs:</b> In this tab you can see the list of backups. You can Filter by backup type database or Files. Also download or delete the backup are avaibles there.<br />
+  <b>5.Configuration:</b> In this tab you can see "Number Record Display in log" to set display the list of backup you want show in Backup log.<br /> </p>');
+  switch ($route_name) {
+    case 'help.page.allinone_backup':
+      $output = '';
+      $output .= '<h3>' . t('About') . '</h3>';
+      $output .= '<p>' . t('This module will provide an interface to export the database and files of the project.') . '</p>';
+      $output .= '<h3>' . t('Features') . '</h3>';
+      $output .= $content;
+      $output .= '<h3>' . t('How to use') . '</h3>';
+      $output .= $content2;
+      return $output;
+
+    default:
+  }
+}
+
+/**
+ * Hook For Delete Backup File From Folder _node_delete()
+ */
+function allinone_backup_node_delete(EntityInterface $node) {
+  $getData = $node->toArray();
+  $type = $getData['type'][0]['target_id'];
+  $file_name = $getData['title'][0]['value'];
+  if ($type == 'allinone_backup') {
+    $path = drupal_realpath('private://allinonefiles/' . $file_name);
+    unlink($path);
+  }
+}
+
+/**
+ * Alter Query Result For view Limits By Config Value.
+ */
+function allinone_backup_views_pre_execute(ViewExecutable $view) {
+  if ($view->id() == "allinonebackup_block") {
+    $limit = \Drupal::config('allinone_backup.formsettings')->get('record');
+    $query = $view->query;
+    $query->setLimit($limit);
+    $view->save();
+  }
+}

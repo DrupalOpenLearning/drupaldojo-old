@@ -1,0 +1,21 @@
+# field.field.node.allinone_backup.field_backup_type.yml
+langcode: en
+status: true
+dependencies:
+    config:
+        - field.storage.node.field_message_log
+        - node.type.allinone_backup
+    module:
+        - text
+id: node.allinone_backup.field_message_log
+field_name: field_message_log
+entity_type: node
+bundle: allinone_backup
+label: 'Message log'
+description: 'More specific information about the Message logs.'
+required: false
+translatable: true
+default_value: {  }
+default_value_callback: ''
+settings: {  }
+field_type: string_long

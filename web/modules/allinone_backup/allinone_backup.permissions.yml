@@ -1,0 +1,4 @@
+administer allinone_backup:
+  title: 'AllInOne Backup'
+  description: 'Backup your database And files'  
+  restrict access: TRUE

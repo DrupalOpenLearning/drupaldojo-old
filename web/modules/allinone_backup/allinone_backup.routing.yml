@@ -1,0 +1,35 @@
+allinone_backup.databasebackupform:
+  path: '/admin/config/allinone_backup/databasebackupform'
+  defaults:
+    _form: '\Drupal\allinone_backup\Form\DatabasebackupForm' 
+    _title: 'All in One Database Backup'
+  requirements: 
+    _permission: 'administer'
+allinone_backup.filesbackupform:
+  path: '/admin/config/allinone_backup/filesbackupform'
+  defaults:
+    _form: '\Drupal\allinone_backup\Form\FilesbackupForm' 
+    _title: 'All in One Files Backup'
+  requirements: 
+    _permission: 'administer'
+allinone_backup.importbackup:
+  path: '/admin/config/allinone_backup/importbackup'
+  defaults:
+    _controller: '\Drupal\allinone_backup\Controller\ImportbackupController::content' 
+    _title: 'All in One Import Backup'
+  requirements: 
+    _permission: 'administer'
+allinone_backup.backuplog:
+  path: '/admin/config/allinone_backup/backuplog'
+  defaults:
+    _controller: '\Drupal\allinone_backup\Controller\BackuplogsController::content' 
+    _title: 'All in One Backuplogs'
+  requirements: 
+    _permission: 'administer'
+allinone_backup.formsettings:
+  path: '/admin/config/allinone_backup/formsettings'
+  defaults:
+    _form: '\Drupal\allinone_backup\Form\BackupsettingsForm' 
+    _title: 'All in One Configuration'
+  requirements: 
+    _permission: 'administer'
