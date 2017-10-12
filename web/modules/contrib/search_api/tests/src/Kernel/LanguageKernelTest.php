@@ -10,6 +10,7 @@ use Drupal\KernelTests\KernelTestBase;
 use Drupal\language\Entity\ConfigurableLanguage;
 use Drupal\search_api\Entity\Index;
 use Drupal\search_api\Entity\Server;
+use Drupal\search_api\Utility\Utility;
 
 /**
  * Tests translation handling of the content entity datasource.
@@ -286,6 +287,77 @@ class LanguageKernelTest extends KernelTestBase {
     $this->assertEquals(1, $this->index->getTrackerInstance()->getIndexedItemsCount(), 'The updated items needs to be reindexed.');
     $this->index->indexItems();
     $this->assertEquals(3, $this->index->getTrackerInstance()->getIndexedItemsCount(), 'Three items are indexed.');
+  }
+
+  /**
+   * Tests tracking when the datasource has only specific languages enabled.
+   */
+  public function testDatasourceLanguagesSetting() {
+    $datasource_id = 'entity:' . $this->testEntityTypeId;
+    $datasource = $this->index->getDatasource($datasource_id);
+    $datasource->setConfiguration([
+      'languages' => [
+        'default' => FALSE,
+        'selected' => [$this->langcodes[0], $this->langcodes[2]],
+      ],
+    ]);
+    $this->index->save();
+
+    // Create new entities with our three custom languages and one with the
+    // default language (English).
+    /** @var \Drupal\entity_test\Entity\EntityTestMulRevChanged[] $entities */
+    $entities = [];
+    $uid = $this->container->get('current_user')->id();
+    foreach ([0, 1, 2, 3] as $i) {
+      $entity = EntityTestMulRevChanged::create([
+        'id' => $i + 1,
+        'name' => 'test 1',
+        'user_id' => $uid,
+      ]);
+      if (!empty($this->langcodes[$i])) {
+        $entity->set('langcode', $this->langcodes[$i]);
+      }
+      $entity->save();
+      $entities[$i] = $entity;
+    }
+
+    // Only the ones with languages "l0" and "l2" should have been tracked.
+    $tracker = $this->index->getTrackerInstance();
+    $this->assertEquals(2, $tracker->getTotalItemsCount());
+    $expected = [
+      Utility::createCombinedId($datasource_id, "1:{$this->langcodes[0]}"),
+      Utility::createCombinedId($datasource_id, "3:{$this->langcodes[2]}"),
+    ];
+    $actual = $tracker->getRemainingItems();
+    sort($actual);
+    $this->assertEquals($expected, $actual);
+
+    // Add a translation for a disabled language. It should not be tracked.
+    $entities[0]->addTranslation($this->langcodes[1])->save();
+    $this->assertEquals(2, $tracker->getTotalItemsCount());
+    $actual = $tracker->getRemainingItems();
+    sort($actual);
+    $this->assertEquals($expected, $actual);
+
+    // Add a translation for an enabled language. It should be tracked.
+    $langcode = $this->langcodes[0];
+    $entities[1]->addTranslation($langcode)->save();
+    $this->assertEquals(3, $tracker->getTotalItemsCount());
+    $expected_1 = $expected;
+    $expected_1[] = Utility::createCombinedId($datasource_id, "2:$langcode");
+    sort($expected_1);
+    $actual = $tracker->getRemainingItems();
+    sort($actual);
+    $this->assertEquals($expected_1, $actual);
+
+    // Remove that translation again and verify that it's also deleted from the
+    // tracker.
+    $entities[1]->removeTranslation($langcode);
+    $entities[1]->save();
+    $this->assertEquals(2, $tracker->getTotalItemsCount());
+    $actual = $tracker->getRemainingItems();
+    sort($actual);
+    $this->assertEquals($expected, $actual);
   }
 
 }

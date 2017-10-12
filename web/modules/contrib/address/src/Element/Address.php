@@ -334,14 +334,21 @@ class Address extends FormElement {
    * Ajax callback.
    */
   public static function ajaxRefresh(array $form, FormStateInterface $form_state) {
-    $country_element = $form_state->getTriggeringElement();
-    $address_element = NestedArray::getValue($form, array_slice($country_element['#array_parents'], 0, -2));
+    $triggering_element = $form_state->getTriggeringElement();
+    $parents = $triggering_element['#array_parents'];
+    $triggering_element_name = array_pop($parents);
+    // The country_code element is nested one level deeper than
+    // the subdivision elements.
+    if ($triggering_element_name == 'country_code') {
+      array_pop($parents);
+    };
+    $address_element = NestedArray::getValue($form, $parents);
 
     return $address_element;
   }
 
   /**
-   * Clears the country-specific form values when the country changes.
+   * Clears dependent form values when the country or subdivision changes.
    *
    * Implemented as an #after_build callback because #after_build runs before
    * validation, allowing the values to be cleared early enough to prevent the
@@ -353,14 +360,22 @@ class Address extends FormElement {
       return $element;
     }
 
-    $triggering_element_name = end($triggering_element['#parents']);
-    if ($triggering_element_name == 'country_code') {
-      $keys = [
+    $keys = [
+      'country_code' => [
         'dependent_locality', 'locality', 'administrative_area',
         'postal_code', 'sorting_code',
-      ];
+      ],
+      'administrative_area' => [
+        'dependent_locality', 'locality',
+      ],
+      'locality' => [
+        'dependent_locality',
+      ],
+    ];
+    $triggering_element_name = end($triggering_element['#parents']);
+    if (isset($keys[$triggering_element_name])) {
       $input = &$form_state->getUserInput();
-      foreach ($keys as $key) {
+      foreach ($keys[$triggering_element_name] as $key) {
         $parents = array_merge($element['#parents'], [$key]);
         NestedArray::setValue($input, $parents, '');
         $element[$key]['#value'] = '';

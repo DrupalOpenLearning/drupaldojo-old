@@ -7,8 +7,8 @@ config: entity.address_format.collection
 dependencies:
   - drupal:field
 
-# Information added by Drupal.org packaging script on 2017-05-18
-version: '8.x-1.0'
+# Information added by Drupal.org packaging script on 2017-07-12
+version: '8.x-1.1'
 core: '8.x'
 project: 'address'
-datestamp: 1495109891
+datestamp: 1499893145

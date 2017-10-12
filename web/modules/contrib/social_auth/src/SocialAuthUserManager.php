@@ -314,17 +314,6 @@ class SocialAuthUserManager {
       ->getStorage('user')
       ->create($fields);
 
-    // Validate the new user.
-    $violations = $new_user->validate();
-    if (count($violations) > 0) {
-      $msg = $violations[0]->getMessage();
-      drupal_set_message($this->t('Creation of user account failed: @message', array('@message' => $msg)), 'error');
-      $this->loggerFactory
-        ->get($this->getPluginId())
-        ->error('Could not create new user: @message', array('@message' => $msg));
-      return FALSE;
-    }
-
     // Try to save the new user account.
     try {
       $new_user->save();

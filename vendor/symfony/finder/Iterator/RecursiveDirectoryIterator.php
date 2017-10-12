@@ -37,8 +37,6 @@ class RecursiveDirectoryIterator extends \RecursiveDirectoryIterator
     private $directorySeparator = '/';
 
     /**
-     * Constructor.
-     *
      * @param string $path
      * @param int    $flags
      * @param bool   $ignoreUnreadableDirs
@@ -53,7 +51,7 @@ class RecursiveDirectoryIterator extends \RecursiveDirectoryIterator
 
         parent::__construct($path, $flags);
         $this->ignoreUnreadableDirs = $ignoreUnreadableDirs;
-        $this->rootPath = (string) $path;
+        $this->rootPath = $path;
         if ('/' !== DIRECTORY_SEPARATOR && !($flags & self::UNIX_PATHS)) {
             $this->directorySeparator = DIRECTORY_SEPARATOR;
         }

@@ -30,6 +30,7 @@ class Google_Service_Bigquery_JobStatistics2 extends Google_Collection
   public $statementType;
   public $totalBytesBilled;
   public $totalBytesProcessed;
+  public $totalSlotMs;
   protected $undeclaredQueryParametersType = 'Google_Service_Bigquery_QueryParameter';
   protected $undeclaredQueryParametersDataType = 'array';
 
@@ -122,6 +123,14 @@ class Google_Service_Bigquery_JobStatistics2 extends Google_Collection
   public function getTotalBytesProcessed()
   {
     return $this->totalBytesProcessed;
+  }
+  public function setTotalSlotMs($totalSlotMs)
+  {
+    $this->totalSlotMs = $totalSlotMs;
+  }
+  public function getTotalSlotMs()
+  {
+    return $this->totalSlotMs;
   }
   /**
    * @param Google_Service_Bigquery_QueryParameter

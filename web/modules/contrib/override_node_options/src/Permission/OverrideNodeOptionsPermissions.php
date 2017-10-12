@@ -1,15 +1,13 @@
 <?php
 
-/**
- * @file
- * Contains \Drupal\override_node_options\OverrideNodeOptionsPermissions.
- */
-
 namespace Drupal\override_node_options\Permission;
 
 use Drupal\Core\StringTranslation\StringTranslationTrait;
 use Drupal\node\Entity\NodeType;
 
+/**
+ * Provides dynamic override permissions for nodes of different types.
+ */
 class OverrideNodeOptionsPermissions {
 
   use StringTranslationTrait;
@@ -23,7 +21,7 @@ class OverrideNodeOptionsPermissions {
   public function permissions() {
     $permissions = [];
 
-    /** @var NodeType[] $node_types */
+    /** @var Drupal\node\Entity\NodeType[] $node_types */
     $node_types = NodeType::loadMultiple();
     foreach ($node_types as $type) {
       $id = $type->id();

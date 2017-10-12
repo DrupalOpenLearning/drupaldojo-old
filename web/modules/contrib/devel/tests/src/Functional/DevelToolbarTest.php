@@ -182,11 +182,11 @@ class DevelToolbarTest extends BrowserTestBase {
     $toolbar_tray = $this->assertSession()->elementExists('css', $toolbar_tray_selector);
 
     $devel_menu_items = $this->getMenuLinkInfos();
-    $toolbar_items = $toolbar_tray->findAll('css', 'ul.menu a');
+    $toolbar_items = $toolbar_tray->findAll('css', 'ul.toolbar-menu a');
     $this->assertCount(count($devel_menu_items), $toolbar_items);
 
     foreach ($devel_menu_items as $link) {
-      $item_selector = sprintf('ul.menu a:contains("%s")', $link['title']);
+      $item_selector = sprintf('ul.toolbar-menu a:contains("%s")', $link['title']);
       $item = $this->assertSession()->elementExists('css', $item_selector, $toolbar_tray);
       // TODO: find a more correct way to test link url.
       $this->assertContains(strtok($link['url'], '?'), $item->getAttribute('href'));
@@ -206,7 +206,7 @@ class DevelToolbarTest extends BrowserTestBase {
 
     $this->drupalGet('');
     $toolbar_tray = $this->assertSession()->elementExists('css', $toolbar_tray_selector);
-    $item = $this->assertSession()->elementExists('css', sprintf('ul.menu a:contains("%s")', 'Events Info'), $toolbar_tray);
+    $item = $this->assertSession()->elementExists('css', sprintf('ul.toolbar-menu a:contains("%s")', 'Events Info'), $toolbar_tray);
     $this->assertFalse($item->hasClass('toolbar-horizontal-item-hidden'));
 
     // Ensures that disabling a menu link it will not more shown in the toolbar
@@ -216,7 +216,7 @@ class DevelToolbarTest extends BrowserTestBase {
 
     $this->drupalGet('');
     $toolbar_tray = $this->assertSession()->elementExists('css', $toolbar_tray_selector);
-    $this->assertSession()->elementNotExists('css', sprintf('ul.menu a:contains("%s")', 'Events Info'), $toolbar_tray);
+    $this->assertSession()->elementNotExists('css', sprintf('ul.toolbar-menu a:contains("%s")', 'Events Info'), $toolbar_tray);
   }
 
   /**

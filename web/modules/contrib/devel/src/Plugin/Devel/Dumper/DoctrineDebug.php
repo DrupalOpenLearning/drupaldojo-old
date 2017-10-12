@@ -3,6 +3,7 @@
 namespace Drupal\devel\Plugin\Devel\Dumper;
 
 use Doctrine\Common\Util\Debug;
+use Drupal\Component\Utility\Xss;
 use Drupal\devel\DevelDumperBase;
 
 /**
@@ -27,6 +28,10 @@ class DoctrineDebug extends DevelDumperBase {
     print_r($variable);
     $dump = ob_get_contents();
     ob_end_clean();
+
+    // Run Xss::filterAdmin on the resulting string to prevent
+    // cross-site-scripting (XSS) vulnerabilities.
+    $dump = Xss::filterAdmin($dump);
 
     $dump = '<pre>' . $name . $dump . '</pre>';
 

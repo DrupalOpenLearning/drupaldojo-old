@@ -47,7 +47,7 @@ services:
 # event subscribers
   webprofiler.profiler_listener:
     class: Symfony\Component\HttpKernel\EventListener\ProfilerListener
-    arguments: ['@profiler', '@?webprofiler.matcher', '%webprofiler.only_exceptions%', '%webprofiler.only_master_requests%', '@request_stack']
+    arguments: ['@profiler', '@request_stack', '@?webprofiler.matcher', '%webprofiler.only_exceptions%', '%webprofiler.only_master_requests%']
     tags:
       - { name: event_subscriber }
 
@@ -186,10 +186,6 @@ services:
 # debug services
   stopwatch:
     class: Drupal\webprofiler\Stopwatch
-
-  webprofiler.debug.event_dispatcher.default:
-    class: Symfony\Component\EventDispatcher\ContainerAwareEventDispatcher
-    arguments: ['@service_container']
 
   webprofiler.debug.plugin.manager.mail.default:
     class: Drupal\Core\Mail\MailManager

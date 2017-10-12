@@ -242,6 +242,7 @@ class ZoneTerritory extends FormElement {
           ':input[name="' . $checkbox_path . '"]' => ['checked' => TRUE],
         ],
       ],
+      '#size' => 35,
     ];
     $element['excluded_postal_codes'] = [
       '#type' => 'textfield',
@@ -253,6 +254,7 @@ class ZoneTerritory extends FormElement {
           ':input[name="' . $checkbox_path . '"]' => ['checked' => TRUE],
         ],
       ],
+      '#size' => 35,
     ];
 
     return $element;

@@ -55,12 +55,4 @@ interface OAuth2ManagerInterface {
    */
   public function setAccessToken($access_token);
 
-  /**
-   * Returns the user information.
-   *
-   * @return mixed
-   *   The user data.
-   */
-  public function getUserInfo();
-
 }

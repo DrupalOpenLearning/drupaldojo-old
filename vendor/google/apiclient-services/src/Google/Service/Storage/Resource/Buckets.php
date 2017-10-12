@@ -97,6 +97,8 @@ class Google_Service_Storage_Resource_Buckets extends Google_Service_Resource
    * @opt_param string projection Set of properties to return. Defaults to noAcl,
    * unless the bucket resource specifies acl or defaultObjectAcl properties, when
    * it defaults to full.
+   * @opt_param string userProject The project to be billed for this request, for
+   * Requester Pays buckets.
    * @return Google_Service_Storage_Bucket
    */
   public function insert($project, Google_Service_Storage_Bucket $postBody, $optParams = array())
@@ -119,6 +121,8 @@ class Google_Service_Storage_Resource_Buckets extends Google_Service_Resource
    * @opt_param string prefix Filter results to buckets whose names begin with
    * this prefix.
    * @opt_param string projection Set of properties to return. Defaults to noAcl.
+   * @opt_param string userProject The project to be billed for this request, for
+   * Requester Pays buckets.
    * @return Google_Service_Storage_Buckets
    */
   public function listBuckets($project, $optParams = array())

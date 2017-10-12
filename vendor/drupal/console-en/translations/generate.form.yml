@@ -1,31 +1,39 @@
 description: 'Generate a new "%s"'
 help: 'The <info>"%s"</info> command helps you generate a new "%s"'
-welcome: 'Welcome to the Drupal form generator'
+welcome: 'Welcome to the Drupal Form generator'
 options:
-  module: common.options.module
+  module: 'The Module name.'
   class: 'The form class name'
   form-id: 'The Form id'
-  services: common.options.services
+  services: 'Load services from the container.'
   config-file: 'Add a config file'
-  inputs: common.options.inputs
+  inputs: 'Create inputs in a form.'
   path: 'Enter the form path'
   menu-link-gen: 'Generate a menu link'
   menu-link-title: 'A title for the menu link'
   menu-parent: 'Menu parent'
   menu-link-desc: 'A description for the menu link'
 questions:
-  module: common.questions.module
+  module: 'Enter the module name'
   class: 'Enter the Form Class name'
   form-id: 'Enter the Form id'
-  services: common.questions.services
+  services: 'Enter your service'
   config-file: 'Do you want to generate a config file'
-  inputs: common.questions.inputs
   routing: 'Would you like to register a route for this form'
   path: 'Enter the route path'
   max-amount-characters: 'Maximum amount of characters'
   textfield-width-in-chars: 'Width of the textfield (in characters)'
   multiselect-size-in-lines: 'Size of multiselect box (in lines)'
   input-options: 'Input options separated by comma'
+  menu-link-gen: 'Generate a menu link'
+  menu-link-title: 'Enter a title for the menu link'
+  menu-parent: 'Enter Menu parent'
+  menu-link-desc: 'Enter a description for the menu link'
+  type: 'Enter New field type'
+  label: 'Input label'
+  description: 'Description'
+  default-value: 'Default value'
+  weight: 'Weight for input item'
 suggestions:
   description-for-menu: 'A description for the menu entry'
 examples:

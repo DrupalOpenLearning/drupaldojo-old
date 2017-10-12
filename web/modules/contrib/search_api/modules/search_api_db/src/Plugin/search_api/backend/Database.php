@@ -29,7 +29,6 @@ use Drupal\search_api\Query\ConditionGroupInterface;
 use Drupal\search_api\Query\QueryInterface;
 use Drupal\search_api\SearchApiException;
 use Drupal\search_api\Utility\DataTypeHelper;
-use Drupal\search_api_autocomplete\SearchInterface;
 use Drupal\search_api_autocomplete\Suggestion;
 use Drupal\search_api_db\DatabaseCompatibility\DatabaseCompatibilityHandlerInterface;
 use Drupal\search_api_db\DatabaseCompatibility\GenericDatabase;
@@ -728,6 +727,11 @@ class Database extends BackendPluginBase implements PluginFormInterface {
           ],
         ],
       ];
+      // For the denormalized index table, add a primary key right away. For
+      // newly created field tables we first need to add the "value" column.
+      if ($type === 'index') {
+        $table['primary key'] = ['item_id'];
+      }
       $this->database->schema()->createTable($db['table'], $table);
       $this->dbmsCompatibility->alterNewTable($db['table'], $type);
     }
@@ -795,16 +799,9 @@ class Database extends BackendPluginBase implements PluginFormInterface {
       $this->logException($e, '%type while trying to add a database index for column %column to table %table: @message in %function (line %line of %file).', $variables, RfcLogLevel::WARNING);
     }
 
-    if ($new_table) {
-      // Add a covering index for fields with multiple values.
-      if (!isset($db['column'])) {
-        $this->database->schema()->addPrimaryKey($db['table'], ['item_id', $column]);
-      }
-      // This is a denormalized table with many columns, where we can't predict
-      // the best covering index.
-      else {
-        $this->database->schema()->addPrimaryKey($db['table'], ['item_id']);
-      }
+    // Add a covering index for field tables.
+    if ($new_table && $type == 'field') {
+      $this->database->schema()->addPrimaryKey($db['table'], ['item_id', $column]);
     }
   }
 

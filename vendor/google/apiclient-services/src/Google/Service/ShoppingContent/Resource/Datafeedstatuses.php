@@ -46,6 +46,15 @@ class Google_Service_ShoppingContent_Resource_Datafeedstatuses extends Google_Se
    * @param string $merchantId
    * @param string $datafeedId
    * @param array $optParams Optional parameters.
+   *
+   * @opt_param string country The country for which to get the datafeed status.
+   * If this parameter is provided then language must also be provided. Note that
+   * this parameter is required for feeds targeting multiple countries and
+   * languages, since a feed may have a different status for each target.
+   * @opt_param string language The language for which to get the datafeed status.
+   * If this parameter is provided then country must also be provided. Note that
+   * this parameter is required for feeds targeting multiple countries and
+   * languages, since a feed may have a different status for each target.
    * @return Google_Service_ShoppingContent_DatafeedStatus
    */
   public function get($merchantId, $datafeedId, $optParams = array())

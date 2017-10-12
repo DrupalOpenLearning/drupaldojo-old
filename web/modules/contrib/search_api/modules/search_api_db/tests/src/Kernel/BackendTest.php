@@ -3,11 +3,11 @@
 namespace Drupal\Tests\search_api_db\Kernel;
 
 use Drupal\Component\Render\FormattableMarkup;
-use Drupal\Core\Database\Database;
 use Drupal\search_api\Entity\Server;
 use Drupal\search_api\Query\QueryInterface;
 use Drupal\search_api\SearchApiException;
-use Drupal\search_api_db\Plugin\search_api\backend\Database as BackendDatabase;
+use Drupal\search_api_db\Plugin\search_api\backend\Database;
+use Drupal\search_api_db\Tests\DatabaseTestsTrait;
 use Drupal\Tests\search_api\Kernel\BackendTestBase;
 
 /**
@@ -18,6 +18,8 @@ use Drupal\Tests\search_api\Kernel\BackendTestBase;
  * @group search_api
  */
 class BackendTest extends BackendTestBase {
+
+  use DatabaseTestsTrait;
 
   /**
    * {@inheritdoc}
@@ -104,7 +106,8 @@ class BackendTest extends BackendTestBase {
     sort($actual_fields);
     $this->assertEquals($expected_fields, $actual_fields, 'All expected field tables were created.');
 
-    $this->assertTrue(\Drupal::database()->schema()->tableExists($normalized_storage_table), 'Normalized storage table exists');
+    $this->assertTrue(\Drupal::database()->schema()->tableExists($normalized_storage_table), 'Normalized storage table exists.');
+    $this->assertHasPrimaryKey($normalized_storage_table, 'Normalized storage table has a primary key.');
     foreach ($field_infos as $field_id => $field_info) {
       if ($field_id != 'search_api_id') {
         $this->assertTrue(\Drupal::database()
@@ -507,7 +510,7 @@ class BackendTest extends BackendTestBase {
     $query = $this->buildSearch();
     $results = $query->execute();
     $this->assertEquals(0, $results->getResultCount(), 'Clearing the server worked correctly.');
-    $schema = Database::getConnection()->schema();
+    $schema = \Drupal::database()->schema();
     $table_exists = $schema->tableExists($normalized_storage_table);
     $this->assertTrue($table_exists, 'The index tables were left in place.');
 
@@ -574,7 +577,7 @@ class BackendTest extends BackendTestBase {
    */
   protected function getIndexDbInfo($index_id = NULL) {
     $index_id = $index_id ?: $this->indexId;
-    return \Drupal::keyValue(BackendDatabase::INDEXES_KEY_VALUE_STORE_ID)
+    return \Drupal::keyValue(Database::INDEXES_KEY_VALUE_STORE_ID)
       ->get($index_id);
   }
 

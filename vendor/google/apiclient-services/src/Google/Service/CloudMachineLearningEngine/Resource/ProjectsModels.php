@@ -120,6 +120,39 @@ class Google_Service_CloudMachineLearningEngine_Resource_ProjectsModels extends 
     return $this->call('list', array($params), "Google_Service_CloudMachineLearningEngine_GoogleCloudMlV1ListModelsResponse");
   }
   /**
+   * Updates a specific model resource.
+   *
+   * Currently the only supported fields to update are `description` and
+   * `default_version.name`. (models.patch)
+   *
+   * @param string $name Required. The project name.
+   * @param Google_Service_CloudMachineLearningEngine_GoogleCloudMlV1Model $postBody
+   * @param array $optParams Optional parameters.
+   *
+   * @opt_param string updateMask Required. Specifies the path, relative to
+   * `Model`, of the field to update.
+   *
+   * For example, to change the description of a model to "foo" and set its
+   * default version to "version_1", the `update_mask` parameter would be
+   * specified as `description`, `default_version.name`, and the `PATCH` request
+   * body would specify the new value, as follows:     {       "description":
+   * "foo",       "defaultVersion": {         "name":"version_1"       }     } In
+   * this example, the model is blindly overwritten since no etag is given.
+   *
+   * To adopt etag mechanism, include `etag` field in the mask, and include the
+   * `etag` value in your model resource.
+   *
+   * Currently the supported update masks are `description`,
+   * `default_version.name`, `labels`, and `etag`.
+   * @return Google_Service_CloudMachineLearningEngine_GoogleLongrunningOperation
+   */
+  public function patch($name, Google_Service_CloudMachineLearningEngine_GoogleCloudMlV1Model $postBody, $optParams = array())
+  {
+    $params = array('name' => $name, 'postBody' => $postBody);
+    $params = array_merge($params, $optParams);
+    return $this->call('patch', array($params), "Google_Service_CloudMachineLearningEngine_GoogleLongrunningOperation");
+  }
+  /**
    * Sets the access control policy on the specified resource. Replaces any
    * existing policy. (models.setIamPolicy)
    *

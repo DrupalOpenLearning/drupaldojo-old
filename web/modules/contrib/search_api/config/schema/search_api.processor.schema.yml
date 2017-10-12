@@ -167,6 +167,27 @@ plugin.plugin_configuration.search_api_processor.transliteration:
   type: search_api.fields_processor_configuration
   label: 'Transliteration processor configuration'
 
+plugin.plugin_configuration.search_api_processor.type_boost:
+  type: search_api.default_processor_configuration
+  label: 'Type-specific boosting processor configuration'
+  mapping:
+    boosts:
+      type: sequence
+      label: 'Boost settings'
+      sequence:
+        type: mapping
+        label: 'Datasource boost settings'
+        mapping:
+          datasource_boost:
+            type: float
+            label: 'Base boost for the datasource'
+          bundle_boosts:
+            type: sequence
+            label: 'Bundle-specific boosts'
+            sequence:
+              type: float
+              label: 'The boost value for this bundle'
+
 # Definitions for property configuration
 
 search_api.property_configuration.*:

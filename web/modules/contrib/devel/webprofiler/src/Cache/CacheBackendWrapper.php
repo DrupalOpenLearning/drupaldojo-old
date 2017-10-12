@@ -56,7 +56,7 @@ class CacheBackendWrapper implements CacheBackendInterface, CacheTagsInvalidator
     $cache = $this->cacheBackend->get($cid, $allow_invalid);
 
     if ($cache) {
-      $cacheCopy = new \StdClass();
+      $cacheCopy = new \stdClass();
       $cacheCopy->cid = $cache->cid;
       $cacheCopy->expire = $cache->expire;
       $cacheCopy->tags = $cache->tags;
@@ -82,7 +82,7 @@ class CacheBackendWrapper implements CacheBackendInterface, CacheTagsInvalidator
         $this->cacheDataCollector->registerCacheMiss($this->bin, $cid);
       }
       else {
-        $cacheCopy = new \StdClass();
+        $cacheCopy = new \stdClass();
         $cacheCopy->cid = $cache[$cid]->cid;
         $cacheCopy->expire = $cache[$cid]->expire;
         $cacheCopy->tags = $cache[$cid]->tags;

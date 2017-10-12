@@ -70,7 +70,7 @@ class DevelSwitchUserTest extends WebTestBase {
     $this->assertNoText($this->block->label(), 'Block title was not found.');
 
     // Ensure that a token is required to switch user.
-    $this->drupalGet('/devel/switch/' . $this->webUser->getUsername());
+    $this->drupalGet('/devel/switch/' . $this->webUser->getDisplayName());
     $this->assertResponse(403);
 
     $this->drupalLogin($this->develUser);
@@ -83,22 +83,22 @@ class DevelSwitchUserTest extends WebTestBase {
     $this->assertResponse(403);
 
     // Ensure that a token is required to switch user.
-    $this->drupalGet('/devel/switch/' . $this->switchUser->getUsername());
+    $this->drupalGet('/devel/switch/' . $this->switchUser->getDisplayName());
     $this->assertResponse(403);
 
     // Switch to another user account.
     $this->drupalGet('/user/' . $this->switchUser->id());
-    $this->clickLink($this->switchUser->getUsername());
+    $this->clickLink($this->switchUser->getDisplayName());
     $this->assertSessionByUid($this->switchUser->id());
     $this->assertNoSessionByUid($this->develUser->id());
 
     // Switch back to initial account.
-    $this->clickLink($this->develUser->getUsername());
+    $this->clickLink($this->develUser->getDisplayName());
     $this->assertNoSessionByUid($this->switchUser->id());
     $this->assertSessionByUid($this->develUser->id());
 
     // Use the search form to switch to another account.
-    $edit = ['userid' => $this->switchUser->getUsername()];
+    $edit = ['userid' => $this->switchUser->getDisplayName()];
     $this->drupalPostForm(NULL, $edit, t('Switch'));
     $this->assertSessionByUid($this->switchUser->id());
     $this->assertNoSessionByUid($this->develUser->id());
@@ -166,22 +166,22 @@ class DevelSwitchUserTest extends WebTestBase {
 
     // Ensure that user with 'switch users' permission are prioritized.
     $this->assertSwitchUserListCount(2);
-    $this->assertSwitchUserListContainsUser($this->develUser->getUsername());
-    $this->assertSwitchUserListContainsUser($this->switchUser->getUsername());
+    $this->assertSwitchUserListContainsUser($this->develUser->getDisplayName());
+    $this->assertSwitchUserListContainsUser($this->switchUser->getDisplayName());
 
     // Ensure that blocked users are not shown in the list.
     $this->switchUser->set('status', 0)->save();
     $this->drupalGet('');
     $this->assertSwitchUserListCount(2);
-    $this->assertSwitchUserListContainsUser($this->develUser->getUsername());
-    $this->assertSwitchUserListContainsUser($this->webUser->getUsername());
-    $this->assertSwitchUserListNoContainsUser($this->switchUser->getUsername());
+    $this->assertSwitchUserListContainsUser($this->develUser->getDisplayName());
+    $this->assertSwitchUserListContainsUser($this->webUser->getDisplayName());
+    $this->assertSwitchUserListNoContainsUser($this->switchUser->getDisplayName());
 
     // Ensure that anonymous user are prioritized if include_anon is set to true.
     $this->setBlockConfiguration('include_anon', TRUE);
     $this->drupalGet('');
     $this->assertSwitchUserListCount(2);
-    $this->assertSwitchUserListContainsUser($this->develUser->getUsername());
+    $this->assertSwitchUserListContainsUser($this->develUser->getDisplayName());
     $this->assertSwitchUserListContainsUser($anonymous);
 
     // Ensure that the switch user block works properly even if no prioritized
@@ -192,7 +192,7 @@ class DevelSwitchUserTest extends WebTestBase {
     $this->drupalLogin($this->rootUser);
     $this->drupalGet('');
     $this->assertSwitchUserListCount(2);
-    $this->assertSwitchUserListContainsUser($this->rootUser->getUsername());
+    $this->assertSwitchUserListContainsUser($this->rootUser->getDisplayName());
     $this->assertSwitchUserListContainsUser($anonymous);
 
     // Ensure that the switch user block works properly even if no roles have
@@ -202,7 +202,7 @@ class DevelSwitchUserTest extends WebTestBase {
 
     $this->drupalGet('');
     $this->assertSwitchUserListCount(2);
-    $this->assertSwitchUserListContainsUser($this->rootUser->getUsername());
+    $this->assertSwitchUserListContainsUser($this->rootUser->getDisplayName());
     $this->assertSwitchUserListContainsUser($anonymous);
   }
 

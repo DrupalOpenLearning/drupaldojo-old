@@ -49,7 +49,7 @@ class HtmlFilterTest extends UnitTestCase {
     ];
     $this->processor->setConfiguration($configuration);
     $type = 'text';
-    $this->invokeMethod('processFieldValue', [&$passed_value, &$type]);
+    $this->invokeMethod('processFieldValue', [&$passed_value, $type]);
     $this->assertEquals($expected_value, $passed_value);
   }
 
@@ -91,7 +91,7 @@ class HtmlFilterTest extends UnitTestCase {
     ];
     $this->processor->setConfiguration($configuration);
     $type = 'text';
-    $this->invokeMethod('processFieldValue', [&$passed_value, &$type]);
+    $this->invokeMethod('processFieldValue', [&$passed_value, $type]);
     $this->assertEquals($expected_value, $passed_value);
   }
 
@@ -167,7 +167,7 @@ class HtmlFilterTest extends UnitTestCase {
     ];
     $this->processor->setConfiguration($configuration);
     $type = 'text';
-    $this->invokeMethod('processFieldValue', [&$passed_value, &$type]);
+    $this->invokeMethod('processFieldValue', [&$passed_value, $type]);
     $this->assertEquals($expected_value, $passed_value);
   }
 
@@ -250,7 +250,7 @@ class HtmlFilterTest extends UnitTestCase {
     $expected_value = preg_replace('/\s+/', ' ', strip_tags($passed_value));
 
     $type = 'string';
-    $this->invokeMethod('processFieldValue', [&$passed_value, &$type]);
+    $this->invokeMethod('processFieldValue', [&$passed_value, $type]);
     $this->assertEquals($expected_value, $passed_value);
   }
 

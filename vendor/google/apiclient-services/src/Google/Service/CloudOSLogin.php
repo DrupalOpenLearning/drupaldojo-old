@@ -36,6 +36,12 @@ class Google_Service_CloudOSLogin extends Google_Service
   /** View your data across Google Cloud Platform services. */
   const CLOUD_PLATFORM_READ_ONLY =
       "https://www.googleapis.com/auth/cloud-platform.read-only";
+  /** View and manage your Google Compute Engine resources. */
+  const COMPUTE =
+      "https://www.googleapis.com/auth/compute";
+  /** View your Google Compute Engine resources. */
+  const COMPUTE_READONLY =
+      "https://www.googleapis.com/auth/compute.readonly";
 
   public $users;
   public $users_sshPublicKeys;

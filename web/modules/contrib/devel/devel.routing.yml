@@ -7,7 +7,7 @@ devel.admin_settings:
     _permission: 'administer site configuration'
 
 devel.toolbar.settings_form:
-  path: 'admin/config/development/devel/toolbar'
+  path: '/admin/config/development/devel/toolbar'
   defaults:
     _form: '\Drupal\devel\Form\ToolbarSettingsForm'
     _title: 'Devel Toolbar Settings'
@@ -50,7 +50,7 @@ devel.config_edit:
   path: '/devel/config/edit/{config_name}'
   defaults:
     _form: '\Drupal\devel\Form\ConfigEditor'
-    _title: 'Edit configuration object: !config_name'
+    _title: 'Edit configuration object: @config_name'
   options:
     _admin_route: TRUE
   requirements:
@@ -81,16 +81,6 @@ devel.theme_registry:
   defaults:
     _controller: '\Drupal\devel\Controller\DevelController::themeRegistry'
     _title: 'Theme registry'
-  options:
-    _admin_route: TRUE
-  requirements:
-    _permission: 'access devel information'
-
-devel.entity_info_page:
-  path: '/devel/entity/info'
-  defaults:
-    _controller: '\Drupal\devel\Controller\DevelController::entityInfoPage'
-    _title: 'Entity info'
   options:
     _admin_route: TRUE
   requirements:
@@ -137,16 +127,6 @@ devel.switch:
   requirements:
     _permission: 'switch users'
     _csrf_token: 'TRUE'
-
-devel.elements_page:
-  path: '/devel/elements'
-  defaults:
-    _controller: '\Drupal\devel\Controller\DevelController::elementsPage'
-    _title: 'Element Info'
-  options:
-    _admin_route: TRUE
-  requirements:
-    _permission: 'access devel information'
 
 devel.cache_clear:
   path: '/devel/cache/clear'
@@ -238,6 +218,60 @@ devel.event_info:
   defaults:
     _controller: '\Drupal\devel\Controller\EventInfoController::eventList'
     _title: 'Events'
+  options:
+    _admin_route: TRUE
+  requirements:
+    _permission: 'access devel information'
+
+# Layouts info
+devel.layout_info:
+  path: '/devel/layouts'
+  defaults:
+    _controller: '\Drupal\devel\Controller\LayoutInfoController::layoutInfoPage'
+    _title: 'Layouts'
+  options:
+    _admin_route: TRUE
+  requirements:
+    _permission: 'access devel information'
+    _module_dependencies: 'layout_discovery'
+
+# Element info
+devel.elements_page:
+  path: '/devel/elements'
+  defaults:
+    _controller: '\Drupal\devel\Controller\ElementInfoController::elementList'
+    _title: 'Element Info'
+  options:
+    _admin_route: TRUE
+  requirements:
+    _permission: 'access devel information'
+
+devel.elements_page.detail:
+  path: '/devel/elements/{element_name}'
+  defaults:
+    _controller: '\Drupal\devel\Controller\ElementInfoController::elementDetail'
+    _title: 'Element @element_name'
+  options:
+    _admin_route: TRUE
+  requirements:
+    _permission: 'access devel information'
+
+# Entity type info
+devel.entity_info_page:
+  path: '/devel/entity/info'
+  defaults:
+    _controller: '\Drupal\devel\Controller\EntityTypeInfoController::entityTypeList'
+    _title: 'Entity info'
+  options:
+    _admin_route: TRUE
+  requirements:
+    _permission: 'access devel information'
+
+devel.entity_info_page.detail:
+  path: '/devel/entity/info/{entity_type_id}'
+  defaults:
+    _controller: '\Drupal\devel\Controller\EntityTypeInfoController::entityTypeDetail'
+    _title: 'Entity type @entity_type_id'
   options:
     _admin_route: TRUE
   requirements:

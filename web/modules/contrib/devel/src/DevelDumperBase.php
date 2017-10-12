@@ -2,8 +2,8 @@
 
 namespace Drupal\devel;
 
-use Drupal\Core\Render\Markup;
 use Drupal\Core\Plugin\PluginBase;
+use Drupal\devel\Render\FilteredMarkup;
 
 /**
  * Defines a base devel dumper implementation.
@@ -39,7 +39,7 @@ abstract class DevelDumperBase extends PluginBase implements DevelDumperInterfac
    *   The unaltered input value.
    */
   protected function setSafeMarkup($input) {
-    return Markup::create($input);
+    return FilteredMarkup::create($input);
   }
 
 }

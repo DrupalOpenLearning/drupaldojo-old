@@ -24,7 +24,6 @@ use Drupal\field\FieldStorageConfigInterface;
 use Drupal\search_api\Datasource\DatasourcePluginBase;
 use Drupal\search_api\Entity\Index;
 use Drupal\search_api\Plugin\PluginFormTrait;
-use Drupal\search_api\SearchApiException;
 use Drupal\search_api\IndexInterface;
 use Drupal\search_api\Utility\FieldsHelperInterface;
 use Drupal\search_api\Utility\Utility;
@@ -954,8 +953,7 @@ class ContentEntity extends DatasourcePluginBase implements EntityDatasourceInte
    * {@inheritdoc}
    */
   public static function getIndexesForEntity(ContentEntityInterface $entity) {
-    $entity_type = $entity->getEntityTypeId();
-    $datasource_id = 'entity:' . $entity_type;
+    $datasource_id = 'entity:' . $entity->getEntityTypeId();
     $entity_bundle = $entity->bundle();
     $has_bundles = $entity->getEntityType()->hasKey('bundle');
 
@@ -971,21 +969,67 @@ class ContentEntity extends DatasourcePluginBase implements EntityDatasourceInte
       elseif ($has_bundles) {
         // If the entity type supports bundles, we also have to filter out
         // indexes that exclude the entity's bundle.
-        try {
-          $config = $index->getDatasource($datasource_id)->getConfiguration();
-          $default = !empty($config['bundles']['default']);
-          $bundle_set = in_array($entity_bundle, $config['bundles']['selected']);
-          if ($default == $bundle_set) {
-            unset($indexes[$index_id]);
-          }
-        }
-        catch (SearchApiException $e) {
+        $config = $index->getDatasource($datasource_id)->getConfiguration();
+        $default = !empty($config['bundles']['default']);
+        $bundle_set = in_array($entity_bundle, $config['bundles']['selected']);
+        if ($default == $bundle_set) {
           unset($indexes[$index_id]);
         }
       }
     }
 
     return $indexes;
+  }
+
+  /**
+   * Filters a set of datasource-specific item IDs.
+   *
+   * Returns only those item IDs that are valid for the given datasource and
+   * index. This method only checks the item language, though – whether an
+   * entity with that ID actually exists, or whether it has a bundle included
+   * for that datasource, is not verified.
+   *
+   * @param \Drupal\search_api\IndexInterface $index
+   *   The index for which to validate.
+   * @param string $datasource_id
+   *   The ID of the datasource on the index for which to validate.
+   * @param string[] $item_ids
+   *   The item IDs to be validated.
+   *
+   * @return string[]
+   *   All given item IDs that are valid for that index and datasource.
+   */
+  public static function filterValidItemIds(IndexInterface $index, $datasource_id, array $item_ids) {
+    if (!$index->isValidDatasource($datasource_id)) {
+      return $item_ids;
+    }
+    $config = $index->getDatasource($datasource_id)->getConfiguration();
+    // If the entity type doesn't allow translations, we just accept all IDs.
+    // (If the entity type were translatable, the config key would have been set
+    // with the default configuration.)
+    if (!isset($config['languages']['selected'])) {
+      return $item_ids;
+    }
+    $default = !empty($config['languages']['default']);
+    $selected = $config['languages']['selected'];
+    $always_valid = [
+      LanguageInterface::LANGCODE_NOT_SPECIFIED,
+      LanguageInterface::LANGCODE_NOT_APPLICABLE,
+    ];
+    $valid_ids = [];
+    foreach ($item_ids as $item_id) {
+      $pos = strrpos($item_id, ':');
+      // Item IDs without colons are always invalid.
+      if ($pos === FALSE) {
+        continue;
+      }
+      $langcode = substr($item_id, $pos + 1);
+      if ($default != in_array($langcode, $selected)
+          || in_array($langcode, $always_valid)) {
+        $valid_ids[] = $item_id;
+      }
+    }
+    return $valid_ids;
   }
 
 }

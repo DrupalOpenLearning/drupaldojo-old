@@ -114,6 +114,20 @@ class Google_Service_FirebaseRules extends Google_Service
                   'required' => true,
                 ),
               ),
+            ),'getExecutable' => array(
+              'path' => 'v1/{+name}:getExecutable',
+              'httpMethod' => 'GET',
+              'parameters' => array(
+                'name' => array(
+                  'location' => 'path',
+                  'type' => 'string',
+                  'required' => true,
+                ),
+                'executableVersion' => array(
+                  'location' => 'query',
+                  'type' => 'string',
+                ),
+              ),
             ),'list' => array(
               'path' => 'v1/{+name}/releases',
               'httpMethod' => 'GET',
@@ -123,10 +137,6 @@ class Google_Service_FirebaseRules extends Google_Service
                   'type' => 'string',
                   'required' => true,
                 ),
-                'pageSize' => array(
-                  'location' => 'query',
-                  'type' => 'integer',
-                ),
                 'filter' => array(
                   'location' => 'query',
                   'type' => 'string',
@@ -134,6 +144,10 @@ class Google_Service_FirebaseRules extends Google_Service
                 'pageToken' => array(
                   'location' => 'query',
                   'type' => 'string',
+                ),
+                'pageSize' => array(
+                  'location' => 'query',
+                  'type' => 'integer',
                 ),
               ),
             ),'update' => array(

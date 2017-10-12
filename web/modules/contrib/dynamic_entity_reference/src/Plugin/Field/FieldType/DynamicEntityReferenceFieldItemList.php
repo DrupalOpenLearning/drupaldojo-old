@@ -57,7 +57,7 @@ class DynamicEntityReferenceFieldItemList extends EntityReferenceFieldItemList {
     // Load and add the existing entities.
     if ($ids) {
       foreach ($ids as $target_type => $entity_type_ids) {
-        $entities = \Drupal::entityManager()
+        $entities = \Drupal::entityTypeManager()
           ->getStorage($target_type)
           ->loadMultiple($entity_type_ids);
         foreach ($entity_type_ids as $delta => $target_id) {
@@ -77,7 +77,7 @@ class DynamicEntityReferenceFieldItemList extends EntityReferenceFieldItemList {
    * {@inheritdoc}
    */
   public static function processDefaultValue($default_value, FieldableEntityInterface $entity, FieldDefinitionInterface $definition) {
-    $manager = \Drupal::entityManager();
+    $manager = \Drupal::entityTypeManager();
     // We want to bypass the EntityReferenceItem::processDefaultValue() so
     // we duplicate FieldItemList::processDefaultValue() here which just returns
     // $default_values.
@@ -122,7 +122,7 @@ class DynamicEntityReferenceFieldItemList extends EntityReferenceFieldItemList {
    * {@inheritdoc}
    */
   public function defaultValuesFormSubmit(array $element, array &$form, FormStateInterface $form_state) {
-    $manager = \Drupal::entityManager();
+    $manager = \Drupal::entityTypeManager();
     $default_value = [];
     // We want to bypass the EntityReferenceItem::defaultValuesFormSubmit() so
     // we duplicate FieldItemList::defaultValuesFormSubmit() here.

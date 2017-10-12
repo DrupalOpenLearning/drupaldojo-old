@@ -456,9 +456,14 @@ function theme_search_api_index(array $variables) {
 
     $cron_limit = $index->getOption('cron_limit', \Drupal::config('search_api.settings')->get('default_cron_limit'));
     // Check if the cron limit is higher than zero.
-    if ($cron_limit > 0) {
+    if ($cron_limit != 0) {
       $classes[] = 'ok';
-      $info = \Drupal::translation()->formatPlural($cron_limit, 'During cron runs, 1 item will be indexed per batch.', 'During cron runs, @count items will be indexed per batch.');
+      if ($cron_limit > 0) {
+        $info = \Drupal::translation()->formatPlural($cron_limit, 'During cron runs, 1 item will be indexed per batch.', 'During cron runs, @count items will be indexed per batch.');
+      }
+      else {
+        $info = t('All items will be indexed at once during cron runs.');
+      }
     }
     else {
       $classes[] = 'warning';

@@ -191,6 +191,13 @@ function search_api_config_import_steps_alter(&$sync_steps, ConfigImporter $conf
  * By setting the $entity->search_api_skip_tracking property to a true-like
  * value before this hook is invoked, you can prevent this behavior and make the
  * Search API ignore this new entity.
+ *
+ * Note that this function implements tracking only on behalf of the "Content
+ * Entity" datasource defined in this module, not for entity-based datasources
+ * in general. Datasources defined by other modules still have to implement
+ * their own mechanism for tracking new/updated/deleted entities.
+ *
+ * @see \Drupal\search_api\Plugin\search_api\datasource\ContentEntity
  */
 function search_api_entity_insert(EntityInterface $entity) {
   // Check if the entity is a content entity.
@@ -210,7 +217,8 @@ function search_api_entity_insert(EntityInterface $entity) {
   }
   $datasource_id = 'entity:' . $entity->getEntityTypeId();
   foreach ($indexes as $index) {
-    $index->trackItemsInserted($datasource_id, $item_ids);
+    $filtered_item_ids = ContentEntity::filterValidItemIds($index, $datasource_id, $item_ids);
+    $index->trackItemsInserted($datasource_id, $filtered_item_ids);
   }
 }
 
@@ -225,6 +233,13 @@ function search_api_entity_insert(EntityInterface $entity) {
  * By setting the $entity->search_api_skip_tracking property to a true-like
  * value before this hook is invoked, you can prevent this behavior and make the
  * Search API ignore this update.
+ *
+ * Note that this function implements tracking only on behalf of the "Content
+ * Entity" datasource defined in this module, not for entity-based datasources
+ * in general. Datasources defined by other modules still have to implement
+ * their own mechanism for tracking new/updated/deleted entities.
+ *
+ * @see \Drupal\search_api\Plugin\search_api\datasource\ContentEntity
  */
 function search_api_entity_update(EntityInterface $entity) {
   // Check if the entity is a content entity.
@@ -264,7 +279,8 @@ function search_api_entity_update(EntityInterface $entity) {
   $deleted_item_ids = array_map($combine_id, $deleted_item_ids);
   foreach ($indexes as $index) {
     if ($inserted_item_ids) {
-      $index->trackItemsInserted($datasource_id, $inserted_item_ids);
+      $filtered_item_ids = ContentEntity::filterValidItemIds($index, $datasource_id, $inserted_item_ids);
+      $index->trackItemsInserted($datasource_id, $filtered_item_ids);
     }
     if ($updated_item_ids) {
       $index->trackItemsUpdated($datasource_id, $updated_item_ids);
@@ -286,6 +302,13 @@ function search_api_entity_update(EntityInterface $entity) {
  * Search API ignore this deletion. (Note that this might lead to stale data in
  * the tracking table or on the server, since the item will not removed from
  * there (if it has been added before).)
+ *
+ * Note that this function implements tracking only on behalf of the "Content
+ * Entity" datasource defined in this module, not for entity-based datasources
+ * in general. Datasources defined by other modules still have to implement
+ * their own mechanism for tracking new/updated/deleted entities.
+ *
+ * @see \Drupal\search_api\Plugin\search_api\datasource\ContentEntity
  */
 function search_api_entity_delete(EntityInterface $entity) {
   // Check if the entity is a content entity.

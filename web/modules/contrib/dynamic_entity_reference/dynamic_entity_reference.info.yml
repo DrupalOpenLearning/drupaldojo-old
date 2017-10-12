@@ -12,8 +12,8 @@ test_dependencies:
   - drupal:node
   - drupal:taxonomy
 
-# Information added by Drupal.org packaging script on 2017-05-21
-version: '8.x-1.3'
+# Information added by Drupal.org packaging script on 2017-07-27
+version: '8.x-1.4'
 core: '8.x'
 project: 'dynamic_entity_reference'
-datestamp: 1495398191
+datestamp: 1501151044

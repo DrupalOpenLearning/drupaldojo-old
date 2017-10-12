@@ -75,6 +75,10 @@ class ThemeInfoRebuildSubscriber implements EventSubscriberInterface {
       drupal_theme_rebuild();
       // Refresh theme data.
       $this->themeHandler->refreshInfo();
+      // Resets the internal state of the theme handler and clear the 'system
+      // list' cache; this allow to properly register, if needed, PSR-4
+      // namespaces for theme extensions after refreshing the info data.
+      $this->themeHandler->reset();
       // Notify the user that the theme info are rebuilt on every request.
       $this->triggerWarningIfNeeded($event->getRequest());
     }

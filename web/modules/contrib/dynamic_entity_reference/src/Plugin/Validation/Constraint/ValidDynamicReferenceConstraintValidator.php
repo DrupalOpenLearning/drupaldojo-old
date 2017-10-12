@@ -109,11 +109,11 @@ class ValidDynamicReferenceConstraintValidator extends ConstraintValidator imple
 
     // Collect all new and created valid entities fot bundle validation.
     $valid_entities = [];
-
+    $entity = !empty($value->getParent()) ? $value->getEntity() : NULL;
     // Validate new entities.
     foreach ($new_entities as $delta => $new_entity) {
       /** @var \Drupal\Core\Entity\EntityReferenceSelection\SelectionInterface $handler */
-      $handler = $this->selectionManager->getSelectionHandler($value->getFieldDefinition(), NULL, $target_types[$delta]);
+      $handler = $this->selectionManager->getSelectionHandler($value->getFieldDefinition(), $entity, $target_types[$delta]);
       if ($handler instanceof SelectionWithAutocreateInterface && ($new_entity->getEntityTypeId() == $target_types[$delta] || empty($target_types[$delta]))) {
         if (!$handler->validateReferenceableNewEntities([$new_entity])) {
           $this->context->buildViolation($constraint->invalidAutocreateMessage)
@@ -182,7 +182,7 @@ class ValidDynamicReferenceConstraintValidator extends ConstraintValidator imple
 
     // Validate target ids.
     foreach ($target_ids as $delta => $id) {
-      $handler = $this->selectionManager->getSelectionHandler($value->getFieldDefinition(), NULL, $target_types[$delta]);
+      $handler = $this->selectionManager->getSelectionHandler($value->getFieldDefinition(), $entity, $target_types[$delta]);
       $valid_target_id = $handler->validateReferenceableEntities([$id]);
       if (!$valid_target_id) {
         $this->context->buildViolation($constraint->message)

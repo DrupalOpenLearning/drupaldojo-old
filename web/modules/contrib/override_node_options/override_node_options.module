@@ -1,5 +1,11 @@
 <?php
 
+/**
+ * @file
+ * Main module file for override_node_options.
+ */
+
+use Drupal\Core\Access\AccessResult;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\node\NodeForm;
 
@@ -8,25 +14,55 @@ use Drupal\node\NodeForm;
  */
 function override_node_options_form_alter(array &$form, FormStateInterface $form_state) {
   $form_object = $form_state->getFormObject();
+
   if ($form_object instanceof NodeForm) {
-    /** @var \Drupal\Core\Session\AccountInterface $account */
+    /** @var Drupal\Core\Session\AccountProxyInterface $user */
     $user = \Drupal::currentUser();
+
     if ($user->hasPermission('administer nodes')) {
       return;
     }
+
     $node_type = $form_object->getEntity()->bundle();
 
-    $form['promote']['#access'] = $user->hasPermission("override $node_type promote to front page option");
-
-    $form['sticky']['#access'] = $user->hasPermission("override $node_type sticky option");
-
     $form['revision']['#access'] = $user->hasPermission("override $node_type revision option");
+  }
+}
 
-    $form['revision_log']['#access'] = $user->hasPermission("override $node_type revision log entry");
+/**
+ * Implements hook_entity_field_access_alter().
+ */
+function override_node_options_entity_field_access_alter(array &$grants, array $context) {
+  $entity_type = $context['field_definition']->getTargetEntityTypeId();
 
-    $form['created']['#access'] = $user->hasPermission("override $node_type authored on option");
+  if ($entity_type == 'node' && $context['operation'] == 'edit' && !$context['account']->hasPermission('administer nodes')) {
+    $bundle = $context['items']->getEntity()->bundle();
 
-    $form['uid']['#access'] = $user->hasPermission("override $node_type authored by option");
+    switch ($context['field_definition']->getName()) {
+      case 'promote':
+        $grants[':default'] = AccessResult::allowedIfHasPermission($context['account'], "override $bundle promote to front page option");
+        break;
+
+      case 'sticky':
+        $grants[':default'] = AccessResult::allowedIfHasPermission($context['account'], "override $bundle sticky option");
+        break;
+
+      case 'revision_log':
+        $grants[':default'] = AccessResult::allowedIfHasPermission($context['account'], "override $bundle revision log entry");
+        break;
+
+      case 'created':
+        $grants[':default'] = AccessResult::allowedIfHasPermission($context['account'], "override $bundle authored on option");
+        break;
+
+      case 'uid':
+        $grants[':default'] = AccessResult::allowedIfHasPermission($context['account'], "override $bundle authored by option");
+        break;
+
+      case 'status':
+        $grants[':default'] = AccessResult::allowedIfHasPermission($context['account'], "override $bundle published option");
+        break;
+    }
   }
 }
 

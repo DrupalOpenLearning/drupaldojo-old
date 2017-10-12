@@ -59,6 +59,14 @@ function social_profile_form_profile_profile_add_form_alter(array &$form, FormSt
     unset($form['actions']['set_default']);
   }
 
+  if (isset($form['field_profile_expertise']['widget']['target_id'])) {
+    $form['field_profile_expertise']['widget']['target_id']['#selection_settings']['hide_id'] = TRUE;
+  }
+
+  if (isset($form['field_profile_interests']['widget']['target_id'])) {
+    $form['field_profile_interests']['widget']['target_id']['#selection_settings']['hide_id'] = TRUE;
+  }
+
   // Add custom submit handler just for redirect purposes. We don't want to
   // override the form::save in profile.
   $form['actions']['submit']['#submit'][] = '_social_profile_profile_edit_form_submit';
@@ -84,6 +92,14 @@ function social_profile_form_profile_profile_edit_form_alter(array &$form, FormS
   // Remove the save and set default submit button on profile edit.
   if (isset($form['actions']['set_default'])) {
     unset($form['actions']['set_default']);
+  }
+
+  if (isset($form['field_profile_expertise']['widget']['target_id'])) {
+    $form['field_profile_expertise']['widget']['target_id']['#selection_settings']['hide_id'] = TRUE;
+  }
+
+  if (isset($form['field_profile_interests']['widget']['target_id'])) {
+    $form['field_profile_interests']['widget']['target_id']['#selection_settings']['hide_id'] = TRUE;
   }
 
   // Add custom submit handler just for redirect purposes. We don't want to
@@ -217,11 +233,18 @@ function social_profile_user_insert(UserInterface $account) {
   // If the new account has a UID, we can create a default profile.
   // Default image is added through the field settings.
   if (!empty($account->id())) {
-    $profile = Profile::create($expected = [
-      'type' => ProfileType::load('profile')->id(),
-      'uid' => $account->id(),
-    ]);
-    $profile->save();
+    /** @var ProfileType $profile_type */
+    $profile_type = ProfileType::load('profile');
+    // Sometimes profile fields are already requested during registrataion.
+    // In those cases, the profile will already be created from that.
+    if ($profile_type->getRegistration() === FALSE) {
+      // Create a profile.
+      $profile = Profile::create($expected = [
+        'type' => $profile_type->id(),
+        'uid' => $account->id(),
+      ]);
+      $profile->save();
+    }
   }
 }
 
@@ -258,7 +281,7 @@ function social_profile_form_user_form_alter(&$form, FormStateInterface $form_st
         $form['profile_privacy']['social_profile_show_email']['#description'] = t('This setting is currently being controlled by a platform wide setting and cannot be changed. Please contact a sitemanager if you have questions.');
       }
       else {
-        // Submit function only when the data is actualy editable.
+        // Submit function only when the data is actually editable.
         $form['actions']['submit']['#submit'][] = '_social_profile_form_user_form_submit';
       }
     }

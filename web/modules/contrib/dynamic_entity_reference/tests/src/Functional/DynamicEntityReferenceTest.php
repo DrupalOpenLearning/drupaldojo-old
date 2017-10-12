@@ -8,6 +8,7 @@ use Drupal\Core\Field\FieldStorageDefinitionInterface;
 use Drupal\Core\Language\LanguageInterface;
 use Drupal\Core\Site\Settings;
 use Drupal\Core\Url;
+use Drupal\dynamic_entity_reference\Plugin\Field\FieldType\DynamicEntityReferenceItem;
 use Drupal\entity_test\Entity\EntityTest;
 use Drupal\entity_test\Entity\EntityTestBundle;
 use Drupal\field\Entity\FieldConfig;
@@ -99,36 +100,27 @@ class DynamicEntityReferenceTest extends BrowserTestBase {
     $assert_session->fieldExists('default_value_input[field_foobar][0][target_type]');
     $assert_session->optionExists('default_value_input[field_foobar][0][target_type]', 'entity_test');
     $assert_session->optionNotExists('default_value_input[field_foobar][0][target_type]', 'user');
-    $assert_session->fieldNotExists('settings[entity_test_no_id][handler_settings][target_bundles][entity_test_no_id]');
-    $assert_session->fieldNotExists('settings[entity_test_string_id][handler_settings][target_bundles][entity_test_string_id]');
-    $edit = [
-      'settings[entity_test_view_builder][handler_settings][target_bundles][entity_test_view_builder]' => TRUE,
-      'settings[entity_test_multivalue_basefield][handler_settings][target_bundles][entity_test_multivalue_basefield]' => TRUE,
-      'settings[entity_test_no_label][handler_settings][target_bundles][entity_test_no_label]' => TRUE,
-      'settings[entity_test_label_callback][handler_settings][target_bundles][entity_test_label_callback]' => TRUE,
-      'settings[entity_test][handler_settings][target_bundles][entity_test]' => TRUE,
-      'settings[entity_test_admin_routes][handler_settings][target_bundles][entity_test_admin_routes]' => TRUE,
-      'settings[entity_test_base_field_display][handler_settings][target_bundles][entity_test_base_field_display]' => TRUE,
-      'settings[entity_test_mul][handler_settings][target_bundles][entity_test_mul]' => TRUE,
-      'settings[entity_test_mul_changed][handler_settings][target_bundles][entity_test_mul_changed]' => TRUE,
-      'settings[entity_test_mul_default_value][handler_settings][target_bundles][entity_test_mul_default_value]' => TRUE,
-      'settings[entity_test_mul_langcode_key][handler_settings][target_bundles][entity_test_mul_langcode_key]' => TRUE,
-      'settings[entity_test_rev][handler_settings][target_bundles][entity_test_rev]' => TRUE,
-      'settings[entity_test_mulrev_changed][handler_settings][target_bundles][entity_test_mulrev_changed]' => TRUE,
-      'settings[entity_test_mulrev][handler_settings][target_bundles][entity_test_mulrev]' => TRUE,
-      'settings[entity_test_constraints][handler_settings][target_bundles][entity_test_constraints]' => TRUE,
-      'settings[entity_test_composite_constraint][handler_settings][target_bundles][entity_test_composite_constraint]' => TRUE,
-      'settings[entity_test_constraint_violation][handler_settings][target_bundles][entity_test_constraint_violation]' => TRUE,
-      'settings[entity_test_field_override][handler_settings][target_bundles][entity_test_field_override]' => TRUE,
-      'settings[entity_test_default_value][handler_settings][target_bundles][entity_test_default_value]' => TRUE,
-      'settings[entity_test_update][handler_settings][target_bundles][entity_test_update]' => TRUE,
-      'settings[entity_test_with_bundle][handler_settings][target_bundles][test]' => TRUE,
-      'settings[entity_test_default_access][handler_settings][target_bundles][entity_test_default_access]' => TRUE,
-      'settings[entity_test_cache][handler_settings][target_bundles][entity_test_cache]' => TRUE,
-      'settings[entity_test_field_methods][handler_settings][target_bundles][entity_test_field_methods]' => TRUE,
-      'settings[entity_test_mulrevpub][handler_settings][target_bundles][entity_test_mulrevpub]' => TRUE,
-      'settings[entity_test_mulrev_chnged_revlog][handler_settings][target_bundles][entity_test_mulrev_chnged_revlog]' => TRUE,
+
+    $labels = $this->container->get('entity_type.repository')->getEntityTypeLabels(TRUE);
+    $edit = [];
+    $excluded_entity_type_ids = [
+      'user',
+      'file',
+      'entity_test_label',
+      'entity_test_no_id',
+      'entity_test_no_bundle',
+      'entity_test_string_id',
     ];
+    foreach ($labels[(string) t('Content', [], ['context' => 'Entity type group'])] as $entity_type_id => $entity_type_label) {
+      if (!in_array($entity_type_id, $excluded_entity_type_ids)) {
+        if ($entity_type_id !== 'entity_test_with_bundle') {
+          $edit["settings[$entity_type_id][handler_settings][target_bundles][$entity_type_id]"] = TRUE;
+        }
+        else {
+          $edit['settings[entity_test_with_bundle][handler_settings][target_bundles][test]'] = TRUE;
+        }
+      }
+    }
     $this->submitForm($edit, t('Save settings'));
     $assert_session->responseContains(t('Saved %name configuration', ['%name' => 'Foobar']));
     $excluded_entity_type_ids = FieldStorageConfig::loadByName('entity_test', 'field_foobar')
@@ -137,6 +129,22 @@ class DynamicEntityReferenceTest extends BrowserTestBase {
     $this->assertSame(array_keys($excluded_entity_type_ids), ['user', 'entity_test_label']);
     // Check the include entity settings.
     $this->drupalGet('entity_test/structure/entity_test/fields/entity_test.entity_test.field_foobar/storage');
+    $this->submitForm([
+      'cardinality' => FieldStorageDefinitionInterface::CARDINALITY_UNLIMITED,
+      'settings[exclude_entity_types]' => FALSE,
+      'settings[entity_type_ids][]' => [],
+    ], t('Save field settings'));
+    $assert_session->pageTextContains('Select at least one entity type ID.');
+    $options = array_filter(array_keys($labels[(string) t('Content', [], ['context' => 'Entity type group'])]), function ($entity_type_id) {
+      return DynamicEntityReferenceItem::entityHasIntegerId($entity_type_id);
+    });
+    unset($options['entity_test_no_id']);
+    $this->submitForm([
+      'cardinality' => FieldStorageDefinitionInterface::CARDINALITY_UNLIMITED,
+      'settings[exclude_entity_types]' => TRUE,
+      'settings[entity_type_ids][]' => $options,
+    ], t('Save field settings'));
+    $assert_session->pageTextContains('Select at least one entity type ID.');
     $this->submitForm([
       'cardinality' => FieldStorageDefinitionInterface::CARDINALITY_UNLIMITED,
       'settings[exclude_entity_types]' => FALSE,
@@ -193,36 +201,25 @@ class DynamicEntityReferenceTest extends BrowserTestBase {
     ], t('Save field settings'));
     $assert_session->fieldNotExists('settings[entity_test_no_id][handler_settings][target_bundles][entity_test_no_id]');
     $assert_session->fieldNotExists('settings[entity_test_string_id][handler_settings][target_bundles][entity_test_string_id]');
-    $edit = [
-      'settings[entity_test_label][handler_settings][target_bundles][entity_test_label]' => TRUE,
-      'settings[entity_test_view_builder][handler_settings][target_bundles][entity_test_view_builder]' => TRUE,
-      'settings[entity_test_multivalue_basefield][handler_settings][target_bundles][entity_test_multivalue_basefield]' => TRUE,
-      'settings[entity_test_no_label][handler_settings][target_bundles][entity_test_no_label]' => TRUE,
-      'settings[entity_test_label_callback][handler_settings][target_bundles][entity_test_label_callback]' => TRUE,
-      'settings[entity_test][handler_settings][target_bundles][entity_test]' => TRUE,
-      'settings[entity_test_admin_routes][handler_settings][target_bundles][entity_test_admin_routes]' => TRUE,
-      'settings[entity_test_base_field_display][handler_settings][target_bundles][entity_test_base_field_display]' => TRUE,
-      'settings[entity_test_mul][handler_settings][target_bundles][entity_test_mul]' => TRUE,
-      'settings[entity_test_mul_changed][handler_settings][target_bundles][entity_test_mul_changed]' => TRUE,
-      'settings[entity_test_mul_default_value][handler_settings][target_bundles][entity_test_mul_default_value]' => TRUE,
-      'settings[entity_test_mul_langcode_key][handler_settings][target_bundles][entity_test_mul_langcode_key]' => TRUE,
-      'settings[entity_test_rev][handler_settings][target_bundles][entity_test_rev]' => TRUE,
-      'settings[entity_test_mulrev_changed][handler_settings][target_bundles][entity_test_mulrev_changed]' => TRUE,
-      'settings[entity_test_mulrev][handler_settings][target_bundles][entity_test_mulrev]' => TRUE,
-      'settings[entity_test_constraints][handler_settings][target_bundles][entity_test_constraints]' => TRUE,
-      'settings[entity_test_composite_constraint][handler_settings][target_bundles][entity_test_composite_constraint]' => TRUE,
-      'settings[entity_test_constraint_violation][handler_settings][target_bundles][entity_test_constraint_violation]' => TRUE,
-      'settings[entity_test_field_override][handler_settings][target_bundles][entity_test_field_override]' => TRUE,
-      'settings[entity_test_default_value][handler_settings][target_bundles][entity_test_default_value]' => TRUE,
-      'settings[entity_test_update][handler_settings][target_bundles][entity_test_update]' => TRUE,
-      'settings[entity_test_with_bundle][handler_settings][target_bundles][test]' => TRUE,
-      'settings[entity_test_default_access][handler_settings][target_bundles][entity_test_default_access]' => TRUE,
-      'settings[entity_test_cache][handler_settings][target_bundles][entity_test_cache]' => TRUE,
-      'settings[entity_test_field_methods][handler_settings][target_bundles][entity_test_field_methods]' => TRUE,
-      'settings[entity_test_mulrevpub][handler_settings][target_bundles][entity_test_mulrevpub]' => TRUE,
-      'settings[entity_test_mulrev_chnged_revlog][handler_settings][target_bundles][entity_test_mulrev_chnged_revlog]' => TRUE,
-
+    $labels = $this->container->get('entity_type.repository')->getEntityTypeLabels(TRUE);
+    $edit = [];
+    $excluded_entity_type_ids = [
+      'user',
+      'file',
+      'entity_test_no_id',
+      'entity_test_no_bundle',
+      'entity_test_string_id',
     ];
+    foreach ($labels[(string) t('Content', [], ['context' => 'Entity type group'])] as $entity_type_id => $entity_type_label) {
+      if (!in_array($entity_type_id, $excluded_entity_type_ids)) {
+        if ($entity_type_id !== 'entity_test_with_bundle') {
+          $edit["settings[$entity_type_id][handler_settings][target_bundles][$entity_type_id]"] = TRUE;
+        }
+        else {
+          $edit['settings[entity_test_with_bundle][handler_settings][target_bundles][test]'] = TRUE;
+        }
+      }
+    }
     $this->submitForm($edit, t('Save settings'));
     $assert_session->responseContains(t('Saved %name configuration', ['%name' => 'Foobar']));
     \Drupal::service('entity_field.manager')->clearCachedFieldDefinitions();

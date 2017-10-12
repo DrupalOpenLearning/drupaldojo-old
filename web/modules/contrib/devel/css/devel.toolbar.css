@@ -18,10 +18,10 @@
     float: left;
 }
 
-.toolbar .toolbar-tray-horizontal .menu {
+.toolbar .toolbar-tray-horizontal .toolbar-menu {
     float: left; /* LTR */
 }
-[dir="rtl"] .toolbar .toolbar-tray-horizontal .menu {
+[dir="rtl"] .toolbar .toolbar-tray-horizontal .toolbar-menu {
     float: right;
 }
 

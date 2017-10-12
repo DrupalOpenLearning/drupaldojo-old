@@ -26,6 +26,7 @@ class Google_Service_AdExchangeBuyerII_FilterSet extends Google_Collection
   public $environment;
   public $filterSetId;
   public $format;
+  public $name;
   public $ownerAccountId;
   public $platforms;
   protected $realtimeTimeRangeType = 'Google_Service_AdExchangeBuyerII_RealtimeTimeRange';
@@ -96,6 +97,14 @@ class Google_Service_AdExchangeBuyerII_FilterSet extends Google_Collection
   public function getFormat()
   {
     return $this->format;
+  }
+  public function setName($name)
+  {
+    $this->name = $name;
+  }
+  public function getName()
+  {
+    return $this->name;
   }
   public function setOwnerAccountId($ownerAccountId)
   {

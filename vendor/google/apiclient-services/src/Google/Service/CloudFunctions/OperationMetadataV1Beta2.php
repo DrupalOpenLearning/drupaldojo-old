@@ -20,6 +20,7 @@ class Google_Service_CloudFunctions_OperationMetadataV1Beta2 extends Google_Mode
   public $request;
   public $target;
   public $type;
+  public $versionId;
 
   public function setRequest($request)
   {
@@ -44,5 +45,13 @@ class Google_Service_CloudFunctions_OperationMetadataV1Beta2 extends Google_Mode
   public function getType()
   {
     return $this->type;
+  }
+  public function setVersionId($versionId)
+  {
+    $this->versionId = $versionId;
+  }
+  public function getVersionId()
+  {
+    return $this->versionId;
   }
 }

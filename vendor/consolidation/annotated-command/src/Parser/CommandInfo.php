@@ -388,6 +388,27 @@ class CommandInfo
     }
 
     /**
+     * Get hidden status for the command.
+     * @return bool
+     */
+    public function getHidden()
+    {
+        $this->parseDocBlock();
+        return $this->hasAnnotation('hidden');
+    }
+
+    /**
+     * Set hidden status. List command omits hidden commands.
+     *
+     * @param bool $hidden
+     */
+    public function setHidden($hidden)
+    {
+        $this->hidden = $hidden;
+        return $this;
+    }
+
+    /**
      * Return the examples for this command. This is @usage instead of
      * @example because the later is defined by the phpdoc standard to
      * be example method calls.
@@ -482,9 +503,24 @@ class CommandInfo
         return $this->inputOptions;
     }
 
+    protected function addImplicitNoOptions()
+    {
+        $opts = $this->options()->getValues();
+        foreach ($opts as $name => $defaultValue) {
+            if ($defaultValue === true) {
+                $key = 'no-' . $name;
+                if (!array_key_exists($key, $opts)) {
+                    $description = "Negate --$name option.";
+                    $this->options()->add($key, $description, false);
+                }
+            }
+        }
+    }
+
     protected function createInputOptions()
     {
         $explicitOptions = [];
+        $this->addImplicitNoOptions();
 
         $opts = $this->options()->getValues();
         foreach ($opts as $name => $defaultValue) {
@@ -496,7 +532,16 @@ class CommandInfo
                 list($fullName, $shortcut) = explode('|', $name, 2);
             }
 
-            if (is_bool($defaultValue)) {
+            // Treat the following two cases identically:
+            //   - 'foo' => InputOption::VALUE_OPTIONAL
+            //   - 'foo' => null
+            // The first form is preferred, but we will convert the value
+            // to 'null' for storage as the option default value.
+            if ($defaultValue === InputOption::VALUE_OPTIONAL) {
+                $defaultValue = null;
+            }
+
+            if ($defaultValue === false) {
                 $explicitOptions[$fullName] = new InputOption($fullName, $shortcut, InputOption::VALUE_NONE, $description);
             } elseif ($defaultValue === InputOption::VALUE_REQUIRED) {
                 $explicitOptions[$fullName] = new InputOption($fullName, $shortcut, InputOption::VALUE_REQUIRED, $description);
@@ -586,7 +631,7 @@ class CommandInfo
         $result = new DefaultsWithDescriptions();
         $params = $this->reflection->getParameters();
         $optionsFromParameters = $this->determineOptionsFromParameters();
-        if (!empty($optionsFromParameters)) {
+        if ($this->lastParameterIsOptionsArray()) {
             array_pop($params);
         }
         foreach ($params as $param) {
@@ -638,6 +683,28 @@ class CommandInfo
             return [];
         }
         return $param->getDefaultValue();
+    }
+
+    /**
+     * Determine if the last argument contains $options.
+     *
+     * Two forms indicate options:
+     * - $options = []
+     * - $options = ['flag' => 'default-value']
+     *
+     * Any other form, including `array $foo`, is not options.
+     */
+    protected function lastParameterIsOptionsArray()
+    {
+        $params = $this->reflection->getParameters();
+        if (empty($params)) {
+            return [];
+        }
+        $param = end($params);
+        if (!$param->isDefaultValueAvailable()) {
+            return [];
+        }
+        return is_array($param->getDefaultValue());
     }
 
     /**

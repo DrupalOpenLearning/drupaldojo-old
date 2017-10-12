@@ -26,6 +26,7 @@ use Drupal\Core\Url;
 use Drupal\Core\Utility\Error;
 use Drupal\devel\EntityTypeInfo;
 use Drupal\devel\ToolbarHandler;
+use Drupal\Core\StringTranslation\TranslatableMarkup;
 
 /**
  * Implements hook_help().
@@ -74,6 +75,11 @@ function devel_help($route_name, RouteMatchInterface $route_match) {
     case 'devel.state_system_page':
       return '<p>' . t('This is a list of state variables and their values. For more information read online documentation of <a href=":documentation">State API in Drupal 8</a>.', array(':documentation' => "https://www.drupal.org/developing/api/8/state")) . '</p>';
 
+    case 'devel.layout_info':
+      $output = '';
+      $output .= '<p>' . t('Displays layouts available to the site. For a complete overview of the layout system, see the <a href=":url">Layout API documentation</a>.', [':url' => 'https://www.drupal.org/docs/8/api/layout-api']) . '</p>';
+      return $output;
+
   }
 }
 
@@ -102,6 +108,21 @@ function devel_toolbar() {
   return \Drupal::service('class_resolver')
     ->getInstanceFromDefinition(ToolbarHandler::class)
     ->toolbar();
+}
+
+/**
+ * Implements hook_menu_links_discovered_alter().
+ */
+function devel_menu_links_discovered_alter(&$links) {
+  // Conditionally add the Layouts info menu link.
+  if (\Drupal::moduleHandler()->moduleExists('layout_discovery')) {
+    $links['devel.layout_info'] = [
+      'title' => new TranslatableMarkup('Layouts Info'),
+      'route_name' => 'devel.layout_info',
+      'description' => new TranslatableMarkup('Overview of layouts available to the site.'),
+      'menu_name' => 'devel',
+    ];
+  }
 }
 
 /**
@@ -529,46 +550,6 @@ function ddebug_backtrace($return = FALSE, $pop = 0, $options = DEBUG_BACKTRACE_
       kpr($nicetrace);
     }
   }
-}
-
-/*
- * Migration-related functions.
- */
-
-/**
- * Regenerates the data in node_comment_statistics table.
- * Technique - http://www.artfulsoftware.com/infotree/queries.php?&bw=1280#101
- *
- * @return void
- */
-function devel_rebuild_node_comment_statistics() {
-  // Empty table.
-  db_truncate('node_comment_statistics')->execute();
-
-  // TODO: DBTNG. Ignore keyword is Mysql only? Is only used in the rare case
-  // when two comments on the same node share same timestamp.
-  $sql = "
-    INSERT IGNORE INTO {node_comment_statistics} (nid, cid, last_comment_timestamp, last_comment_name, last_comment_uid, comment_count) (
-      SELECT c.nid, c.cid, c.created, c.name, c.uid, c2.comment_count FROM {comment} c
-      JOIN (
-        SELECT c.nid, MAX(c.created) AS created, COUNT(*) AS comment_count FROM {comment} c WHERE status = 1 GROUP BY c.nid
-      ) AS c2 ON c.nid = c2.nid AND c.created = c2.created
-    )";
-  db_query($sql, array(':published' => CommentInterface::PUBLISHED));
-
-  // Insert records into the node_comment_statistics for nodes that are missing.
-  $query = db_select('node', 'n');
-  $query->leftJoin('node_comment_statistics', 'ncs', 'ncs.nid = n.nid');
-  $query->addField('n', 'changed', 'last_comment_timestamp');
-  $query->addField('n', 'uid', 'last_comment_uid');
-  $query->addField('n', 'nid');
-  $query->addExpression('0', 'comment_count');
-  $query->addExpression('NULL', 'last_comment_name');
-  $query->isNull('ncs.comment_count');
-
-  db_insert('node_comment_statistics', array('return' => Database::RETURN_NULL))
-    ->from($query)
-    ->execute();
 }
 
 /**

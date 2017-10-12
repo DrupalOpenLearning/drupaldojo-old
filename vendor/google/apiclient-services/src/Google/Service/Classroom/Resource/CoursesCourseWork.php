@@ -149,6 +149,32 @@ class Google_Service_Classroom_Resource_CoursesCourseWork extends Google_Service
     return $this->call('list', array($params), "Google_Service_Classroom_ListCourseWorkResponse");
   }
   /**
+   * Modifies assignee mode and options of a coursework.
+   *
+   * Only a teacher of the course that contains the coursework may call this
+   * method.
+   *
+   * This method returns the following error codes:
+   *
+   * * `PERMISSION_DENIED` if the requesting user is not permitted to access the
+   * requested course or course work or for access errors. * `INVALID_ARGUMENT` if
+   * the request is malformed. * `NOT_FOUND` if the requested course or course
+   * work does not exist. (courseWork.modifyAssignees)
+   *
+   * @param string $courseId Identifier of the course. This identifier can be
+   * either the Classroom-assigned identifier or an alias.
+   * @param string $id Identifier of the coursework.
+   * @param Google_Service_Classroom_ModifyCourseWorkAssigneesRequest $postBody
+   * @param array $optParams Optional parameters.
+   * @return Google_Service_Classroom_CourseWork
+   */
+  public function modifyAssignees($courseId, $id, Google_Service_Classroom_ModifyCourseWorkAssigneesRequest $postBody, $optParams = array())
+  {
+    $params = array('courseId' => $courseId, 'id' => $id, 'postBody' => $postBody);
+    $params = array_merge($params, $optParams);
+    return $this->call('modifyAssignees', array($params), "Google_Service_Classroom_CourseWork");
+  }
+  /**
    * Updates one or more fields of a course work.
    *
    * See google.classroom.v1.CourseWork for details of which fields may be updated
@@ -182,9 +208,10 @@ class Google_Service_Classroom_Resource_CoursesCourseWork extends Google_Service
    * and not set in the CourseWork object, an `INVALID_ARGUMENT` error will be
    * returned.
    *
-   * The following fields may be specified by teachers: * `title` * `description`
-   * * `state` * `due_date` * `due_time` * `max_points` * `scheduled_time` *
-   * `submission_modification_mode`
+   * The following fields may be specified by teachers:
+   *
+   * * `title` * `description` * `state` * `due_date` * `due_time` * `max_points`
+   * * `scheduled_time` * `submission_modification_mode`
    * @return Google_Service_Classroom_CourseWork
    */
   public function patch($courseId, $id, Google_Service_Classroom_CourseWork $postBody, $optParams = array())

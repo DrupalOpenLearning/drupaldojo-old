@@ -44,7 +44,7 @@ class TokenizerTest extends UnitTestCase {
       $this->processor->setConfiguration($config);
     }
     $type = 'text';
-    $this->invokeMethod('processFieldValue', [&$passed_value, &$type]);
+    $this->invokeMethod('processFieldValue', [&$passed_value, $type]);
     $this->assertEquals($expected_value, $passed_value);
   }
 

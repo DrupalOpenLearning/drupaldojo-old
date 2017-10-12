@@ -100,6 +100,16 @@ class Google_Service_PeopleService_Resource_People extends Google_Service_Resour
    *
    * @param array $optParams Optional parameters.
    *
+   * @opt_param string resourceNames The resource names of the people to provide
+   * information about.
+   *
+   * - To get information about the authenticated user, specify `people/me`. - To
+   * get information about a google account, specify   `people/`account_id. - To
+   * get information about a contact, specify the resource name that   identifies
+   * the contact as returned by
+   * [`people.connections.list`](/people/api/rest/v1/people.connections/list).
+   *
+   * You can include up to 50 resource names in one request.
    * @opt_param string personFields **Required.** A field mask to restrict which
    * fields on each person are returned. Valid values are:
    *
@@ -111,16 +121,6 @@ class Google_Service_PeopleService_Resource_People extends Google_Service_Resour
    * @opt_param string requestMask.includeField **Required.** Comma-separated list
    * of person fields to be included in the response. Each path should start with
    * `person.`: for example, `person.names` or `person.photos`.
-   * @opt_param string resourceNames The resource names of the people to provide
-   * information about.
-   *
-   * - To get information about the authenticated user, specify `people/me`. - To
-   * get information about a google account, specify   `people/`account_id. - To
-   * get information about a contact, specify the resource name that   identifies
-   * the contact as returned by
-   * [`people.connections.list`](/people/api/rest/v1/people.connections/list).
-   *
-   * You can include up to 50 resource names in one request.
    * @return Google_Service_PeopleService_GetPeopleResponse
    */
   public function getBatchGet($optParams = array())

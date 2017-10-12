@@ -16,7 +16,7 @@ function devel_requirements($phase) {
     // https://www.drupal.org/node/2834400.
     $requirements['devel'] = [
       'title' => t('Devel module enabled'),
-      'description' => t('The module provide the access to debug informations, therefore is recommended to disable the Devel module on production sites.'),
+      'description' => t('The Devel module provides access to internal debugging information; therefore it\'s recommended to disable this module on sites in production.'),
       'severity' => REQUIREMENT_INFO,
     ];
   }

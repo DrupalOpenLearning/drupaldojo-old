@@ -9,8 +9,8 @@ tags:
 dependencies:
  - devel
 
-# Information added by Drupal.org packaging script on 2017-04-23
-version: '8.x-1.0-rc2'
+# Information added by Drupal.org packaging script on 2017-08-14
+version: '8.x-1.0'
 core: '8.x'
 project: 'devel'
-datestamp: 1492989248
+datestamp: 1502732047

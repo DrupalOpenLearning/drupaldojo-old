@@ -61,7 +61,7 @@ class ToolbarHandler implements ContainerInjectionInterface {
    */
   public static function create(ContainerInterface $container) {
     return new static(
-      $container->get('menu.link_tree'),
+      $container->get('toolbar.menu_tree'),
       $container->get('config.factory'),
       $container->get('current_user')
     );

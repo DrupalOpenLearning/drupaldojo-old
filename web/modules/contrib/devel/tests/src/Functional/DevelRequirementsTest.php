@@ -27,7 +27,7 @@ class DevelRequirementsTest extends BrowserTestBase {
     $this->assertSession()->statusCodeEquals(200);
 
     $this->assertSession()->pageTextContains('Devel module enabled');
-    $this->assertSession()->pageTextContains('The module provide the access to debug informations, therefore is recommended to disable the Devel module on production sites.');
+    $this->assertSession()->pageTextContains('The Devel module provides access to internal debugging information; therefore it\'s recommended to disable this module on sites in production.');
   }
 
 }

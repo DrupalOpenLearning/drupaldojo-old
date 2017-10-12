@@ -1,3 +1,18 @@
+Search API 1.3 (2017-07-19):
+----------------------------
+- #2888584 by drunken monkey: Fixed index description for "cron batch size" of
+  -1.
+- #2895142 by drunken monkey: Made our test classes more useful for other
+  modules.
+- #2851436 by Erik Frèrejean, andywhale, beltofte, drunken monkey: Added a
+  "Type-specific boosting" processor.
+- #2889426 by cspitzlay, drunken monkey: Fixed test fails on Drupal 8.3.
+- #2891387 by drunken monkey: Fixed some new code style issues.
+- #2891246 by drunken monkey: Fixed error detection in plugin helper.
+- #2884451 by drunken monkey: Fixed missing primary key for denormalized index
+  tables in DB backend.
+- #2886978 by drunken monkey: Fixed tracking of entities in disabled languages.
+
 Search API 1.2 (2017-06-25):
 ----------------------------
 - #2881198 by jzavrl, drunken monkey, borisson_: Added property paths to "Add

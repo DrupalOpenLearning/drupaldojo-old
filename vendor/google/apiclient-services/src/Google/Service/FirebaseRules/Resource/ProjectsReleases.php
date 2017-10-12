@@ -93,6 +93,25 @@ class Google_Service_FirebaseRules_Resource_ProjectsReleases extends Google_Serv
     return $this->call('get', array($params), "Google_Service_FirebaseRules_Release");
   }
   /**
+   * Get the `Release` executable to use when enforcing rules.
+   * (releases.getExecutable)
+   *
+   * @param string $name Resource name of the `Release`.
+   *
+   * Format: `projects/{project_id}/releases/{release_id}`
+   * @param array $optParams Optional parameters.
+   *
+   * @opt_param string executableVersion The requested runtime executable version.
+   * Defaults to FIREBASE_RULES_EXECUTABLE_V1
+   * @return Google_Service_FirebaseRules_GetReleaseExecutableResponse
+   */
+  public function getExecutable($name, $optParams = array())
+  {
+    $params = array('name' => $name);
+    $params = array_merge($params, $optParams);
+    return $this->call('getExecutable', array($params), "Google_Service_FirebaseRules_GetReleaseExecutableResponse");
+  }
+  /**
    * List the `Release` values for a project. This list may optionally be filtered
    * by `Release` name, `Ruleset` name, `TestSuite` name, or any combination
    * thereof. (releases.listProjectsReleases)
@@ -102,11 +121,6 @@ class Google_Service_FirebaseRules_Resource_ProjectsReleases extends Google_Serv
    * Format: `projects/{project_id}`
    * @param array $optParams Optional parameters.
    *
-   * @opt_param int pageSize Page size to load. Maximum of 100. Defaults to 10.
-   * Note: `page_size` is just a hint and the service may choose to load fewer
-   * than `page_size` results due to the size of the output. To traverse all of
-   * the releases, the caller should iterate until the `page_token` on the
-   * response is empty.
    * @opt_param string filter `Release` filter. The list method supports filters
    * with restrictions on the `Release.name`, `Release.ruleset_name`, and
    * `Release.test_suite_name`.
@@ -134,6 +148,11 @@ class Google_Service_FirebaseRules_Resource_ProjectsReleases extends Google_Serv
    * `test_suite_name=projects/foo/testsuites/uuid1`
    * @opt_param string pageToken Next page token for the next batch of `Release`
    * instances.
+   * @opt_param int pageSize Page size to load. Maximum of 100. Defaults to 10.
+   * Note: `page_size` is just a hint and the service may choose to load fewer
+   * than `page_size` results due to the size of the output. To traverse all of
+   * the releases, the caller should iterate until the `page_token` on the
+   * response is empty.
    * @return Google_Service_FirebaseRules_ListReleasesResponse
    */
   public function listProjectsReleases($name, $optParams = array())

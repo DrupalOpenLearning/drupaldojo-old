@@ -39,9 +39,6 @@ class Google_Service_CloudTrace extends Google_Service
   /** Write Trace data for a project or application. */
   const TRACE_APPEND =
       "https://www.googleapis.com/auth/trace.append";
-  /** Read Trace data for a project or application. */
-  const TRACE_READONLY =
-      "https://www.googleapis.com/auth/trace.readonly";
 
   public $projects_traces;
   public $projects_traces_spans;
@@ -73,54 +70,6 @@ class Google_Service_CloudTrace extends Google_Service
                   'location' => 'path',
                   'type' => 'string',
                   'required' => true,
-                ),
-              ),
-            ),'list' => array(
-              'path' => 'v2/{+parent}/traces',
-              'httpMethod' => 'GET',
-              'parameters' => array(
-                'parent' => array(
-                  'location' => 'path',
-                  'type' => 'string',
-                  'required' => true,
-                ),
-                'filter' => array(
-                  'location' => 'query',
-                  'type' => 'string',
-                ),
-                'endTime' => array(
-                  'location' => 'query',
-                  'type' => 'string',
-                ),
-                'startTime' => array(
-                  'location' => 'query',
-                  'type' => 'string',
-                ),
-                'pageToken' => array(
-                  'location' => 'query',
-                  'type' => 'string',
-                ),
-                'pageSize' => array(
-                  'location' => 'query',
-                  'type' => 'integer',
-                ),
-                'orderBy' => array(
-                  'location' => 'query',
-                  'type' => 'string',
-                ),
-              ),
-            ),'listSpans' => array(
-              'path' => 'v2/{+parent}:listSpans',
-              'httpMethod' => 'GET',
-              'parameters' => array(
-                'parent' => array(
-                  'location' => 'path',
-                  'type' => 'string',
-                  'required' => true,
-                ),
-                'pageToken' => array(
-                  'location' => 'query',
-                  'type' => 'string',
                 ),
               ),
             ),

@@ -130,6 +130,11 @@ class AnnotatedCommand extends Command implements HelpDocumentAlter
         }
         $this->setCommandArguments($commandInfo);
         $this->setReturnType($commandInfo->getReturnType());
+        // Hidden commands available since Symfony 3.2
+        // http://symfony.com/doc/current/console/hide_commands.html
+        if (method_exists($this, 'setHidden')) {
+            $this->setHidden($commandInfo->getHidden());
+        }
         return $this;
     }
 
@@ -436,6 +441,11 @@ class AnnotatedCommand extends Command implements HelpDocumentAlter
             $this->usesInputInterface,
             $this->usesOutputInterface
         );
+
+        // Allow the commandData to cache the list of options with
+        // special default values ('null' and 'true'), as these will
+        // need special handling. @see CommandData::options().
+        $commandData->cacheSpecialDefaults($this->getDefinition());
 
         return $commandData;
     }

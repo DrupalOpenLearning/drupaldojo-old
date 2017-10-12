@@ -84,7 +84,7 @@ class Google_Service_ShoppingContent_Resource_Accounts extends Google_Service_Re
    *
    * @opt_param bool dryRun Flag to run the request in dry-run mode.
    * @opt_param bool force Flag to delete sub-accounts with products. The default
-   * value of false will become active on September 28, 2017.
+   * value is false.
    */
   public function delete($merchantId, $accountId, $optParams = array())
   {

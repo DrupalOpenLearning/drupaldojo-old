@@ -46,7 +46,7 @@ class DynamicEntityReferenceWidget extends EntityReferenceAutocompleteWidget {
     $referenced_entities = $items->referencedEntities();
 
     $settings = $this->getFieldSettings();
-    $labels = \Drupal::entityManager()->getEntityTypeLabels();
+    $labels = \Drupal::service('entity_type.repository')->getEntityTypeLabels();
     $available = DynamicEntityReferenceItem::getTargetTypes($settings);
     $cardinality = $items->getFieldDefinition()->getFieldStorageDefinition()->getCardinality();
     $target_type = $items->get($delta)->target_type ?: reset($available);
@@ -79,7 +79,6 @@ class DynamicEntityReferenceWidget extends EntityReferenceAutocompleteWidget {
 
     $element['#title'] = $this->t('Label');
 
-    $js_class = Html::cleanCssIdentifier("dynamic-entity-reference-{$items->getName()}[$delta][target_type]");
     if (count($available) > 1) {
       $target_type_element = [
         '#type' => 'select',
@@ -90,7 +89,6 @@ class DynamicEntityReferenceWidget extends EntityReferenceAutocompleteWidget {
         '#attributes' => [
           'class' => [
             'dynamic-entity-reference-entity-type',
-            $js_class,
           ],
         ],
       ];
@@ -109,13 +107,14 @@ class DynamicEntityReferenceWidget extends EntityReferenceAutocompleteWidget {
       ],
       'target_type' => $target_type_element,
       'target_id' => $element,
+      '#process' => [[$this, 'processFormElement']],
       '#attached' => [
         'library' => [
           'dynamic_entity_reference/drupal.dynamic_entity_reference_widget',
         ],
         'drupalSettings' => [
           'dynamic_entity_reference' => [
-            $js_class => $this->createAutoCompletePaths($available),
+            'auto_complete_paths' => $this->createAutoCompletePaths($available),
           ],
         ],
       ],
@@ -127,6 +126,29 @@ class DynamicEntityReferenceWidget extends EntityReferenceAutocompleteWidget {
       $form_element['#open'] = TRUE;
     }
     return $form_element;
+  }
+
+  /**
+   * Adds entity autocomplete paths to a form element.
+   *
+   * @param array $element
+   *   The form element.
+   * @param \Drupal\Core\Form\FormStateInterface $form_state
+   *   The current state of the form.
+   * @param array $complete_form
+   *   The complete form structure.
+   *
+   * @return array
+   *   The form element.
+   */
+  public static function processFormElement(array &$element, FormStateInterface $form_state, array &$complete_form) {
+    $name = implode('-', $element['#parents']);
+    $js_class = Html::cleanCssIdentifier("js-dynamic-entity-reference-{$name}-target_type");
+    $element['target_type']['#attributes']['class'][] = $js_class;
+    $auto_complete_paths = $element['#attached']['drupalSettings']['dynamic_entity_reference']['auto_complete_paths'];
+    unset($element['#attached']['drupalSettings']['dynamic_entity_reference']['auto_complete_paths']);
+    $element['#attached']['drupalSettings']['dynamic_entity_reference'][$js_class] = $auto_complete_paths;
+    return $element;
   }
 
   /**

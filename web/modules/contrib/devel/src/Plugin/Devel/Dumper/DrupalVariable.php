@@ -3,6 +3,7 @@
 namespace Drupal\devel\Plugin\Devel\Dumper;
 
 use Drupal\Component\Utility\Variable;
+use Drupal\Component\Utility\Xss;
 use Drupal\devel\DevelDumperBase;
 
 /**
@@ -21,7 +22,11 @@ class DrupalVariable extends DevelDumperBase {
    */
   public function export($input, $name = NULL) {
     $name = $name ? $name . ' => ' : '';
-    $dump = '<pre>' . $name . Variable::export($input) . '</pre>';
+    $dump = Variable::export($input);
+    // Run Xss::filterAdmin on the resulting string to prevent
+    // cross-site-scripting (XSS) vulnerabilities.
+    $dump = Xss::filterAdmin($dump);
+    $dump = '<pre>' . $name . $dump . '</pre>';
     return $this->setSafeMarkup($dump);
   }
 

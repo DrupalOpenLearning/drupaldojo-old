@@ -38,7 +38,7 @@ trait DynamicEntityReferenceFormatterTrait {
     }
     if ($ids) {
       foreach (array_keys($ids) as $target_type) {
-        $target_entities[$target_type] = \Drupal::entityManager()->getStorage($target_type)->loadMultiple($ids[$target_type]);
+        $target_entities[$target_type] = \Drupal::entityTypeManager()->getStorage($target_type)->loadMultiple($ids[$target_type]);
       }
     }
 
