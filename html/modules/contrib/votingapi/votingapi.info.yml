@@ -1,0 +1,11 @@
+name: Voting API
+type: module
+description: 'Provides a voting API that other modules can make use of.'
+package: Voting
+# core: 8.x
+configure: votingapi.admin_settings
+# Information added by Drupal.org packaging script on 2016-06-17
+version: '8.x-3.0-alpha2'
+core: '8.x'
+project: 'votingapi'
+datestamp: 1466179279

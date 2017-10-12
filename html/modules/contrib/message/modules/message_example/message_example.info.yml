@@ -1,0 +1,16 @@
+name: Message example
+type: module
+description: "Example message for working with the message module."
+# core: 8.x
+package: Message
+dependencies:
+ - message
+ - token
+ - node
+ - comment
+
+# Information added by Drupal.org packaging script on 2017-08-10
+version: '8.x-1.0-beta2'
+core: '8.x'
+project: 'message'
+datestamp: 1502381068

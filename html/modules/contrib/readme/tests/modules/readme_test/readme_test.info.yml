@@ -1,0 +1,11 @@
+name: 'Readme test'
+type: module
+description: 'Support module for Readme that provides README.txt example.'
+package: Testing
+# core: 8.x
+
+# Information added by Drupal.org packaging script on 2016-06-17
+version: '8.x-1.0-beta2'
+core: '8.x'
+project: 'readme'
+datestamp: 1466191440
