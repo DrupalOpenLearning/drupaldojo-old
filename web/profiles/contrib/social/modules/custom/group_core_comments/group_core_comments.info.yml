@@ -1,0 +1,9 @@
+name: Group Core Comments support
+type: module
+description: Enables Group functionality for the Comment module
+core: 8.x
+package: Group
+dependencies:
+  - drupal:comment
+  - drupal:node
+  - group:group

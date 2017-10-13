@@ -1,0 +1,21 @@
+name: Activity Viewer
+type: module
+description: Used to display activities with support for views
+core: 8.x
+package: Social
+dependencies:
+  - activity_creator:activity_creator
+  - activity_logger:activity_logger
+  - drupal:block_content
+  - drupal:comment
+  - dynamic_entity_reference:dynamic_entity_reference
+  - drupal:file
+  - group:group
+  - drupal:menu_link_content
+  - message:message
+  - drupal:node
+  - drupal:options
+  - profile:profile
+  - social_post:social_post
+  - drupal:taxonomy
+  - drupal:user

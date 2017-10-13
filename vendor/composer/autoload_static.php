@@ -352,7 +352,7 @@ class ComposerStaticInitdc153d40c1e90ce7271ef1eafc482043
         ),
         'Social\\' => 
         array (
-            0 => __DIR__ . '/../..' . '/html/profiles/contrib/social/src',
+            0 => __DIR__ . '/../..' . '/web/profiles/contrib/social/src',
         ),
         'RedBeanPHP\\' => 
         array (
@@ -466,11 +466,11 @@ class ComposerStaticInitdc153d40c1e90ce7271ef1eafc482043
         ),
         'Drupal\\Driver\\' => 
         array (
-            0 => __DIR__ . '/../..' . '/html/drivers/lib/Drupal/Driver',
+            0 => __DIR__ . '/../..' . '/web/drivers/lib/Drupal/Driver',
         ),
         'Drupal\\Core\\' => 
         array (
-            0 => __DIR__ . '/../..' . '/html/core/lib/Drupal/Core',
+            0 => __DIR__ . '/../..' . '/web/core/lib/Drupal/Core',
         ),
         'Drupal\\Console\\Dotenv\\' => 
         array (
@@ -490,7 +490,7 @@ class ComposerStaticInitdc153d40c1e90ce7271ef1eafc482043
         ),
         'Drupal\\Component\\' => 
         array (
-            0 => __DIR__ . '/../..' . '/html/core/lib/Drupal/Component',
+            0 => __DIR__ . '/../..' . '/web/core/lib/Drupal/Component',
         ),
         'DrupalComposer\\DrupalScaffold\\' => 
         array (
@@ -745,15 +745,15 @@ class ComposerStaticInitdc153d40c1e90ce7271ef1eafc482043
     public static $classMap = array (
         'CallbackFilterIterator' => __DIR__ . '/..' . '/symfony/polyfill-php54/Resources/stubs/CallbackFilterIterator.php',
         'Console_Table' => __DIR__ . '/..' . '/pear/console_table/Table.php',
-        'Drupal' => __DIR__ . '/../..' . '/html/core/lib/Drupal.php',
+        'Drupal' => __DIR__ . '/../..' . '/web/core/lib/Drupal.php',
         'DrupalFinder\\DrupalFinder' => __DIR__ . '/..' . '/webflo/drupal-finder/src/DrupalFinder.php',
         'DrupalProject\\composer\\ScriptHandler' => __DIR__ . '/../..' . '/scripts/composer/ScriptHandler.php',
-        'Drupal\\Component\\Utility\\Timer' => __DIR__ . '/../..' . '/html/core/lib/Drupal/Component/Utility/Timer.php',
-        'Drupal\\Component\\Utility\\Unicode' => __DIR__ . '/../..' . '/html/core/lib/Drupal/Component/Utility/Unicode.php',
-        'Drupal\\Core\\Database\\Database' => __DIR__ . '/../..' . '/html/core/lib/Drupal/Core/Database/Database.php',
-        'Drupal\\Core\\DrupalKernel' => __DIR__ . '/../..' . '/html/core/lib/Drupal/Core/DrupalKernel.php',
-        'Drupal\\Core\\DrupalKernelInterface' => __DIR__ . '/../..' . '/html/core/lib/Drupal/Core/DrupalKernelInterface.php',
-        'Drupal\\Core\\Site\\Settings' => __DIR__ . '/../..' . '/html/core/lib/Drupal/Core/Site/Settings.php',
+        'Drupal\\Component\\Utility\\Timer' => __DIR__ . '/../..' . '/web/core/lib/Drupal/Component/Utility/Timer.php',
+        'Drupal\\Component\\Utility\\Unicode' => __DIR__ . '/../..' . '/web/core/lib/Drupal/Component/Utility/Unicode.php',
+        'Drupal\\Core\\Database\\Database' => __DIR__ . '/../..' . '/web/core/lib/Drupal/Core/Database/Database.php',
+        'Drupal\\Core\\DrupalKernel' => __DIR__ . '/../..' . '/web/core/lib/Drupal/Core/DrupalKernel.php',
+        'Drupal\\Core\\DrupalKernelInterface' => __DIR__ . '/../..' . '/web/core/lib/Drupal/Core/DrupalKernelInterface.php',
+        'Drupal\\Core\\Site\\Settings' => __DIR__ . '/../..' . '/web/core/lib/Drupal/Core/Site/Settings.php',
         'File_Iterator' => __DIR__ . '/..' . '/phpunit/php-file-iterator/src/Iterator.php',
         'File_Iterator_Facade' => __DIR__ . '/..' . '/phpunit/php-file-iterator/src/Facade.php',
         'File_Iterator_Factory' => __DIR__ . '/..' . '/phpunit/php-file-iterator/src/Factory.php',

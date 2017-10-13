@@ -5256,57 +5256,6 @@
         ]
     },
     {
-        "name": "consolidation/output-formatters",
-        "version": "3.1.11",
-        "version_normalized": "3.1.11.0",
-        "source": {
-            "type": "git",
-            "url": "https://github.com/consolidation/output-formatters.git",
-            "reference": "3a1160440819269e6d8d9c11db67129384b8fb35"
-        },
-        "dist": {
-            "type": "zip",
-            "url": "https://api.github.com/repos/consolidation/output-formatters/zipball/3a1160440819269e6d8d9c11db67129384b8fb35",
-            "reference": "3a1160440819269e6d8d9c11db67129384b8fb35",
-            "shasum": ""
-        },
-        "require": {
-            "php": ">=5.4.0",
-            "symfony/console": "^2.8|~3",
-            "symfony/finder": "~2.5|~3.0"
-        },
-        "require-dev": {
-            "phpunit/phpunit": "^4.8",
-            "satooshi/php-coveralls": "^1.0",
-            "squizlabs/php_codesniffer": "^2.7",
-            "victorjonsson/markdowndocs": "^1.3"
-        },
-        "time": "2017-08-17T22:11:07+00:00",
-        "type": "library",
-        "extra": {
-            "branch-alias": {
-                "dev-master": "3.x-dev"
-            }
-        },
-        "installation-source": "dist",
-        "autoload": {
-            "psr-4": {
-                "Consolidation\\OutputFormatters\\": "src"
-            }
-        },
-        "notification-url": "https://packagist.org/downloads/",
-        "license": [
-            "MIT"
-        ],
-        "authors": [
-            {
-                "name": "Greg Anderson",
-                "email": "greg.1.anderson@greenknowe.org"
-            }
-        ],
-        "description": "Format text by applying transformations provided by plug-in formatters."
-    },
-    {
         "name": "jcalderonzumba/mink-phantomjs-driver",
         "version": "v0.3.3",
         "version_normalized": "0.3.3.0",
@@ -6472,60 +6421,6 @@
         ],
         "description": "Symfony Validator Component",
         "homepage": "https://symfony.com"
-    },
-    {
-        "name": "zendframework/zend-diactoros",
-        "version": "1.6.0",
-        "version_normalized": "1.6.0.0",
-        "source": {
-            "type": "git",
-            "url": "https://github.com/zendframework/zend-diactoros.git",
-            "reference": "2faa791b66bac33ca40031d8bce03b7dc8143490"
-        },
-        "dist": {
-            "type": "zip",
-            "url": "https://api.github.com/repos/zendframework/zend-diactoros/zipball/2faa791b66bac33ca40031d8bce03b7dc8143490",
-            "reference": "2faa791b66bac33ca40031d8bce03b7dc8143490",
-            "shasum": ""
-        },
-        "require": {
-            "php": "^5.6 || ^7.0",
-            "psr/http-message": "^1.0"
-        },
-        "provide": {
-            "psr/http-message-implementation": "1.0"
-        },
-        "require-dev": {
-            "ext-dom": "*",
-            "ext-libxml": "*",
-            "phpunit/phpunit": "^5.7.16 || ^6.0.8",
-            "zendframework/zend-coding-standard": "~1.0"
-        },
-        "time": "2017-09-13T14:47:08+00:00",
-        "type": "library",
-        "extra": {
-            "branch-alias": {
-                "dev-master": "1.6-dev",
-                "dev-develop": "1.7-dev"
-            }
-        },
-        "installation-source": "dist",
-        "autoload": {
-            "psr-4": {
-                "Zend\\Diactoros\\": "src/"
-            }
-        },
-        "notification-url": "https://packagist.org/downloads/",
-        "license": [
-            "BSD-2-Clause"
-        ],
-        "description": "PSR HTTP Message implementations",
-        "homepage": "https://github.com/zendframework/zend-diactoros",
-        "keywords": [
-            "http",
-            "psr",
-            "psr-7"
-        ]
     },
     {
         "name": "psr/simple-cache",
@@ -9973,243 +9868,6 @@
         }
     },
     {
-        "name": "bower-asset/autosize",
-        "version": "4.0.0",
-        "version_normalized": "4.0.0.0",
-        "source": {
-            "type": "git",
-            "url": "https://github.com/jackmoore/autosize.git",
-            "reference": "113f1b345868901619d4b01cda02b09aa1690ebd"
-        },
-        "dist": {
-            "type": "zip",
-            "url": "https://api.github.com/repos/jackmoore/autosize/zipball/113f1b345868901619d4b01cda02b09aa1690ebd",
-            "reference": "113f1b345868901619d4b01cda02b09aa1690ebd",
-            "shasum": null
-        },
-        "type": "bower-asset",
-        "installation-source": "dist",
-        "license": [
-            "MIT"
-        ]
-    },
-    {
-        "name": "bower-asset/jquery",
-        "version": "3.2.1",
-        "version_normalized": "3.2.1.0",
-        "source": {
-            "type": "git",
-            "url": "https://github.com/jquery/jquery-dist.git",
-            "reference": "77d2a51d0520d2ee44173afdf4e40a9201f5964e"
-        },
-        "dist": {
-            "type": "zip",
-            "url": "https://api.github.com/repos/jquery/jquery-dist/zipball/77d2a51d0520d2ee44173afdf4e40a9201f5964e",
-            "reference": "77d2a51d0520d2ee44173afdf4e40a9201f5964e",
-            "shasum": null
-        },
-        "type": "bower-asset",
-        "installation-source": "dist",
-        "license": [
-            "MIT"
-        ]
-    },
-    {
-        "name": "bower-asset/bootstrap",
-        "version": "v3.3.7",
-        "version_normalized": "3.3.7.0",
-        "source": {
-            "type": "git",
-            "url": "https://github.com/twbs/bootstrap.git",
-            "reference": "0b9c4a4007c44201dce9a6cc1a38407005c26c86"
-        },
-        "dist": {
-            "type": "zip",
-            "url": "https://api.github.com/repos/twbs/bootstrap/zipball/0b9c4a4007c44201dce9a6cc1a38407005c26c86",
-            "reference": "0b9c4a4007c44201dce9a6cc1a38407005c26c86",
-            "shasum": null
-        },
-        "require": {
-            "bower-asset/jquery": ">=1.9.1,<4.0"
-        },
-        "type": "bower-asset",
-        "installation-source": "dist",
-        "license": [
-            "MIT"
-        ]
-    },
-    {
-        "name": "bower-asset/eve-raphael",
-        "version": "v0.5.0",
-        "version_normalized": "0.5.0.0",
-        "source": {
-            "type": "git",
-            "url": "https://github.com/tomasAlabes/eve.git",
-            "reference": "93132d5d47a0ce31dbd1b75208b1d4c0e2ad81e8"
-        },
-        "dist": {
-            "type": "zip",
-            "url": "https://api.github.com/repos/tomasAlabes/eve/zipball/93132d5d47a0ce31dbd1b75208b1d4c0e2ad81e8",
-            "reference": "93132d5d47a0ce31dbd1b75208b1d4c0e2ad81e8",
-            "shasum": null
-        },
-        "type": "bower-asset",
-        "installation-source": "dist",
-        "license": [
-            "MIT"
-        ]
-    },
-    {
-        "name": "bower-asset/raphael",
-        "version": "v2.2.7",
-        "version_normalized": "2.2.7.0",
-        "source": {
-            "type": "git",
-            "url": "https://github.com/DmitryBaranovskiy/raphael.git",
-            "reference": "c02b9c125d036e42b9bb95d0e401bbf6a5153da5"
-        },
-        "dist": {
-            "type": "zip",
-            "url": "https://api.github.com/repos/DmitryBaranovskiy/raphael/zipball/c02b9c125d036e42b9bb95d0e401bbf6a5153da5",
-            "reference": "c02b9c125d036e42b9bb95d0e401bbf6a5153da5",
-            "shasum": null
-        },
-        "require": {
-            "bower-asset/eve-raphael": "0.5.0"
-        },
-        "type": "bower-asset",
-        "installation-source": "dist",
-        "license": [
-            "MIT"
-        ]
-    },
-    {
-        "name": "bower-asset/mocha",
-        "version": "1.17.1",
-        "version_normalized": "1.17.1.0",
-        "source": {
-            "type": "git",
-            "url": "https://github.com/mochajs/mocha.git",
-            "reference": "7fc565ee3e225cb7a66bf39ae9c2c05b346675c1"
-        },
-        "dist": {
-            "type": "zip",
-            "url": "https://api.github.com/repos/mochajs/mocha/zipball/7fc565ee3e225cb7a66bf39ae9c2c05b346675c1",
-            "reference": "7fc565ee3e225cb7a66bf39ae9c2c05b346675c1",
-            "shasum": null
-        },
-        "type": "bower-asset",
-        "installation-source": "dist"
-    },
-    {
-        "name": "bower-asset/morris.js",
-        "version": "0.5.1",
-        "version_normalized": "0.5.1.0",
-        "source": {
-            "type": "git",
-            "url": "https://github.com/oesmith/morris.js.git",
-            "reference": "d5cf1410eda7055eaf2c7d218d4cb24ec5ed55c8"
-        },
-        "dist": {
-            "type": "zip",
-            "url": "https://api.github.com/repos/oesmith/morris.js/zipball/d5cf1410eda7055eaf2c7d218d4cb24ec5ed55c8",
-            "reference": "d5cf1410eda7055eaf2c7d218d4cb24ec5ed55c8",
-            "shasum": null
-        },
-        "require": {
-            "bower-asset/jquery": ">=2.1.0",
-            "bower-asset/mocha": "~1.17.1",
-            "bower-asset/raphael": ">=2.0"
-        },
-        "type": "bower-asset",
-        "installation-source": "dist"
-    },
-    {
-        "name": "bower-asset/respond",
-        "version": "1.4.2",
-        "version_normalized": "1.4.2.0",
-        "source": {
-            "type": "git",
-            "url": "git@github.com:scottjehl/Respond.git",
-            "reference": "20b7f4a192bb910c8c7e067b961de38519d334e4"
-        },
-        "dist": {
-            "type": "zip",
-            "url": "https://api.github.com/repos/scottjehl/Respond/zipball/20b7f4a192bb910c8c7e067b961de38519d334e4",
-            "reference": "20b7f4a192bb910c8c7e067b961de38519d334e4",
-            "shasum": null
-        },
-        "type": "bower-asset",
-        "installation-source": "dist"
-    },
-    {
-        "name": "bower-asset/tablesaw",
-        "version": "v2.0.3",
-        "version_normalized": "2.0.3.0",
-        "source": {
-            "type": "git",
-            "url": "https://github.com/filamentgroup/tablesaw.git",
-            "reference": "5bfebe20c539c18aecb4881a14c6bab5cfa3cb46"
-        },
-        "dist": {
-            "type": "zip",
-            "url": "https://api.github.com/repos/filamentgroup/tablesaw/zipball/5bfebe20c539c18aecb4881a14c6bab5cfa3cb46",
-            "reference": "5bfebe20c539c18aecb4881a14c6bab5cfa3cb46",
-            "shasum": null
-        },
-        "require": {
-            "bower-asset/jquery": ">=1.11.2",
-            "bower-asset/respond": ">=1.4.2"
-        },
-        "type": "bower-asset",
-        "installation-source": "dist"
-    },
-    {
-        "name": "bower-asset/timepicker",
-        "version": "1.11.4",
-        "version_normalized": "1.11.4.0",
-        "source": {
-            "type": "git",
-            "url": "https://github.com/jonthornton/jquery-timepicker.git",
-            "reference": "e0ac33d4b85f1be3a107e5bd6174c6672b27ec34"
-        },
-        "dist": {
-            "type": "zip",
-            "url": "https://api.github.com/repos/jonthornton/jquery-timepicker/zipball/e0ac33d4b85f1be3a107e5bd6174c6672b27ec34",
-            "reference": "e0ac33d4b85f1be3a107e5bd6174c6672b27ec34",
-            "shasum": null
-        },
-        "require": {
-            "bower-asset/jquery": ">=1.7"
-        },
-        "type": "bower-asset",
-        "installation-source": "dist",
-        "license": [
-            "http://opensource.org/licenses/MIT"
-        ]
-    },
-    {
-        "name": "bower-asset/waves",
-        "version": "v0.7.5",
-        "version_normalized": "0.7.5.0",
-        "source": {
-            "type": "git",
-            "url": "https://github.com/fians/Waves.git",
-            "reference": "5ce37da75c9e1c41b0344afd4a8dd6eea92424e7"
-        },
-        "dist": {
-            "type": "zip",
-            "url": "https://api.github.com/repos/fians/Waves/zipball/5ce37da75c9e1c41b0344afd4a8dd6eea92424e7",
-            "reference": "5ce37da75c9e1c41b0344afd4a8dd6eea92424e7",
-            "shasum": null
-        },
-        "type": "bower-asset",
-        "installation-source": "dist",
-        "license": [
-            "MIT"
-        ]
-    },
-    {
         "name": "drupal/bootstrap",
         "version": "3.6.0",
         "version_normalized": "3.6.0.0",
@@ -10731,6 +10389,348 @@
         "support": {
             "source": "http://cgit.drupalcode.org/address"
         }
+    },
+    {
+        "name": "zendframework/zend-diactoros",
+        "version": "1.6.1",
+        "version_normalized": "1.6.1.0",
+        "source": {
+            "type": "git",
+            "url": "https://github.com/zendframework/zend-diactoros.git",
+            "reference": "c8664b92a6d5bc229e48b0923486c097e45a7877"
+        },
+        "dist": {
+            "type": "zip",
+            "url": "https://api.github.com/repos/zendframework/zend-diactoros/zipball/c8664b92a6d5bc229e48b0923486c097e45a7877",
+            "reference": "c8664b92a6d5bc229e48b0923486c097e45a7877",
+            "shasum": ""
+        },
+        "require": {
+            "php": "^5.6 || ^7.0",
+            "psr/http-message": "^1.0"
+        },
+        "provide": {
+            "psr/http-message-implementation": "1.0"
+        },
+        "require-dev": {
+            "ext-dom": "*",
+            "ext-libxml": "*",
+            "phpunit/phpunit": "^5.7.16 || ^6.0.8",
+            "zendframework/zend-coding-standard": "~1.0"
+        },
+        "time": "2017-10-12T15:24:51+00:00",
+        "type": "library",
+        "extra": {
+            "branch-alias": {
+                "dev-master": "1.6-dev",
+                "dev-develop": "1.7-dev"
+            }
+        },
+        "installation-source": "dist",
+        "autoload": {
+            "psr-4": {
+                "Zend\\Diactoros\\": "src/"
+            }
+        },
+        "notification-url": "https://packagist.org/downloads/",
+        "license": [
+            "BSD-2-Clause"
+        ],
+        "description": "PSR HTTP Message implementations",
+        "homepage": "https://github.com/zendframework/zend-diactoros",
+        "keywords": [
+            "http",
+            "psr",
+            "psr-7"
+        ]
+    },
+    {
+        "name": "consolidation/output-formatters",
+        "version": "3.1.12",
+        "version_normalized": "3.1.12.0",
+        "source": {
+            "type": "git",
+            "url": "https://github.com/consolidation/output-formatters.git",
+            "reference": "88ef346a1cefb92aab8b57a3214a6d5fc63f5d2a"
+        },
+        "dist": {
+            "type": "zip",
+            "url": "https://api.github.com/repos/consolidation/output-formatters/zipball/88ef346a1cefb92aab8b57a3214a6d5fc63f5d2a",
+            "reference": "88ef346a1cefb92aab8b57a3214a6d5fc63f5d2a",
+            "shasum": ""
+        },
+        "require": {
+            "php": ">=5.4.0",
+            "symfony/console": "^2.8|~3",
+            "symfony/finder": "~2.5|~3.0"
+        },
+        "require-dev": {
+            "phpunit/phpunit": "^4.8",
+            "satooshi/php-coveralls": "^1.0",
+            "squizlabs/php_codesniffer": "^2.7",
+            "victorjonsson/markdowndocs": "^1.3"
+        },
+        "time": "2017-10-12T19:38:03+00:00",
+        "type": "library",
+        "extra": {
+            "branch-alias": {
+                "dev-master": "3.x-dev"
+            }
+        },
+        "installation-source": "dist",
+        "autoload": {
+            "psr-4": {
+                "Consolidation\\OutputFormatters\\": "src"
+            }
+        },
+        "notification-url": "https://packagist.org/downloads/",
+        "license": [
+            "MIT"
+        ],
+        "authors": [
+            {
+                "name": "Greg Anderson",
+                "email": "greg.1.anderson@greenknowe.org"
+            }
+        ],
+        "description": "Format text by applying transformations provided by plug-in formatters."
+    },
+    {
+        "name": "bower-asset/autosize",
+        "version": "4.0.0",
+        "version_normalized": "4.0.0.0",
+        "source": {
+            "type": "git",
+            "url": "https://github.com/jackmoore/autosize.git",
+            "reference": "113f1b345868901619d4b01cda02b09aa1690ebd"
+        },
+        "dist": {
+            "type": "zip",
+            "url": "https://api.github.com/repos/jackmoore/autosize/zipball/113f1b345868901619d4b01cda02b09aa1690ebd",
+            "reference": "113f1b345868901619d4b01cda02b09aa1690ebd",
+            "shasum": null
+        },
+        "type": "bower-asset",
+        "installation-source": "dist",
+        "license": [
+            "MIT"
+        ]
+    },
+    {
+        "name": "bower-asset/jquery",
+        "version": "3.2.1",
+        "version_normalized": "3.2.1.0",
+        "source": {
+            "type": "git",
+            "url": "https://github.com/jquery/jquery-dist.git",
+            "reference": "77d2a51d0520d2ee44173afdf4e40a9201f5964e"
+        },
+        "dist": {
+            "type": "zip",
+            "url": "https://api.github.com/repos/jquery/jquery-dist/zipball/77d2a51d0520d2ee44173afdf4e40a9201f5964e",
+            "reference": "77d2a51d0520d2ee44173afdf4e40a9201f5964e",
+            "shasum": null
+        },
+        "type": "bower-asset",
+        "installation-source": "dist",
+        "license": [
+            "MIT"
+        ]
+    },
+    {
+        "name": "bower-asset/bootstrap",
+        "version": "v3.3.7",
+        "version_normalized": "3.3.7.0",
+        "source": {
+            "type": "git",
+            "url": "https://github.com/twbs/bootstrap.git",
+            "reference": "0b9c4a4007c44201dce9a6cc1a38407005c26c86"
+        },
+        "dist": {
+            "type": "zip",
+            "url": "https://api.github.com/repos/twbs/bootstrap/zipball/0b9c4a4007c44201dce9a6cc1a38407005c26c86",
+            "reference": "0b9c4a4007c44201dce9a6cc1a38407005c26c86",
+            "shasum": null
+        },
+        "require": {
+            "bower-asset/jquery": ">=1.9.1,<4.0"
+        },
+        "type": "bower-asset",
+        "installation-source": "dist",
+        "license": [
+            "MIT"
+        ]
+    },
+    {
+        "name": "bower-asset/eve-raphael",
+        "version": "v0.5.0",
+        "version_normalized": "0.5.0.0",
+        "source": {
+            "type": "git",
+            "url": "https://github.com/tomasAlabes/eve.git",
+            "reference": "93132d5d47a0ce31dbd1b75208b1d4c0e2ad81e8"
+        },
+        "dist": {
+            "type": "zip",
+            "url": "https://api.github.com/repos/tomasAlabes/eve/zipball/93132d5d47a0ce31dbd1b75208b1d4c0e2ad81e8",
+            "reference": "93132d5d47a0ce31dbd1b75208b1d4c0e2ad81e8",
+            "shasum": null
+        },
+        "type": "bower-asset",
+        "installation-source": "dist",
+        "license": [
+            "MIT"
+        ]
+    },
+    {
+        "name": "bower-asset/raphael",
+        "version": "v2.2.7",
+        "version_normalized": "2.2.7.0",
+        "source": {
+            "type": "git",
+            "url": "https://github.com/DmitryBaranovskiy/raphael.git",
+            "reference": "c02b9c125d036e42b9bb95d0e401bbf6a5153da5"
+        },
+        "dist": {
+            "type": "zip",
+            "url": "https://api.github.com/repos/DmitryBaranovskiy/raphael/zipball/c02b9c125d036e42b9bb95d0e401bbf6a5153da5",
+            "reference": "c02b9c125d036e42b9bb95d0e401bbf6a5153da5",
+            "shasum": null
+        },
+        "require": {
+            "bower-asset/eve-raphael": "0.5.0"
+        },
+        "type": "bower-asset",
+        "installation-source": "dist",
+        "license": [
+            "MIT"
+        ]
+    },
+    {
+        "name": "bower-asset/mocha",
+        "version": "1.17.1",
+        "version_normalized": "1.17.1.0",
+        "source": {
+            "type": "git",
+            "url": "https://github.com/mochajs/mocha.git",
+            "reference": "7fc565ee3e225cb7a66bf39ae9c2c05b346675c1"
+        },
+        "dist": {
+            "type": "zip",
+            "url": "https://api.github.com/repos/mochajs/mocha/zipball/7fc565ee3e225cb7a66bf39ae9c2c05b346675c1",
+            "reference": "7fc565ee3e225cb7a66bf39ae9c2c05b346675c1",
+            "shasum": null
+        },
+        "type": "bower-asset",
+        "installation-source": "dist"
+    },
+    {
+        "name": "bower-asset/morris.js",
+        "version": "0.5.1",
+        "version_normalized": "0.5.1.0",
+        "source": {
+            "type": "git",
+            "url": "https://github.com/oesmith/morris.js.git",
+            "reference": "d5cf1410eda7055eaf2c7d218d4cb24ec5ed55c8"
+        },
+        "dist": {
+            "type": "zip",
+            "url": "https://api.github.com/repos/oesmith/morris.js/zipball/d5cf1410eda7055eaf2c7d218d4cb24ec5ed55c8",
+            "reference": "d5cf1410eda7055eaf2c7d218d4cb24ec5ed55c8",
+            "shasum": null
+        },
+        "require": {
+            "bower-asset/jquery": ">=2.1.0",
+            "bower-asset/mocha": "~1.17.1",
+            "bower-asset/raphael": ">=2.0"
+        },
+        "type": "bower-asset",
+        "installation-source": "dist"
+    },
+    {
+        "name": "bower-asset/respond",
+        "version": "1.4.2",
+        "version_normalized": "1.4.2.0",
+        "source": {
+            "type": "git",
+            "url": "git@github.com:scottjehl/Respond.git",
+            "reference": "20b7f4a192bb910c8c7e067b961de38519d334e4"
+        },
+        "dist": {
+            "type": "zip",
+            "url": "https://api.github.com/repos/scottjehl/Respond/zipball/20b7f4a192bb910c8c7e067b961de38519d334e4",
+            "reference": "20b7f4a192bb910c8c7e067b961de38519d334e4",
+            "shasum": null
+        },
+        "type": "bower-asset",
+        "installation-source": "dist"
+    },
+    {
+        "name": "bower-asset/tablesaw",
+        "version": "v2.0.3",
+        "version_normalized": "2.0.3.0",
+        "source": {
+            "type": "git",
+            "url": "https://github.com/filamentgroup/tablesaw.git",
+            "reference": "5bfebe20c539c18aecb4881a14c6bab5cfa3cb46"
+        },
+        "dist": {
+            "type": "zip",
+            "url": "https://api.github.com/repos/filamentgroup/tablesaw/zipball/5bfebe20c539c18aecb4881a14c6bab5cfa3cb46",
+            "reference": "5bfebe20c539c18aecb4881a14c6bab5cfa3cb46",
+            "shasum": null
+        },
+        "require": {
+            "bower-asset/jquery": ">=1.11.2",
+            "bower-asset/respond": ">=1.4.2"
+        },
+        "type": "bower-asset",
+        "installation-source": "dist"
+    },
+    {
+        "name": "bower-asset/timepicker",
+        "version": "1.11.4",
+        "version_normalized": "1.11.4.0",
+        "source": {
+            "type": "git",
+            "url": "https://github.com/jonthornton/jquery-timepicker.git",
+            "reference": "e0ac33d4b85f1be3a107e5bd6174c6672b27ec34"
+        },
+        "dist": {
+            "type": "zip",
+            "url": "https://api.github.com/repos/jonthornton/jquery-timepicker/zipball/e0ac33d4b85f1be3a107e5bd6174c6672b27ec34",
+            "reference": "e0ac33d4b85f1be3a107e5bd6174c6672b27ec34",
+            "shasum": null
+        },
+        "require": {
+            "bower-asset/jquery": ">=1.7"
+        },
+        "type": "bower-asset",
+        "installation-source": "dist",
+        "license": [
+            "http://opensource.org/licenses/MIT"
+        ]
+    },
+    {
+        "name": "bower-asset/waves",
+        "version": "v0.7.5",
+        "version_normalized": "0.7.5.0",
+        "source": {
+            "type": "git",
+            "url": "https://github.com/fians/Waves.git",
+            "reference": "5ce37da75c9e1c41b0344afd4a8dd6eea92424e7"
+        },
+        "dist": {
+            "type": "zip",
+            "url": "https://api.github.com/repos/fians/Waves/zipball/5ce37da75c9e1c41b0344afd4a8dd6eea92424e7",
+            "reference": "5ce37da75c9e1c41b0344afd4a8dd6eea92424e7",
+            "shasum": null
+        },
+        "type": "bower-asset",
+        "installation-source": "dist",
+        "license": [
+            "MIT"
+        ]
     },
     {
         "name": "goalgorilla/open_social",

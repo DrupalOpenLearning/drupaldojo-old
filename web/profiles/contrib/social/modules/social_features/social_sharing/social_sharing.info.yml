@@ -1,0 +1,11 @@
+name: 'Social Sharing'
+description: 'Provides sharing of content to social media.'
+type: module
+core: 8.x
+dependencies:
+  - addtoany:addtoany
+  - drupal:block
+  - drupal:node
+  - drupal:system
+  - drupal:views
+package: Social

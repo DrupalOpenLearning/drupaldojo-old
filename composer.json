@@ -25,8 +25,7 @@
     "drupal/address": "~1.0",
     "goalgorilla/open_social": "~1.0",
     "drupal/pathauto": "^1.0",
-    "drupal/readme": "^1.0@beta",
-    "oomphinc/composer-installers-extender": "^1.1"
+    "drupal/readme": "^1.0@beta"
   },
   "require-dev": {
     "mikey179/vfsstream": "~1.2",
@@ -69,29 +68,17 @@
       "npm-asset"
     ],
     "installer-paths": {
-      "html/core": [
-          "drupal/core"
+      "web/core": ["type:drupal-core"],
+      "web/modules/contrib/{$name}": ["type:drupal-module"],
+      "web/profiles/contrib/social": ["goalgorilla/open_social"],
+      "web/profiles/contrib/{$name}": ["type:drupal-profile"],
+      "web/themes/contrib/{$name}": ["type:drupal-theme"],
+      "web/libraries/{$name}": [
+        "type:drupal-library",
+        "type:bower-asset",
+        "type:npm-asset"
       ],
-      "html/modules/contrib/{$name}": [
-          "type:drupal-module"
-      ],
-      "html/profiles/contrib/social": [
-          "goalgorilla/open_social"
-      ],
-      "html/profiles/contrib/{$name}": [
-          "type:drupal-profile"
-      ],
-      "html/themes/contrib/{$name}": [
-          "type:drupal-theme"
-      ],
-      "html/libraries/{$name}": [
-          "type:drupal-library",
-          "type:bower-asset",
-          "type:npm-asset"
-      ],
-      "drush/contrib/{$name}": [
-          "type:drupal-drush"
-      ]
+      "drush/contrib/{$name}": ["type:drupal-drush"]
     },
     "drupal-scaffold": {
       "source": "https://raw.githubusercontent.com/pantheon-systems/drops-8/{version}/{path}",
