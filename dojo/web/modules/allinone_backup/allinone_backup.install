@@ -1,0 +1,37 @@
+<?php
+
+/**
+ * @file
+ * Functioon for allinone_backup_uninstall.
+ * @category Functioon
+ * @package All In One Backup Module
+ * @contributor CmsMinds
+ * @license http://www.gnu.org/copyleft/gpl.html GNU General Public License
+ * @link http://www.cmsminds.com/
+ */
+
+/**
+ * Hook For uninstalltion of module allinone_backup_uninstall().
+ */
+function allinone_backup_uninstall() {
+
+  $result = \Drupal::entityQuery('node')->condition('type', 'allinone_backup')->execute();
+  entity_delete_multiple('node', $result);
+  $folder = "public://allinonefiles";
+  $path = \Drupal::service('file_system')->realpath($folder);
+
+  file_unmanaged_delete_recursive($path);
+
+  $entityManager = \Drupal::service('entity.manager');
+  $fields = $entityManager->getFieldDefinitions('node', 'allinone_backup');
+
+  if ($field = $fields['field_message_log']) {
+    $field->delete();
+  }
+  if ($field = $fields['field_backup_type']) {
+    $field->delete();
+  }
+  // To overwrite default message to custom message.
+  drupal_get_messages(t('status'));
+
+}

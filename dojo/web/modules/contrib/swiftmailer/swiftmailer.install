@@ -1,0 +1,34 @@
+<?php
+
+/**
+ * @file
+ * Contains install and update functions for SwiftMailer.
+ */
+
+/**
+ * Implements hook_requirements().
+ */
+function swiftmailer_requirements($phase) {
+  $requirements = [];
+  if ($phase == 'install') {
+    if (!class_exists('Swift_Mailer')) {
+      $requirements['swiftmailer_library'] = [
+        'description' => t('Swift Mailer requires the external Swift Mailer library. The recommended way of solving this dependency is using the <a href=":url">Composer Manager</a> module.', [':url' => 'https://www.drupal.org/project/composer_manager']),
+        'severity' => REQUIREMENT_ERROR,
+      ];
+    }
+  }
+
+  return $requirements;
+}
+
+/**
+ * Implements hook_install().
+ */
+function swiftmailer_install() {
+  $settings = Drupal::configFactory()->getEditable('mailsystem.settings');
+  $settings->set('modules.swiftmailer.none', [
+    'formatter' => 'swiftmailer',
+    'sender' => 'swiftmailer',
+  ])->save();
+}

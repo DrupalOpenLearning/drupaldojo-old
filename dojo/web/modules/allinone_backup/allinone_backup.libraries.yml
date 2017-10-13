@@ -1,0 +1,7 @@
+allinone_backup_default:
+  version: 1.x
+  css:
+    theme:
+     css/default.css: {}
+  js:
+     js/default.js: {}

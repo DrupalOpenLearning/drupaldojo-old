@@ -1,0 +1,296 @@
+## 1. The SMACSS category Base — CSS reset/normalize plus HTML element styling.
+base:
+  css:
+    base:
+      assets/css/base.css: {}
+  js:
+    assets/js/transition.min.js: {}
+    assets/js/collapse.min.js: {}
+  dependencies:
+    - core/drupal
+    - core/jquery
+    - core/jquery.once
+
+print:
+  css:
+    base:
+      assets/css/print.css: { media: print }
+
+## 2. The SMACSS category Component — discrete, reusable UI elements
+
+### 2.1 Atoms
+alert:
+  css:
+    component:
+      assets/css/alert.css: {}
+  js:
+    assets/js/alert.min.js: { minified: true }
+
+badge:
+  css:
+    component:
+      assets/css/badge.css: {}
+
+button:
+  css:
+    component:
+      assets/css/button.css: {}
+
+cards:
+  css:
+    component:
+      assets/css/cards.css: {}
+
+form-controls:
+  css:
+    component:
+      assets/css/form-controls.css: {}
+  js:
+    assets/js/textarea-autogrow.min.js: { minified: true }
+  dependencies:
+    - core/drupal.form
+
+list:
+  css:
+    component:
+      assets/css/list.css: {}
+
+spinner:
+  css:
+    component:
+      assets/css/spinner.css: {}
+
+
+### 2.2 Molecules
+block--introtext:
+  css:
+    component:
+      assets/css/block--introtext.css: {}
+
+breadcrumb:
+  css:
+    component:
+      assets/css/breadcrumb.css: {}
+
+dropdown:
+  css:
+    component:
+      assets/css/dropdown.css: {}
+  js:
+    assets/js/dropdown.min.js: { minified: true }
+
+file:
+  css:
+    component:
+      assets/css/file.css: {}
+
+form-elements:
+  css:
+    component:
+      assets/css/form-elements.css: {}
+
+form--autocomplete:
+  css:
+    component:
+      assets/css/ajax.css: {}
+      assets/css/autocomplete.css: {}
+
+form--datepicker:
+  css:
+    component:
+      assets/css/datepicker.css: {}
+  js:
+    assets/js/date-picker-init.min.js: { minified: true }
+  dependencies:
+    - core/modernizr
+
+form--input-groups:
+  css:
+    component:
+      assets/css/input-groups.css: {}
+
+form--password:
+  css:
+    component:
+      assets/css/password.css: {}
+
+form--timepicker:
+  remote: https://github.com/jonthornton/jquery-timepicker
+  version: "1.11.3"
+  license:
+    name: MIT
+    url: https://raw.githubusercontent.com/jonthornton/jquery-timepicker/master/README.md
+    gpl-compatible: true
+  css:
+    component:
+      assets/css/timepicker.css: {}
+  js:
+    assets/js/jquery.timepicker.min.js: { minified: true }
+
+imagecrop:
+  css:
+    component:
+      assets/css/imagecrop.css: {}
+
+image-widget:
+  css:
+    component:
+      assets/css/image-widget.css: {}
+
+like:
+  css:
+    component:
+      assets/css/like.css: {}
+  js:
+    assets/js/like_and_dislike_service.min.js: { minified: true }
+
+media:
+  css:
+    component:
+      assets/css/media.css: {}
+
+mention:
+  css:
+    component:
+      assets/css/mention.css: {}
+
+nav-book:
+  css:
+    component:
+      assets/css/nav-book.css: {}
+
+nav-tabs:
+  css:
+    component:
+      assets/css/nav-tabs.css: {}
+  js:
+    assets/js/tab.min.js: { minified: true }
+
+navbar:
+  css:
+    component:
+      assets/css/navbar.css: {}
+  js:
+    assets/js/navbar-collapse.min.js: { minified: true }
+    assets/js/navbar-resize.min.js: { minified: true }
+    assets/js/navbar-search.min.js: { minified: true }
+
+pagination:
+  css:
+    component:
+      assets/css/pagination.css: {}
+
+popover:
+  css:
+    component:
+      assets/css/popover.css: {}
+  js:
+    assets/js/tooltip.min.js: { minified: true }
+    assets/js/popover.min.js: { minified: true }
+
+tabledrag:
+  js:
+    assets/js/tabledrag.min.js: { minified: true }
+
+tablesaw:
+  css:
+    component:
+      assets/css/tablesaw.css: {}
+  js:
+    assets/js/tablesaw.min.js: { minified: true }
+    assets/js/tablesaw-init.min.js: { minified: true }
+
+teaser:
+  css:
+    component:
+      assets/css/teaser.css: {}
+
+tour:
+  css:
+    component:
+      assets/css/tour.css: {}
+
+### 2.3 Organisms
+admin-toolbar:
+  css:
+    component:
+      assets/css/admin-toolbar.css: {}
+
+comment:
+  css:
+    component:
+      assets/css/comment.css: {}
+
+form-post-create:
+  css:
+    component:
+      assets/css/form-post-create.css: {}
+
+group-managers:
+  css:
+    component:
+      assets/css/group-managers.css: {}
+
+hero:
+  css:
+    component:
+      assets/css/hero.css: {}
+
+meta:
+  css:
+    component:
+      assets/css/meta.css: {}
+
+modal:
+  css:
+    component:
+      assets/css/modal.css: {}
+
+offcanvas:
+  css:
+    component:
+      assets/css/offcanvas.css: {}
+
+social-linking:
+  css:
+    component:
+      assets/css/social-linking.css: {}
+
+stream:
+  css:
+    component:
+      assets/css/stream.css: {}
+
+### 2.4 Templates
+layout:
+  css:
+    layout:
+      assets/css/layout.css: {}
+
+page-node:
+  css:
+    layout:
+      assets/css/page-node.css: {}
+  dependencies:
+    - socialbase/meta
+
+page-search:
+  css:
+    layout:
+      assets/css/page-search.css: {}
+  dependencies:
+    - socialbase/hero
+
+page-preview:
+  css:
+    layout:
+      assets/css/page-preview.css: {}
+
+### 2.5 Libraries
+charts:
+  css:
+    component:
+      assets/css/morrisjs.css: {}
+  js:
+    assets/js/morris.min.js: { minified: true }
+    assets/js/raphael.min.js: { minified: true }

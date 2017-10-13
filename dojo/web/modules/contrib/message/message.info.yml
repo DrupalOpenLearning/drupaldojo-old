@@ -1,0 +1,14 @@
+name: Message
+type: module
+description: "A general message logging utility."
+# core: 8.x
+package: Message
+configure: message.main_settings
+dependencies:
+  - text
+
+# Information added by Drupal.org packaging script on 2017-08-10
+version: '8.x-1.0-beta2'
+core: '8.x'
+project: 'message'
+datestamp: 1502381068

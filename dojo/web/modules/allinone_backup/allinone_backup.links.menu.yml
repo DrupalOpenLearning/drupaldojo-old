@@ -1,0 +1,6 @@
+allinone_backup.admin:
+  title: 'All in One Backup'
+  description: 'Backup your database and files'
+  parent: system.admin_config_system
+  route_name: allinone_backup.databasebackupform
+  weight: 0

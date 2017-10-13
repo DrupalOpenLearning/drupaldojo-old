@@ -1,0 +1,7 @@
+All In One Backup Module 8.x.2.1
+================================
+
+- We have added files backups functinality.
+- Now database and files both can backup.
+- New fillter is added for fillter by database OR files.
+- Fast backups functinality.

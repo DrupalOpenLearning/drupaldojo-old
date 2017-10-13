@@ -1,0 +1,48 @@
+swiftmailer.message:
+  type: config_object
+  label: 'Swift Mailer message settings'
+  mapping:
+    format:
+      type: string
+      label: 'Message format'
+    respect_format:
+      type: boolean
+      label: 'Respect format'
+    convert_mode:
+      type: boolean
+      label: 'Respect format'
+    character_set:
+      type: string
+      label: 'Character set'
+
+swiftmailer.transport:
+  type: config_object
+  label: 'Swift Mailer transport settings'
+  mapping:
+    transport:
+      type: string
+      label: 'Transport method'
+    smtp_host:
+      type: string
+      label: 'SMTP Host'
+    smtp_port:
+      type: integer
+      label: 'SMTP Port'
+    smtp_encryption:
+      type: string
+      label: 'SMTP encryption'
+    smtp_username:
+      type: string
+      label: 'SMTP Username'
+    smtp_password:
+      type: string
+      label: 'SMTP Password'
+    sendmail_path:
+      type: string
+      label: 'Sendmail path'
+    sendmail_mode:
+      type: string
+      label: 'Sendmail mode'
+    spool_directory:
+      type: string
+      label: 'Spool directory'

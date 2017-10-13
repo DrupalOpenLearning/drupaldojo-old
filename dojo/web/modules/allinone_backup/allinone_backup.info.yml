@@ -1,0 +1,23 @@
+name: AllInOne Backup
+description: 'Available features are backup your database,files and import database.'
+type: module
+package: Custom
+configure: allinone_backup.databasebackupform
+dependencies:
+  - drupal:views
+# core: '8.x'
+# datestamp: 1489475623
+
+# Information added by Drupal.org packaging script on 2017-03-17
+# core: '8.x'
+# datestamp: 1489746185
+
+# Information added by Drupal.org packaging script on 2017-03-21
+# core: '8.x'
+# datestamp: 1490103485
+
+# Information added by Drupal.org packaging script on 2017-08-09
+version: '8.x-3.0'
+core: '8.x'
+project: 'allinone_backup'
+datestamp: 1502276347

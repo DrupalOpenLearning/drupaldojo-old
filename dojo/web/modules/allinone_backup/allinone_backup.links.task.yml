@@ -1,0 +1,44 @@
+# yaml file to define one or more local task(s).
+#
+# Definitions can contain any of the following:
+# title: (required) The untranslated title of the menu link.
+# description: The untranslated description of the link.
+# route_name: (optional) The route name to be used to build the path. Either a
+#   route_name or a link_path must be provided.
+# base_route: Used to group together related tabs.
+# parent_id: Use the parent_id to relate a tab to a parent tab for multiple
+#   levels of tabs.
+# route_parameters: (optional) The route parameters to build the path. An array.
+# link_path: (optional) If you have an external link use link_path instead of
+#   providing a route_name.
+# weight: (optional) An integer that determines the relative position of items
+#   in the menu; higher-weighted items sink. Defaults to 0.
+#   Menu items with the same weight are ordered alphabetically.
+# options: (optional) An array of options to be passed to l() when generating
+#   a link from this menu item.
+
+allinone_backup.tab_1:
+  route_name : allinone_backup.databasebackupform
+  title: Create Database Backup
+  base_route: allinone_backup.databasebackupform
+  weight: 10
+allinone_backup.tab_2:
+  route_name : allinone_backup.filesbackupform
+  title: Create Files Backup
+  base_route: allinone_backup.databasebackupform
+  weight: 20
+allinone_backup.tab_3:
+  route_name: allinone_backup.importbackup
+  title: Import Backup
+  base_route: allinone_backup.databasebackupform
+  weight: 30
+allinone_backup.tab_4:
+  route_name: allinone_backup.backuplog
+  title: Backup Logs
+  base_route: allinone_backup.databasebackupform
+  weight: 40
+allinone_backup.tab_5:
+  route_name: allinone_backup.formsettings
+  title: Configuration
+  base_route: allinone_backup.databasebackupform
+  weight: 50

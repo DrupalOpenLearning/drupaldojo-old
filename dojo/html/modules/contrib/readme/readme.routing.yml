@@ -1,0 +1,29 @@
+readme.settings:
+  path: '/admin/config/development/readme/settings'
+  defaults:
+    _form: '\Drupal\readme\Form\ReadmeSettingsForm'
+    _title: 'README'
+  requirements:
+    _permission: 'administer modules'
+
+readme.main:
+  path: '/admin/readme'
+  defaults:
+    _controller: '\Drupal\readme\Controller\ReadmeController::readmeMain'
+    _title: Readme
+  requirements:
+    _permission: 'administer modules'
+
+readme.page:
+  path: '/admin/readme/{name}'
+  defaults:
+    _controller: '\Drupal\readme\Controller\ReadmeController::readmePage'
+  requirements:
+    _permission: 'administer modules'
+
+readme.html:
+  path: '/admin/readme/{name}/html'
+  defaults:
+    _controller: '\Drupal\readme\Controller\ReadmeController::readmeHtml'
+  requirements:
+    _custom_access: '\Drupal\readme\ReadmeAccess::checkAccess'

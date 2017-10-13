@@ -1,0 +1,9 @@
+# See: https://www.drupal.org/node/1800686
+link_css.admin:
+  path: 'admin/config/development/link-css'
+  defaults:
+    _form: '\Drupal\link_css\LinkCssAdminForm'
+    _title: 'Link CSS Settings'
+  requirements:
+    #role: 'administrator'
+    _permission: 'administer site configuration'

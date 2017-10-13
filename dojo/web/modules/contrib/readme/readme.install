@@ -1,0 +1,59 @@
+<?php
+
+/**
+ * @file
+ * Install, update and uninstall functions for the README module.
+ */
+
+use Drupal\Component\Utility\Crypt;
+use Drupal\Core\Url;
+
+/**
+ * Implements hook_install().
+ */
+function readme_install() {
+  $token = Crypt::randomBytesBase64(55);
+  \Drupal::state()->set('readme.token', $token);
+}
+
+/**
+ * Implements hook_requirements().
+ */
+function readme_requirements($phase) {
+  if ($phase != 'runtime') {
+    return [];
+  }
+
+  $requirements = [];
+
+  /** @var \Drupal\readme\ReadmeManagerInterface $readme_manager */
+  $readme_manager = \Drupal::service('readme.manager');
+  if (!$readme_manager->markdownInstalled()) {
+    $t_args = [
+      ':href' => Url::fromRoute('readme.page', ['name' => 'readme'])->toString(),
+    ];
+    $requirements['readme_markdown'] = [
+      'title' => t('README: Markdown library'),
+      'value' => t('Not found'),
+      'severity' => REQUIREMENT_ERROR,
+      'description' => t('PHP Markdown is missing. Please see the README module\'s <a href=":href">installation instructions</a>.', $t_args),
+    ];
+  }
+  else {
+    $requirements['readme_markdown'] = [
+      'title' => t('README: Markdown library'),
+      'value' => t('Found'),
+      'severity' => REQUIREMENT_OK,
+    ];
+  }
+
+  return $requirements;
+}
+
+/**
+ * Issue #2750359: Add the ability to pull a README.md's raw HTML into external applications.
+ */
+function readme_update_8001(&$sandbox) {
+  $token = Crypt::randomBytesBase64(55);
+  \Drupal::state()->set('readme.token', $token);
+}

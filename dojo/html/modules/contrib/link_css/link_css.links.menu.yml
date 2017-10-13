@@ -1,0 +1,7 @@
+link_css.admin:
+  title: "Link CSS Settings"
+  parent: system.admin_config_development
+  description: 'Manage Link-CSS settings'
+  route_name: link_css.admin
+  weight: 80
+  menu_name: devel

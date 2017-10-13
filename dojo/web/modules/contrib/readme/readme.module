@@ -1,0 +1,49 @@
+<?php
+/**
+ * @file
+ * Allows site builders and administrator to view a module's README file.
+ */
+
+use Drupal\Core\Form\FormStateInterface;
+use Drupal\Core\Render\Element;
+use Drupal\Core\Url;
+
+/**
+ * Implements hook_form_FORM_ID_alter().
+ */
+function readme_form_system_modules_alter(&$form, FormStateInterface $form_state) {
+  /** @var \Drupal\readme\ReadmeManagerInterface $readme_manager */
+  $readme_manager = \Drupal::service('readme.manager');
+
+  foreach ($form['modules'] as $package => &$modules) {
+    if (!Element::child($package) || !is_array($modules)) {
+      continue;
+    }
+    foreach ($modules as $module_name => &$module) {
+      if (!Element::child($module_name) || !is_array($module)) {
+        continue;
+      }
+      $readme_path = $readme_manager->getPath($module_name);
+      if ($readme_path) {
+        $readme_link = [
+          '#type' => 'link',
+          '#title' => t('Readme'),
+          '#url' => Url::fromRoute('readme.page', ['name' => $module_name]),
+          '#options' => ['attributes' => ['class' => ['module-link', 'module-link-help', 'module-link-readme'], 'title' => t('Readme')]],
+        ];
+
+        if (isset($module['links']['help'])) {
+          $module['links']['help'] = [
+            $readme_link,
+            $module['links']['help'],
+          ];
+        }
+        else {
+          $module['links']['help'] = $readme_link;
+        }
+      }
+    }
+  }
+
+  $form['#attached']['library'][] = 'readme/readme';
+}
